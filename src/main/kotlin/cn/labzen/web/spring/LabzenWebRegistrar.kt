@@ -18,8 +18,6 @@ class LabzenWebRegistrar : ImportBeanDefinitionRegistrar {
     val configuration = Labzens.configurationWith(WebConfiguration::class.java)
 
     if (configuration.unifyRestResponse()) {
-      // 设置自定义JSON
-      registry.registerBeanDefinition("labzenJsonMapperConfig", RootBeanDefinition(LabzenJsonMapperConfig::class.java))
       // 注册 ResponseBodyAdvice
       registry.registerBeanDefinition("labzenRestResponseBody", RootBeanDefinition(LabzenRestResponseBody::class.java))
     }
