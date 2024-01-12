@@ -2,7 +2,6 @@ package cn.labzen.web.spring
 
 import cn.labzen.cells.core.utils.Strings
 import cn.labzen.meta.Labzens
-import cn.labzen.meta.exception.LabzenRuntimeException
 import cn.labzen.spring.Springs
 import cn.labzen.web.exception.RequestException
 import cn.labzen.web.meta.WebConfiguration
@@ -12,7 +11,6 @@ import cn.labzen.web.response.struct.Response
 import cn.labzen.web.source.ControllerClassInitializer
 import org.springframework.beans.factory.InitializingBean
 import org.springframework.core.MethodParameter
-import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.converter.HttpMessageConverter
 import org.springframework.http.server.ServerHttpRequest
@@ -23,6 +21,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice
 import java.util.*
 import javax.servlet.http.HttpServletRequest
+import javax.servlet.http.HttpServletResponse
 
 
 @RestControllerAdvice
@@ -78,6 +77,9 @@ class LabzenRestResponseBody : ResponseBodyAdvice<Any>, InitializingBean {
     request: ServerHttpRequest,
     response: ServerHttpResponse
   ): Any? {
+    if (body is Response) {
+      return body
+    }
     if (!selectedContentType.isCompatibleWith(MediaType.APPLICATION_JSON)) {
       return body
     }
@@ -89,35 +91,8 @@ class LabzenRestResponseBody : ResponseBodyAdvice<Any>, InitializingBean {
     return responseTransformer.transform(body, httpRequest)
   }
 
-  @ExceptionHandler(LabzenRuntimeException::class)
-  fun handleException(request: HttpServletRequest, e: LabzenRuntimeException): Any? {
-//    val withSpringErrorPage = if (handlerMethod?.method?.isAnnotationPresent(Catching::class.java) == true) {
-//      val catching = handlerMethod.method.getAnnotation(Catching::class.java)
-//      // 只有在@Catching中声明的异常类，才按照Labzen的错误信息处理
-//      catching?.exceptions?.find {
-//        it.java.isAssignableFrom(e.javaClass)
-//      } == null
-//    } else {
-//      // 没有注解@Catching，就按照Labzen的错误信息处理
-//      false
-//    }
-
-//    if (withSpringErrorPage) {
-//      val errorViewResolverOptional = Springs.bean(DefaultErrorViewResolver::class.java)
-//      return if (errorViewResolverOptional.isPresent) {
-//        val model = mutableMapOf<String, Any?>()
-//        model["timestamp"] = Date()
-//        model["error"] = HttpStatus.INTERNAL_SERVER_ERROR.reasonPhrase
-//        model["status"] = HttpStatus.INTERNAL_SERVER_ERROR.value()
-//        model["message"] = e.message
-//        model["path"] = request.getAttribute(RequestDispatcher.ERROR_REQUEST_URI);
-//        ModelAndView("error", model);
-//      } else null
-//    }
-    val le = if (e is RequestException) e else null
-    // todo 在这里可以定制不同的异常类对应不同的http code
-    val code = le?.code ?: HttpStatus.INTERNAL_SERVER_ERROR.value()
-
-    return Response(code, e.message ?: "internal server error")
+  @ExceptionHandler(RequestException::class)
+  fun handleException(request: HttpServletRequest, response: HttpServletResponse, e: RequestException): Any? {
+    return Response(e.code, e.message ?: "internal server error")
   }
 }

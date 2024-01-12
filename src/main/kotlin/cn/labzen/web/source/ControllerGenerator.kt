@@ -186,7 +186,6 @@ internal class ControllerGenerator(private val interfaceClass: Class<*>, private
       arrayOf(
         CTAnnotation("org.springframework.validation.annotation.Validated", constPool),
         CTAnnotation("org.springframework.web.bind.annotation.ModelAttribute", constPool)
-//        CTAnnotation("org.springframework.web.bind.annotation.RequestBody", constPool)
       )
     )
     ctParameterAnnotationsAttribute.annotations = ctParameterAnnotations.toTypedArray()
@@ -310,7 +309,6 @@ internal class ControllerGenerator(private val interfaceClass: Class<*>, private
       arrayOf(
         CTAnnotation("org.springframework.validation.annotation.Validated", constPool),
         CTAnnotation("org.springframework.web.bind.annotation.ModelAttribute", constPool)
-//        CTAnnotation("org.springframework.web.bind.annotation.RequestBody", constPool)
       )
     )
     ctParameterAnnotationsAttribute.annotations = ctParameterAnnotations.toTypedArray()
@@ -464,9 +462,6 @@ internal class ControllerGenerator(private val interfaceClass: Class<*>, private
   		}
 		""".trimIndent()
     val ctMethod = CtNewMethod.make(methodDeclaration, ctClass)
-    // 设置返回值的泛型
-//    val cs = SignatureAttribute.ClassSignature(arrayOf(SignatureAttribute.TypeParameter(resourceClass.name)))
-//    ctMethod.returnType.genericSignature = cs.encode()
     // 设置方法参数名
     val ctParameterAttribute =
       MethodParametersAttribute(constPool, arrayOf("resourceCondition", "pageCondition"), intArrayOf(0, 0))

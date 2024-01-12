@@ -21,7 +21,7 @@ interface WebConfiguration {
   /**
    * Controller的接口实现类是否保存为文件
    */
-  @Item(path = "controller.file.save", required = false, defaultValue = "true")
+  @Item(path = "controller.file.save", required = false, defaultValue = "false")
   fun writeClassFile(): Boolean
 
   /**

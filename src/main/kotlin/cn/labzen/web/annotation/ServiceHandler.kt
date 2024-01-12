@@ -11,6 +11,5 @@ import kotlin.reflect.KClass
 @LabzenWeb
 annotation class ServiceHandler(
   val main: KClass<*>,
-//  val organiser: KClass<out ServiceOrganiser>
   val services: Array<KClass<*>> = []
 )

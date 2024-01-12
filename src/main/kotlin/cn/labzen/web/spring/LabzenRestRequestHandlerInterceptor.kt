@@ -8,10 +8,7 @@ import javax.servlet.http.HttpServletResponse
 
 class LabzenRestRequestHandlerInterceptor : HandlerInterceptor {
 
-//  private val requestTime: ThreadLocal<Long> = ThreadLocal()
-
   override fun preHandle(request: HttpServletRequest, response: HttpServletResponse, handler: Any): Boolean {
-//    requestTime.set(System.currentTimeMillis())
     request.setAttribute(REST_REQUEST_TIME_MILLIS, System.currentTimeMillis())
     request.setAttribute(REST_REQUEST_TIME, DateTimes.formatNow())
     return true
@@ -23,11 +20,6 @@ class LabzenRestRequestHandlerInterceptor : HandlerInterceptor {
     handler: Any,
     modelAndView: ModelAndView?
   ) {
-//    val requestTime = this.requestTime.get()
-//    val executionTime = System.currentTimeMillis() - requestTime
-//    request.setAttribute(REST_EXECUTION_TIME, executionTime)
-//
-//    this.requestTime.remove()
   }
 
   override fun afterCompletion(

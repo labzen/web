@@ -20,7 +20,6 @@ class LabzenResponseTransformer : ResponseTransformer {
 
     val requestTime = request.getAttribute(REST_REQUEST_TIME).toString()
     val requestMillis = request.getAttribute(REST_REQUEST_TIME_MILLIS).toString().toLong()
-//    val executionTime = request.getAttribute(REST_EXECUTION_TIME)?.toString()?.toLong() ?: 0
     val executionTime = System.currentTimeMillis() - requestMillis
     return if (result is Result) {
       val code = result.code
