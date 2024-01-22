@@ -1,5 +1,6 @@
 package cn.labzen.web.source
 
+import cn.labzen.web.annotation.ServiceHandler
 import cn.labzen.web.meta.WebConfiguration
 import org.reflections.Reflections
 import org.reflections.scanners.Scanners
@@ -16,7 +17,7 @@ internal object ControllerClassInitializer {
     val controllerInterfaces = scanInterfaces(controllerPackage)
 
     val controllerClasses = controllerInterfaces.map {
-      ControllerGenerator(it, configuration).generate()
+      ControllerGenerator(configuration, it).generate()
     }
     this.controllerClasses.addAll(controllerClasses)
   }
@@ -28,6 +29,8 @@ internal object ControllerClassInitializer {
     val reflections = Reflections(configurationBuilder)
     val allControllers = reflections.getTypesAnnotatedWith(Controller::class.java)
     allControllers.addAll(reflections.getTypesAnnotatedWith(RestController::class.java))
-    return allControllers.filter { it.isInterface }
+    return allControllers.filter {
+      it.isInterface && it.isAnnotationPresent(ServiceHandler::class.java)
+    }
   }
 }

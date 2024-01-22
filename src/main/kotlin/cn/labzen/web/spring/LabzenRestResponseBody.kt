@@ -4,6 +4,7 @@ import cn.labzen.cells.core.utils.Strings
 import cn.labzen.meta.Labzens
 import cn.labzen.spring.Springs
 import cn.labzen.web.exception.RequestException
+import cn.labzen.web.meta.RequestMappingVersionPlace
 import cn.labzen.web.meta.WebConfiguration
 import cn.labzen.web.response.LabzenResponseTransformer
 import cn.labzen.web.response.ResponseTransformer
@@ -29,6 +30,9 @@ class LabzenRestResponseBody : ResponseBodyAdvice<Any>, InitializingBean {
 
   private var processAllRestResponse = true
   private val responseTransformer: ResponseTransformer = createTransformer()
+  private val isHeadVersionEnabled = Labzens.configurationWith(WebConfiguration::class.java).let {
+    it.controllerVersionEnabled() && it.controllerVersionPlace() == RequestMappingVersionPlace.HEAD
+  }
 
   private fun createTransformer(): ResponseTransformer {
     val configuration = Labzens.configurationWith(WebConfiguration::class.java)
@@ -80,7 +84,12 @@ class LabzenRestResponseBody : ResponseBodyAdvice<Any>, InitializingBean {
     if (body is Response) {
       return body
     }
-    if (!selectedContentType.isCompatibleWith(MediaType.APPLICATION_JSON)) {
+
+    if (isHeadVersionEnabled) {
+      if (!"json".equals(selectedContentType.subtype, true) && !"application".equals(selectedContentType.type, true)) {
+        return body
+      }
+    } else if (!selectedContentType.isCompatibleWith(MediaType.APPLICATION_JSON)) {
       return body
     }
 
