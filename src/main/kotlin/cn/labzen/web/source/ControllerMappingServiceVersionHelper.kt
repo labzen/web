@@ -35,11 +35,10 @@ internal object ControllerMappingServiceVersionHelper {
 
       when (configuration.controllerVersionPlace()) {
         RequestMappingVersionPlace.HEAD -> setupVersionInHead(controllerMeta, it, version)
+        RequestMappingVersionPlace.PARAM -> setupVersionInParam(controllerMeta, it, version)
         RequestMappingVersionPlace.URI -> {
           // do nothing
         }
-
-        RequestMappingVersionPlace.PARAM -> setupVersionInParam(controllerMeta, it, version)
       }
     }
   }
@@ -56,13 +55,13 @@ internal object ControllerMappingServiceVersionHelper {
   }
 
   private fun setupVersionInHead(controllerMeta: ControllerMeta, annotation: Annotation, version: String) {
-    val headMemberValue = "application/vnd.${controllerMeta.configuration.controllerVersionVNDName()}.$version+json"
+    val headVersionValue = "application/vnd.${controllerMeta.configuration.controllerVersionVNDName()}.$version+json"
 
-    val memberValue: ArrayMemberValue =
+    val producesMember: ArrayMemberValue =
       (annotation.getMemberValue("produces") ?: ArrayMemberValue(controllerMeta.constPool)) as ArrayMemberValue
-    val appendHeadString = arrayOf(StringMemberValue(headMemberValue, controllerMeta.constPool))
-    memberValue.value = memberValue.value?.let { it + appendHeadString } ?: appendHeadString
-    annotation.addMemberValue("produces", memberValue)
+    val producesMemberValues = arrayOf(StringMemberValue(headVersionValue, controllerMeta.constPool))
+    producesMember.value = producesMember.value?.let { it + producesMemberValues } ?: producesMemberValues
+    annotation.addMemberValue("produces", producesMember)
   }
 
   private fun setupVersionInParam(controllerMeta: ControllerMeta, annotation: Annotation, version: String) {

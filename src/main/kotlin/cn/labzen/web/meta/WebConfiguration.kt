@@ -2,11 +2,11 @@ package cn.labzen.web.meta
 
 import cn.labzen.meta.configuration.annotation.Configured
 import cn.labzen.meta.configuration.annotation.Item
-import cn.labzen.web.response.ResponseTransformer
 import cn.labzen.web.request.PagingCondition
 import cn.labzen.web.request.PagingConditionConverter
 import cn.labzen.web.response.Pagination
 import cn.labzen.web.response.PaginationConverter
+import cn.labzen.web.response.ResponseTransformer
 
 @Configured("web")
 interface WebConfiguration {
@@ -30,7 +30,7 @@ interface WebConfiguration {
   fun controllerVersionEnabled(): Boolean
 
   /**
-   * API 版本控制的版本前缀，默认大写 V
+   * API 版本控制的版本前缀，默认小写 v
    */
   @Item(path = "controller.version.prefix", required = false, defaultValue = "v")
   fun controllerVersionPrefix(): String
@@ -56,6 +56,13 @@ interface WebConfiguration {
    */
   @Item(path = "controller.version.head", required = false, defaultValue = "app")
   fun controllerVersionVNDName(): String
+
+  /**
+   * API 版本控制强制要求访问API时带有Accept Header信息，默认false，如果访问API的Header种没有Accept，
+   * Spring默认会选择一个可以匹配的 produces 方法进行响应，当 controller.version.place 为 HEAD 时有效
+   */
+  @Item(path = "controller.version.forced-accept", required = false, defaultValue = "app")
+  fun controllerVersionHeaderForced(): Boolean
 
   /**
    * API 版本控制的名称，当 controller.version.place 为 PARAM 时有效
