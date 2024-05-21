@@ -18,10 +18,11 @@ class LabzenWebRegistrar : ImportBeanDefinitionRegistrar {
     val configuration = Labzens.configurationWith(WebConfiguration::class.java)
 
     if (configuration.unifyRestResponse()) {
-      // 注册 ResponseBodyAdvice
+      // 注册 ResponseBodyAdvice [LabzenRestResponseBody]
       registry.registerBeanDefinition("labzenRestResponseBody", RootBeanDefinition(LabzenRestResponseBody::class.java))
     }
 
+    // 注册在 [LabzenWebInitializer] 中生成好的 Controller 类
     ControllerClassInitializer.controllerClasses.forEach {
       logger.info().status(Status.IMPORTANT).scene("Controller")
         .log("Register dynamic mvc controller bean for [$it]")

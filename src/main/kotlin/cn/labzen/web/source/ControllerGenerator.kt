@@ -29,11 +29,11 @@ internal class ControllerGenerator(private val configuration: WebConfiguration, 
   fun generate(): Class<*> {
     createDynamicClass()
 
-    if (configuration.writeClassFile()) {
-      val dir = if (Strings.isBlank(configuration.writeClassDirectory())) {
+    if (configuration.saveClassFile()) {
+      val dir = if (Strings.isBlank(configuration.writeClassDirectoryTo())) {
         defaultClassFileDirectory
       } else {
-        configuration.writeClassDirectory()
+        configuration.writeClassDirectoryTo()
       }
       controllerMeta.clazz.writeFile(dir)
       logger.info().status(Status.NOTE).scene("Controller")

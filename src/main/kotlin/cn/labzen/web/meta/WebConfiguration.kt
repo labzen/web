@@ -2,6 +2,11 @@ package cn.labzen.web.meta
 
 import cn.labzen.meta.configuration.annotation.Configured
 import cn.labzen.meta.configuration.annotation.Item
+import cn.labzen.web.response.ResponseTransformer
+import cn.labzen.web.request.PagingCondition
+import cn.labzen.web.request.PagingConditionConverter
+import cn.labzen.web.response.Pagination
+import cn.labzen.web.response.PaginationConverter
 
 @Configured("web")
 interface WebConfiguration {
@@ -62,16 +67,16 @@ interface WebConfiguration {
    * Controller的接口实现类是否保存为文件
    */
   @Item(path = "controller.file.save", required = false, defaultValue = "false")
-  fun writeClassFile(): Boolean
+  fun saveClassFile(): Boolean
 
   /**
    * Controller的接口实现类保存的目录
    */
   @Item(path = "controller.file.path", required = false, defaultValue = "")
-  fun writeClassDirectory(): String
+  fun writeClassDirectoryTo(): String
 
   /**
-   * 定义统一的 API 路径前缀，默认：/api  如需自定义，则将该值设置为空字符
+   * 定义统一的 API 路径前缀，默认：/api；可根据项目实际情况自定义，如不需要前缀则将该值设置为空字符
    */
   @Item(path = "api.path.prefix", required = false, defaultValue = "api")
   fun apiPathPrefix(): String
@@ -83,15 +88,32 @@ interface WebConfiguration {
   fun unifyRestResponse(): Boolean
 
   /**
-   * 如false，则没有通过Controller接口定义的response，不会进行格式统一
+   * 如为false，则普通的Controller定义，返回的response不会进行格式统一，只会处理将Controller定义为接口的那些response
    */
   @Item(path = "response.rest.unify.all", required = false, defaultValue = "true")
   fun unifyAllRestResponse(): Boolean
 
   /**
-   * 可提供自定义的响应内容转换器（实现 ResponseTransformer），将会先从 Spring 容器中寻找对应的 Bean，如果不存在则创建一个实例；如果均失败则会使用默认的转换器
+   * 可提供自定义的响应内容转换器（实现 [ResponseTransformer]），将会先从 Spring 容器中寻找对应的 Bean，如果不存在则创建一个实例；如果均失败则会使用默认的转换器
    */
   @Item(path = "response.rest.unify.transformer", required = false, defaultValue = "")
   fun unifyRestResponseTransformer(): String
 
+  /**
+   * 设置一个 [PagingCondition] 的转换器（实现 [PagingConditionConverter]），将会先从 Spring 容器中寻找对应的 Bean，如果不存在则创建一个实例
+   */
+  @Item(path = "page.converter.request", required = false, defaultValue = "")
+  fun pageConverterForRequest(): String
+
+  /**
+   * 设置一个 [Pagination] 的转换器（实现 [PaginationConverter]），将会先从 Spring 容器中寻找对应的 Bean，如果不存在则创建一个实例
+   */
+  @Item(path = "page.converter.response", required = false, defaultValue = "")
+  fun pageConverterForResponse(): String
+
+  /**
+   * 分页大小，默认20
+   */
+  @Item(path = "page.size", required = false, defaultValue = "20")
+  fun defaultPageSize(): Int
 }

@@ -35,14 +35,18 @@ class PagingCondition {
     }
   }
 
+  /**
+   * 转换为通过[PagingConditionConverter]接口实现转换的分页类
+   */
+  @Suppress("UNCHECKED_CAST")
+  fun <T> convert(): T =
+    converter?.convert(this) as T
+
   data class Order(val name: String, val isAsc: Boolean)
 
   companion object {
 
-    private var defaultSize = 20
-
-    fun setDefaultSize(size: Int) {
-      defaultSize = size
-    }
+    internal var defaultSize = 20
+    internal var converter: PagingConditionConverter<*>? = null
   }
 }

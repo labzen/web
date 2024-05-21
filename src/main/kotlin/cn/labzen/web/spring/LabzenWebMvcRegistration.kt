@@ -16,6 +16,9 @@ import java.lang.reflect.Method
 
 class LabzenWebMvcRegistration : WebMvcRegistrations {
 
+  /**
+   * 注册自定义的 [RequestMappingHandlerMapping] 实现API的版本控制
+   */
   override fun getRequestMappingHandlerMapping(): RequestMappingHandlerMapping? {
     val configuration = Labzens.configurationWith(WebConfiguration::class.java)
     return if (configuration.controllerVersionEnabled()

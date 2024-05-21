@@ -8,6 +8,9 @@ import javax.servlet.http.HttpServletResponse
 
 class LabzenRestRequestHandlerInterceptor : HandlerInterceptor {
 
+  /**
+   * 用于统计一个请求的用时
+   */
   override fun preHandle(request: HttpServletRequest, response: HttpServletResponse, handler: Any): Boolean {
     request.setAttribute(REST_REQUEST_TIME_MILLIS, System.currentTimeMillis())
     request.setAttribute(REST_REQUEST_TIME, DateTimes.formatNow())

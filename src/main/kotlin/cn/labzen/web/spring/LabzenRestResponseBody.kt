@@ -20,11 +20,12 @@ import org.springframework.http.server.ServletServerHttpRequest
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice
-import java.util.*
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 
-
+/**
+ * 转换 Http Response 结构
+ */
 @RestControllerAdvice
 class LabzenRestResponseBody : ResponseBodyAdvice<Any>, InitializingBean {
 
@@ -44,15 +45,11 @@ class LabzenRestResponseBody : ResponseBodyAdvice<Any>, InitializingBean {
       try {
         val customResponseTransformerClass: Class<*> = Class.forName(unifyRestResponseTransformer)
         if (!ResponseTransformer::class.java.isAssignableFrom(customResponseTransformerClass)) {
+          // do nothing todo
           throw RuntimeException()
         }
 
-        val foundTransformerBean: Optional<out Any> = Springs.bean(customResponseTransformerClass)
-        if (foundTransformerBean.isPresent) {
-          foundTransformerBean.get() as ResponseTransformer
-        } else {
-          customResponseTransformerClass.getConstructor().newInstance() as ResponseTransformer
-        }
+        Springs.getOrCreate(customResponseTransformerClass) as ResponseTransformer
       } catch (e: Exception) {
         LabzenResponseTransformer()
       }

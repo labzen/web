@@ -13,4 +13,14 @@ data class Pagination(
   val size: Int,
   val recordCount: Long,
   val pageCount: Long
-)
+) {
+
+  companion object {
+    @Suppress("UNCHECKED_CAST")
+    @JvmStatic
+    fun <T> from(page: T): Pagination? =
+      (converter as? PaginationConverter<T>)?.convert(page)
+
+    internal var converter: PaginationConverter<*>? = null
+  }
+}

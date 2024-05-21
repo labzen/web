@@ -12,10 +12,16 @@ import org.springframework.web.util.UrlPathHelper
 
 class LabzenWebConfigurer : WebMvcConfigurer {
 
+  /**
+   * 注册拦截器
+   */
   override fun addInterceptors(registry: InterceptorRegistry) {
     registry.addInterceptor(LabzenRestRequestHandlerInterceptor())
   }
 
+  /**
+   * 定义API的前缀等
+   */
   override fun configurePathMatch(configurer: PathMatchConfigurer) {
     configurer.setUrlPathHelper(UrlPathHelper())
 
