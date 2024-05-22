@@ -24,6 +24,24 @@ interface WebConfiguration {
   fun controllerClassSuffix(): String
 
   /**
+   * Controller的接口实现类是否保存为文件
+   */
+  @Item(path = "controller.file.save", required = false, defaultValue = "false")
+  fun saveClassFile(): Boolean
+
+  /**
+   * Controller的接口实现类保存的目录
+   */
+  @Item(path = "controller.file.path", required = false, defaultValue = "")
+  fun writeClassDirectoryTo(): String
+
+  /**
+   * 忽略Controller的接口实现类生成时的 WARN 日志
+   */
+  @Item(path = "controller.log.no-warn", required = false, defaultValue = "false")
+  fun ignoreControllerSourceWarning(): Boolean
+
+  /**
    * 开启 API 版本控制
    */
   @Item(path = "controller.version.enable", required = false, defaultValue = "false")
@@ -69,18 +87,6 @@ interface WebConfiguration {
    */
   @Item(path = "controller.version.param", required = false, defaultValue = "version")
   fun controllerVersionParamName(): String
-
-  /**
-   * Controller的接口实现类是否保存为文件
-   */
-  @Item(path = "controller.file.save", required = false, defaultValue = "false")
-  fun saveClassFile(): Boolean
-
-  /**
-   * Controller的接口实现类保存的目录
-   */
-  @Item(path = "controller.file.path", required = false, defaultValue = "")
-  fun writeClassDirectoryTo(): String
 
   /**
    * 定义统一的 API 路径前缀，默认：/api；可根据项目实际情况自定义，如不需要前缀则将该值设置为空字符

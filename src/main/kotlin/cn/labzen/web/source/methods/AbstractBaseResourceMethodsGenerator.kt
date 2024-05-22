@@ -45,6 +45,7 @@ internal abstract class AbstractBaseResourceMethodsGenerator(
 
     if (serviceMethod.returnType != Result::class.java) {
       logger.warn().scene(LOGGER_SCENE_CONTROLLER).status(Status.FIXME)
+        .conditional(!controllerMeta.configuration.ignoreControllerSourceWarning())
         .log("基于 @BaseResource 定义的方法 [${controllerMeta.interfaceType}] 将要调用的Service方法 [${serviceMethod}#$methodName()] 返回类型需要是 [${Result::class.java}]")
       return null
     }
@@ -100,9 +101,7 @@ internal abstract class AbstractBaseResourceMethodsGenerator(
   protected fun setupMethodAnnotations(annotations: Array<Annotation>) {
     val revisableAnnotations = annotations.toMutableList()
     ControllerMappingVersionHelper.setupMappedRequestVersion(
-      controllerMeta,
-      baseApiVersion,
-      revisableAnnotations
+      controllerMeta, baseApiVersion, revisableAnnotations
     )
 
     val annotationsAttribute = AnnotationsAttribute(controllerMeta.constPool, AnnotationsAttribute.visibleTag)

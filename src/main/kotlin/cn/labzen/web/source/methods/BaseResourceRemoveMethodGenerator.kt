@@ -39,6 +39,7 @@ internal class BaseResourceRemoveMethodGenerator(
       serviceFieldClass.getDeclaredMethod(methodName, parameterClass)
     } catch (e: NoSuchMethodException) {
       logger.warn().scene(LOGGER_SCENE_CONTROLLER).status(Status.FIXME)
+        .conditional(!controllerMeta.configuration.ignoreControllerSourceWarning())
         .log("基于 @BaseResource 定义的方法 [${controllerMeta.interfaceType}] 无法找到对应的 Service 方法 [$serviceFieldClass#$methodName(${parameterClass.simpleName} $resourceIdName)]")
       null
     }

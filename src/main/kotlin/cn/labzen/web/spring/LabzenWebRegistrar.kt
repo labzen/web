@@ -27,7 +27,7 @@ class LabzenWebRegistrar : ImportBeanDefinitionRegistrar {
     // 注册在 [LabzenWebInitializer] 中生成好的 Controller 类
     ControllerClassInitializer.controllerClasses.forEach {
       logger.info().status(Status.IMPORTANT).scene(LOGGER_SCENE_CONTROLLER)
-        .log("Register dynamic mvc controller bean for [$it]")
+        .log("注册Controller实现类 [$it]")
       val beanDefinition = RootBeanDefinition(it)
 
       val name = it.simpleName.first().lowercase() + it.simpleName.substring(1)

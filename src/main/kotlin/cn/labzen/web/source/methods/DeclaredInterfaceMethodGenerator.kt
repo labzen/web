@@ -91,6 +91,7 @@ internal class DeclaredInterfaceMethodGenerator(
       // 如果方法的返回为 void
       if (controllerReturnType == Void::class.java) {
         logger.warn().scene(LOGGER_SCENE_CONTROLLER).status(Status.REMIND)
+          .conditional(!controllerMeta.configuration.ignoreControllerSourceWarning())
           .log("[$interfaceType#${interfaceMethod.name}(${interfaceMethod.parameterTypes})] 未提供返回值")
         return ""
       }
@@ -99,6 +100,7 @@ internal class DeclaredInterfaceMethodGenerator(
         callServiceClass.getDeclaredMethod(callMethodName, *interfaceMethod.parameterTypes)
       } catch (e: NoSuchMethodException) {
         logger.warn().scene(LOGGER_SCENE_CONTROLLER).status(Status.FIXME)
+          .conditional(!controllerMeta.configuration.ignoreControllerSourceWarning())
           .log("[$interfaceType#${interfaceMethod.name}(${interfaceMethod.parameterTypes})] 需要调用的方法不存在 [$callServiceClass#$callMethodName(${interfaceMethod.parameterTypes})]")
         return "return null;"
       }
@@ -110,12 +112,14 @@ internal class DeclaredInterfaceMethodGenerator(
         // Service方法没有返回值
         serviceReturnType == Void::class.java -> {
           logger.warn().scene(LOGGER_SCENE_CONTROLLER).status(Status.FIXME)
+            .conditional(!controllerMeta.configuration.ignoreControllerSourceWarning())
             .log("[$callServiceClass#$callMethodName(${interfaceMethod.parameterTypes})] 未提供返回值")
           "return null;"
         }
         // Service方法的返回类型与Controller方法的返回类型不一致，或Service方法的返回类型不是Controller方法的返回类型的子类或接口实现类
         !controllerReturnType.isAssignableFrom(serviceReturnType) -> {
-          logger.warn().status(Status.FIXME)
+          logger.warn().scene(LOGGER_SCENE_CONTROLLER).status(Status.FIXME)
+            .conditional(!controllerMeta.configuration.ignoreControllerSourceWarning())
             .log("[$callServiceClass#$callMethodName(${interfaceMethod.parameterTypes})] 的返回类型 $serviceReturnType，无法匹配 [$controllerReturnType $interfaceType#${interfaceMethod.name}(${interfaceMethod.parameterTypes})]")
           "return null;"
         }
