@@ -2,8 +2,8 @@
 
 package cn.labzen.web.response.result
 
-import cn.labzen.web.response.Pagination
 import cn.labzen.web.response.HttpStatusExt
+import cn.labzen.web.response.Pagination
 import org.springframework.http.HttpStatus
 
 data class Result private constructor(
@@ -42,12 +42,14 @@ data class Result private constructor(
      */
     @JvmOverloads
     @JvmStatic
-    fun withStatus(status: Int,
-                   values: Collection<*>,
-                   page: Int,
-                   size: Int,
-                   recordCount: Long,
-                   message: String? = null): Result {
+    fun withStatus(
+      status: Int,
+      values: Collection<*>,
+      page: Int,
+      size: Int,
+      recordCount: Long,
+      message: String? = null
+    ): Result {
       val pageCount = recordCount / size + if (recordCount % size == 0L) 0 else 1
       val pagination = Pagination(page, size, recordCount, pageCount)
       return Result(status, values, pagination, message)
@@ -66,7 +68,12 @@ data class Result private constructor(
      */
     @JvmOverloads
     @JvmStatic
-    fun withStatus(responseStatus: HttpStatusExt, values: Collection<*>, pagination: Pagination? = null, message: String? = null) =
+    fun withStatus(
+      responseStatus: HttpStatusExt,
+      values: Collection<*>,
+      pagination: Pagination? = null,
+      message: String? = null
+    ) =
       Result(responseStatus.code, values, pagination, message)
 
     /**
@@ -74,12 +81,14 @@ data class Result private constructor(
      */
     @JvmOverloads
     @JvmStatic
-    fun withStatus(responseStatus: HttpStatusExt,
-                   values: Collection<*>,
-                   page: Int,
-                   size: Int,
-                   recordCount: Long,
-                   message: String? = null): Result {
+    fun withStatus(
+      responseStatus: HttpStatusExt,
+      values: Collection<*>,
+      page: Int,
+      size: Int,
+      recordCount: Long,
+      message: String? = null
+    ): Result {
       val pageCount = recordCount / size + if (recordCount % size == 0L) 0 else 1
       val pagination = Pagination(page, size, recordCount, pageCount)
       return Result(responseStatus.code, values, pagination, message)
@@ -98,12 +107,14 @@ data class Result private constructor(
      */
     @JvmOverloads
     @JvmStatic
-    fun withStatus(responseStatus: HttpStatus,
-                   values: Collection<*>,
-                   page: Int,
-                   size: Int,
-                   recordCount: Long,
-                   message: String? = null): Result {
+    fun withStatus(
+      responseStatus: HttpStatus,
+      values: Collection<*>,
+      page: Int,
+      size: Int,
+      recordCount: Long,
+      message: String? = null
+    ): Result {
       val pageCount = recordCount / size + if (recordCount % size == 0L) 0 else 1
       val pagination = Pagination(page, size, recordCount, pageCount)
       return Result(responseStatus.value(), values, pagination, message)

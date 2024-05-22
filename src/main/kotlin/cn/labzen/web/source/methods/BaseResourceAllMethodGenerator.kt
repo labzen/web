@@ -2,6 +2,7 @@ package cn.labzen.web.source.methods
 
 import cn.labzen.logger.kernel.enums.Status
 import cn.labzen.logger.kotlin.logger
+import cn.labzen.web.LOGGER_SCENE_CONTROLLER
 import cn.labzen.web.source.ControllerMeta
 import javassist.bytecode.annotation.Annotation
 import java.lang.reflect.Method
@@ -23,13 +24,13 @@ internal class BaseResourceAllMethodGenerator(
       serviceFieldClass.getDeclaredMethod(methodName)
     } catch (e: NoSuchMethodException) {
       // todo 可配置日志是否打印
-      logger.warn().status(Status.FIXME)
-        .log("Controller定义 [${controllerMeta.interfaceType}]，在指定的 Service [${serviceFieldClass}] 中找不到可调用的方法 - [$methodName()]")
+      logger.warn().scene(LOGGER_SCENE_CONTROLLER).status(Status.FIXME)
+        .log("基于 @BaseResource 定义的方法 [${controllerMeta.interfaceType}] 无法找到对应的 Service 方法 [$serviceFieldClass#$methodName()]")
       null
     }
 
-  override fun generateMethodSignature(methodName: String, version: String): String =
-    "public Result resource$methodName$version()"
+  override fun generateMethodSignature(methodName: String): String =
+    "public Result allResources()"
 
   override fun generateMethodBody(serviceMethod: Method): String =
     "return $serviceFieldName.${serviceMethod.name}();"

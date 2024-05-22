@@ -1,4 +1,4 @@
-package cn.labzen.web.spring
+package cn.labzen.web.spring.runtime
 
 import cn.labzen.cells.core.utils.Strings
 import cn.labzen.meta.Labzens
@@ -31,8 +31,8 @@ class LabzenRestResponseBody : ResponseBodyAdvice<Any>, InitializingBean {
 
   private var processAllRestResponse = true
   private val responseTransformer: ResponseTransformer = createTransformer()
-  private val isHeadVersionEnabled = Labzens.configurationWith(WebConfiguration::class.java).let {
-    it.controllerVersionEnabled() && it.controllerVersionPlace() == RequestMappingVersionPlace.HEAD
+  private val isHeaderVersionEnabled = Labzens.configurationWith(WebConfiguration::class.java).let {
+    it.controllerVersionEnabled() && it.controllerVersionPlace() == RequestMappingVersionPlace.HEADER
   }
 
   private fun createTransformer(): ResponseTransformer {
@@ -82,7 +82,7 @@ class LabzenRestResponseBody : ResponseBodyAdvice<Any>, InitializingBean {
       return body
     }
 
-    if (isHeadVersionEnabled) {
+    if (isHeaderVersionEnabled) {
       if (!"json".equals(selectedContentType.subtype, true) && !"application".equals(selectedContentType.type, true)) {
         return body
       }

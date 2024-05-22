@@ -3,7 +3,7 @@ package cn.labzen.web.annotation
 import org.springframework.web.bind.annotation.RequestMapping
 
 /**
- * 提供定义 [RequestMapping] 接口的版本，注解在通过 [ServiceHandler] 定义的 service 类（或方法）上
+ * 提供定义 [RequestMapping] 接口的版本，与 [RequestMapping] 一样注解Controller方法上
  *
  * - [value] 版本号
  */
@@ -11,6 +11,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
 @LabzenWeb
-annotation class MappingServiceVersion(
+annotation class MappingVersion(
   val value: Int
 )

@@ -2,9 +2,10 @@ package cn.labzen.web.source.methods
 
 import cn.labzen.logger.kernel.enums.Status
 import cn.labzen.logger.kotlin.logger
-import cn.labzen.web.annotation.MappingServiceVersion
+import cn.labzen.web.LOGGER_SCENE_CONTROLLER
+import cn.labzen.web.annotation.BaseResource
 import cn.labzen.web.response.result.Result
-import cn.labzen.web.source.ControllerMappingServiceVersionHelper
+import cn.labzen.web.source.ControllerMappingVersionHelper
 import cn.labzen.web.source.ControllerMeta
 import javassist.CtMethod
 import javassist.CtNewMethod
@@ -14,6 +15,9 @@ import javassist.bytecode.ParameterAnnotationsAttribute
 import javassist.bytecode.annotation.Annotation
 import java.lang.reflect.Method
 
+/**
+ * 提供注解了 [BaseResource] 的Controller，常用的API方法
+ */
 internal abstract class AbstractBaseResourceMethodsGenerator(
   protected val controllerMeta: ControllerMeta,
   private val serviceMethodNames: Array<String>,
@@ -26,8 +30,7 @@ internal abstract class AbstractBaseResourceMethodsGenerator(
   protected lateinit var resourceIdName: String
 
   private lateinit var latestGeneratedMethod: CtMethod
-  private var latestServiceVersion: Int? = null
-
+  private var baseApiVersion: Int? = controllerMeta.apiVersion
 
   fun generate() {
     serviceMethodNames.toSet().forEach {
@@ -41,15 +44,12 @@ internal abstract class AbstractBaseResourceMethodsGenerator(
     val serviceMethod = findServiceMethod(methodName) ?: return null
 
     if (serviceMethod.returnType != Result::class.java) {
-      logger.warn().status(Status.FIXME)
-        .log("Controller定义 [${controllerMeta.interfaceType}]，指定的 Service方法 [${serviceMethod}] 返回值需要是[${Result::class.java}]")
+      logger.warn().scene(LOGGER_SCENE_CONTROLLER).status(Status.FIXME)
+        .log("基于 @BaseResource 定义的方法 [${controllerMeta.interfaceType}] 将要调用的Service方法 [${serviceMethod}#$methodName()] 返回类型需要是 [${Result::class.java}]")
       return null
     }
 
-    latestServiceVersion = fetchServiceMethodVersion(serviceMethod)
-    val versionName = latestServiceVersion?.let { "V$it" } ?: ""
-
-    val signature = generateMethodSignature(methodName, versionName)
+    val signature = generateMethodSignature(methodName)
     val body = generateMethodBody(serviceMethod)
     // 创建方法
     latestGeneratedMethod = CtNewMethod.make(
@@ -65,18 +65,24 @@ internal abstract class AbstractBaseResourceMethodsGenerator(
     return latestGeneratedMethod
   }
 
+  /**
+   * 寻找Service中的对应方法
+   */
   abstract fun findServiceMethod(methodName: String): Method?
 
-  private fun fetchServiceMethodVersion(method: Method): Int? {
-    return if (method.isAnnotationPresent(MappingServiceVersion::class.java)) {
-      method.getAnnotation(MappingServiceVersion::class.java).value
-    } else controllerMeta.apiVersion
-  }
+  /**
+   * 生成方法签名
+   */
+  abstract fun generateMethodSignature(methodName: String): String
 
-  abstract fun generateMethodSignature(methodName: String, version: String): String
-
+  /**
+   * 生成方法体实现
+   */
   abstract fun generateMethodBody(serviceMethod: Method): String
 
+  /**
+   * 设置方法（注解等）
+   */
   abstract fun setupMethod()
 
   protected fun setupMethodArguments(names: Array<String>) {
@@ -93,7 +99,11 @@ internal abstract class AbstractBaseResourceMethodsGenerator(
 
   protected fun setupMethodAnnotations(annotations: Array<Annotation>) {
     val revisableAnnotations = annotations.toMutableList()
-    ControllerMappingServiceVersionHelper.setupMappedRequestVersion(controllerMeta, latestServiceVersion, revisableAnnotations)
+    ControllerMappingVersionHelper.setupMappedRequestVersion(
+      controllerMeta,
+      baseApiVersion,
+      revisableAnnotations
+    )
 
     val annotationsAttribute = AnnotationsAttribute(controllerMeta.constPool, AnnotationsAttribute.visibleTag)
     annotationsAttribute.annotations = revisableAnnotations.toTypedArray()

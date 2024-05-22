@@ -10,8 +10,14 @@ import org.springframework.web.bind.annotation.RestController
 
 internal object ControllerClassInitializer {
 
+  /**
+   * 生成的Controller实现类将暂存在这里
+   */
   val controllerClasses = mutableSetOf<Class<*>>()
 
+  /**
+   * 扫描所有的Controller接口，并根据接口生成Controller实现类
+   */
   fun scanAndGenerate(configuration: WebConfiguration) {
     val controllerPackage = configuration.controllerPackage()
     val controllerInterfaces = scanInterfaces(controllerPackage)
@@ -29,6 +35,8 @@ internal object ControllerClassInitializer {
     val reflections = Reflections(configurationBuilder)
     val allControllers = reflections.getTypesAnnotatedWith(Controller::class.java)
     allControllers.addAll(reflections.getTypesAnnotatedWith(RestController::class.java))
+
+    // 必须符合：1. Spring Controller/RestController；2. 是接口；3. 注解了 ServiceHandler
     return allControllers.filter {
       it.isInterface && it.isAnnotationPresent(ServiceHandler::class.java)
     }

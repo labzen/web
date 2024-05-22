@@ -8,8 +8,11 @@ import javassist.bytecode.annotation.StringMemberValue
 import org.springframework.core.annotation.AnnotatedElementUtils
 import org.springframework.web.bind.annotation.RequestMapping
 
-internal object ControllerMappingServiceVersionHelper {
+internal object ControllerMappingVersionHelper {
 
+  /**
+   * 设置API版本控制所需要在方法上设置的注解等
+   */
   fun setupMappedRequestVersion(
     controllerMeta: ControllerMeta,
     mappedServiceVersion: Int?,
@@ -20,6 +23,7 @@ internal object ControllerMappingServiceVersionHelper {
       return
     }
 
+    // 如果是通过 URI 来控制版本
     if (configuration.controllerVersionPlace() == RequestMappingVersionPlace.URI) {
       val versionAnnotation = setupVersionInURI(controllerMeta, mappedServiceVersion ?: 1)
       annotations.add(versionAnnotation)
@@ -31,10 +35,12 @@ internal object ControllerMappingServiceVersionHelper {
       annotationClass == RequestMapping::class.java ||
         AnnotatedElementUtils.isAnnotated(annotationClass, RequestMapping::class.java)
     }?.let {
-      val version = configuration.controllerVersionPrefix() + (mappedServiceVersion ?: 1)
+      val version = configuration.controllerVersionPrefix() + (mappedServiceVersion ?: controllerMeta.apiVersion)
 
       when (configuration.controllerVersionPlace()) {
-        RequestMappingVersionPlace.HEAD -> setupVersionInHead(controllerMeta, it, version)
+        // 如果通过 Header 中的 Accept 控制API版本
+        RequestMappingVersionPlace.HEADER -> setupVersionInHeader(controllerMeta, it, version)
+        // 如果通过每次API请求携带的参数控制版本
         RequestMappingVersionPlace.PARAM -> setupVersionInParam(controllerMeta, it, version)
         RequestMappingVersionPlace.URI -> {
           // do nothing
@@ -43,27 +49,32 @@ internal object ControllerMappingServiceVersionHelper {
     }
   }
 
+  /**
+   * 设置 URI 版本控制
+   */
   private fun setupVersionInURI(controllerMeta: ControllerMeta, version: Int): Annotation {
     val constPool = controllerMeta.constPool
-    val versionAnnotation = Annotation("cn.labzen.web.annotation.MappingApiVersion", constPool)
-//    val versionAnnotationMember =
-//      ArrayMemberValue(constPool).apply {
-//        value = arrayOf()
-//      }
+    val versionAnnotation = Annotation("cn.labzen.web.annotation.runtime.APIVersion", constPool)
     versionAnnotation.addMemberValue("value", IntegerMemberValue(constPool, version))
     return versionAnnotation
   }
 
-  private fun setupVersionInHead(controllerMeta: ControllerMeta, annotation: Annotation, version: String) {
-    val headVersionValue = "application/vnd.${controllerMeta.configuration.controllerVersionVNDName()}.$version+json"
+  /**
+   * 设置 Header Accept 版本控制
+   */
+  private fun setupVersionInHeader(controllerMeta: ControllerMeta, annotation: Annotation, version: String) {
+    val headerVersionValue = "application/vnd.${controllerMeta.configuration.controllerVersionVNDName()}.$version+json"
 
     val producesMember: ArrayMemberValue =
       (annotation.getMemberValue("produces") ?: ArrayMemberValue(controllerMeta.constPool)) as ArrayMemberValue
-    val producesMemberValues = arrayOf(StringMemberValue(headVersionValue, controllerMeta.constPool))
+    val producesMemberValues = arrayOf(StringMemberValue(headerVersionValue, controllerMeta.constPool))
     producesMember.value = producesMember.value?.let { it + producesMemberValues } ?: producesMemberValues
     annotation.addMemberValue("produces", producesMember)
   }
 
+  /**
+   * 设置请求参数控制版本
+   */
   private fun setupVersionInParam(controllerMeta: ControllerMeta, annotation: Annotation, version: String) {
     val paramsMemberValue = "${controllerMeta.configuration.controllerVersionParamName()}=$version"
 

@@ -3,8 +3,10 @@ package cn.labzen.web.spring
 import cn.labzen.logger.kernel.enums.Status
 import cn.labzen.logger.kotlin.logger
 import cn.labzen.meta.Labzens
+import cn.labzen.web.LOGGER_SCENE_CONTROLLER
 import cn.labzen.web.meta.WebConfiguration
 import cn.labzen.web.source.ControllerClassInitializer
+import cn.labzen.web.spring.runtime.LabzenRestResponseBody
 import org.springframework.beans.factory.support.BeanDefinitionRegistry
 import org.springframework.beans.factory.support.RootBeanDefinition
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar
@@ -24,7 +26,7 @@ class LabzenWebRegistrar : ImportBeanDefinitionRegistrar {
 
     // 注册在 [LabzenWebInitializer] 中生成好的 Controller 类
     ControllerClassInitializer.controllerClasses.forEach {
-      logger.info().status(Status.IMPORTANT).scene("Controller")
+      logger.info().status(Status.IMPORTANT).scene(LOGGER_SCENE_CONTROLLER)
         .log("Register dynamic mvc controller bean for [$it]")
       val beanDefinition = RootBeanDefinition(it)
 

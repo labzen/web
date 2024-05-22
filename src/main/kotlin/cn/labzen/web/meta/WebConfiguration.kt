@@ -42,9 +42,9 @@ interface WebConfiguration {
   fun controllerVersionBase(): Int
 
   /**
-   * API 版本控制，version 的位置，支持 HEAD（默认）, URI, PARAM
+   * API 版本控制，version 的位置，支持 HEADER（默认）, URI, PARAM
    *
-   * HEAD - 通过请求头部信息 Accept: 来传递请求 API 的版本信息，例如：'Accept: application/vnd.app.v1+json'
+   * HEADER - 通过请求头部信息 Accept: 来传递请求 API 的版本信息，例如：'Accept: application/vnd.app.v1+json'
    * URI - 通过 API 的请求地址前置版本信息，例如 'https://www.app.com/v1/login'
    * PARAM - 通过请求 API 时，使用参数来传递版本信息，例如 'https://www.app.com/login?version=v1'
    */
@@ -52,14 +52,14 @@ interface WebConfiguration {
   fun controllerVersionPlace(): RequestMappingVersionPlace
 
   /**
-   * API 版本控制的名称，当 controller.version.place 为 HEAD 时有效
+   * API 版本控制的名称，当 controller.version.place 为 HEADER 时有效
    */
-  @Item(path = "controller.version.head", required = false, defaultValue = "app")
+  @Item(path = "controller.version.header-vnd", required = false, defaultValue = "app")
   fun controllerVersionVNDName(): String
 
   /**
    * API 版本控制强制要求访问API时带有Accept Header信息，默认false，如果访问API的Header种没有Accept，
-   * Spring默认会选择一个可以匹配的 produces 方法进行响应，当 controller.version.place 为 HEAD 时有效
+   * Spring默认会选择一个可以匹配的 produces 方法进行响应，当 controller.version.place 为 HEADER 时有效
    */
   @Item(path = "controller.version.forced-accept", required = false, defaultValue = "app")
   fun controllerVersionHeaderForced(): Boolean

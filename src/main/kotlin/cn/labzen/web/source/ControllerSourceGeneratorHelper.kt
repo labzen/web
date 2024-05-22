@@ -7,20 +7,27 @@ import kotlin.Annotation
 import kotlin.reflect.full.declaredMembers
 import javassist.bytecode.annotation.Annotation as CTAnnotation
 
+/**
+ * Controller接口实现类代码生成器助手，基于 javassist 对类生成的操作
+ */
 internal object ControllerSourceGeneratorHelper {
 
   /**
-   * 拷贝注解
+   * 将注解集合，转换为可附加到类上的运行时可见注解属性
    */
   fun duplicateAnnotations(interfaceAnnotations: Array<Annotation>, constPool: ConstPool): AnnotationsAttribute {
     val ctAnnotations = interfaceAnnotations.map { ia -> duplicateAnnotation(ia, constPool) }
 
+    // 运行时可见的注解属性
     val annotationsAttribute =
       AnnotationsAttribute(constPool, AnnotationsAttribute.visibleTag)
     ctAnnotations.forEach { annotationsAttribute.addAnnotation(it) }
     return annotationsAttribute
   }
 
+  /**
+   * 将原生代码中的注解信息，转换为 javassist 的注解
+   */
   fun duplicateAnnotation(interfaceAnnotation: Annotation, constPool: ConstPool): CTAnnotation {
     val iaClass = interfaceAnnotation.annotationClass
     val ctAnnotation = CTAnnotation(iaClass.qualifiedName, constPool)
@@ -36,6 +43,9 @@ internal object ControllerSourceGeneratorHelper {
     return ctAnnotation
   }
 
+  /**
+   * 将原生代码的注解属性值，转换为 javassist 的注解值
+   */
   private fun parseAnnotationMemberValue(value: Any, constPool: ConstPool): MemberValue {
     return when (value) {
       is String -> StringMemberValue(value, constPool)

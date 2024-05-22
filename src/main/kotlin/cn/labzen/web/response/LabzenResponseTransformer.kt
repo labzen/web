@@ -1,10 +1,10 @@
 package cn.labzen.web.response
 
+import cn.labzen.web.REST_REQUEST_TIME
+import cn.labzen.web.REST_REQUEST_TIME_MILLIS
 import cn.labzen.web.response.result.Result
 import cn.labzen.web.response.struct.Meta
 import cn.labzen.web.response.struct.Response
-import cn.labzen.web.spring.REST_REQUEST_TIME
-import cn.labzen.web.spring.REST_REQUEST_TIME_MILLIS
 import javax.servlet.RequestDispatcher
 import javax.servlet.http.HttpServletRequest
 

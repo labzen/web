@@ -2,6 +2,7 @@ package cn.labzen.web.source.methods
 
 import cn.labzen.logger.kernel.enums.Status
 import cn.labzen.logger.kotlin.logger
+import cn.labzen.web.LOGGER_SCENE_CONTROLLER
 import cn.labzen.web.source.ControllerMeta
 import javassist.bytecode.annotation.Annotation
 import java.lang.reflect.Method
@@ -27,12 +28,12 @@ internal class BaseResourceCreateMethodGenerator(
     try {
       serviceFieldClass.getDeclaredMethod(methodName, resourceBeanClass)
     } catch (e: NoSuchMethodException) {
-      logger.warn().status(Status.FIXME)
-        .log("Controller定义 [${controllerMeta.interfaceType}]，在指定的 Service [${serviceFieldClass}] 中找不到可调用的方法 - [$methodName(${resourceBeanClass.name} resource)]")
+      logger.warn().scene(LOGGER_SCENE_CONTROLLER).status(Status.FIXME)
+        .log("基于 @BaseResource 定义的方法 [${controllerMeta.interfaceType}] 无法找到对应的 Service 方法 [$serviceFieldClass#$methodName(${resourceBeanClass.name} resource)]")
       null
     }
 
-  override fun generateMethodSignature(methodName: String, version: String): String =
+  override fun generateMethodSignature(methodName: String): String =
     "public Result createResource(${resourceBeanClass.name} resource)"
 
   override fun generateMethodBody(serviceMethod: Method): String =

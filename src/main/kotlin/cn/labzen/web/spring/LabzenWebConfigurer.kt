@@ -3,10 +3,10 @@ package cn.labzen.web.spring
 import cn.labzen.logger.kernel.enums.Status
 import cn.labzen.logger.kotlin.logger
 import cn.labzen.meta.Labzens
-import cn.labzen.web.meta.RequestMappingVersionPlace
+import cn.labzen.web.LOGGER_SCENE_CONTROLLER
 import cn.labzen.web.meta.WebConfiguration
+import cn.labzen.web.spring.runtime.LabzenRestRequestHandlerInterceptor
 import com.google.common.base.Strings
-import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry
 import org.springframework.web.servlet.config.annotation.PathMatchConfigurer
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
@@ -31,17 +31,11 @@ class LabzenWebConfigurer : WebMvcConfigurer {
 
     val apiPathPrefix = configuration.apiPathPrefix()
     if (!Strings.isNullOrEmpty(apiPathPrefix)) {
-      logger.info().status(Status.IMPORTANT).scene("Controller").log("系统 API 请求路径统一前缀为：$apiPathPrefix")
+      logger.info().status(Status.IMPORTANT).scene(LOGGER_SCENE_CONTROLLER)
+        .log("系统 API 请求路径统一前缀为：$apiPathPrefix")
       configurer.addPathPrefix(apiPathPrefix) { true }
     }
   }
-
-//  override fun configureContentNegotiation(configurer: ContentNegotiationConfigurer) {
-//    val configuration = Labzens.configurationWith(WebConfiguration::class.java)
-//    if (configuration.controllerVersionPlace() == RequestMappingVersionPlace.HEAD) {
-//      configurer.ignoreAcceptHeader(false)
-//    }
-//  }
 
   companion object {
     private val logger = logger { }

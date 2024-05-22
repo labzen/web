@@ -1,7 +1,7 @@
 package cn.labzen.web.service
 
 import cn.labzen.web.annotation.BaseResource
-import cn.labzen.web.annotation.MappingServiceVersion
+import cn.labzen.web.annotation.MappingVersion
 import cn.labzen.web.request.PagingCondition
 import cn.labzen.web.response.result.Result
 import javax.annotation.Nonnull
@@ -11,7 +11,7 @@ import javax.annotation.Nonnull
  *
  * 当禁用 API 版本控制，或默认版本 1 时，该接口可快速辅助实现增删改查 Service 方法；如项目迭代久了，形成多个版本时，可参考该接口对增删改查
  * 的定义，修改不同版本的方法名，并在 Controller 接口上注释的 [BaseResource] 中，将不同版本的方法名，设置到 methodXxx 参数中
- * （如：methodCreate），同时，需要在 Service 方法上注解 [MappingServiceVersion] 来显示的指明版本号
+ * （如：methodCreate），同时，需要在 Service 方法上注解 [MappingVersion] 来显示的指明版本号
  *
  * @property R 资源类型
  * @property RI 资源Bean的主键ID类型
