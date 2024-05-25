@@ -34,8 +34,10 @@ internal abstract class AbstractBaseResourceMethodsGenerator(
 
   fun generate() {
     serviceMethodNames.toSet().forEach {
-      generateMethod(it)?.apply {
-        controllerMeta.clazz.addMethod(this)
+      if (it.isNotBlank()) {
+        generateMethod(it)?.apply {
+          controllerMeta.clazz.addMethod(this)
+        }
       }
     }
   }

@@ -6,9 +6,9 @@ import kotlin.reflect.KClass
 /**
  * 基于资源提供增删改查等基本接口（符合RESTFUL）
  *
- * 本注解依赖于[ServiceHandler]，各基本接口的实现，将调用[ServiceHandler.main]所指定的Service中对应的方法
+ * 本注解依赖于[ServiceHandler]，各基本接口的实现，将调用[ServiceHandler.value]所指定的Service中对应的方法
  *
- * Controller API 将调用 Service 中使用 methodXxx 指定的方法，例如使用 [methodCreate] 定义的方法（默认为 'create'）。
+ * Controller API 将调用 Service 中使用 methodXxx 指定的方法，例如使用 [methodCreate] 定义的方法（默认为 'create'）；如果不想生成某个方法，则将对应的MethodXxx的值置为空字符。
  *
  * - [resource] 指定Restful接口处理的资源Bean，可以是ORM的domain bean或是DTO（建议）
  * - [resourceId] 指定ResourceBean的ID属性名，默认 id

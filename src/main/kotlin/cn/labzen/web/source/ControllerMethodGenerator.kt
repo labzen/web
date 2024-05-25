@@ -70,7 +70,7 @@ internal class ControllerMethodGenerator(private val controllerMeta: ControllerM
 
       BaseResourceFindMethodGenerator(
         controllerMeta,
-        methodEdit,
+        methodFind,
         serviceFieldClass,
         serviceFieldName,
         resourceBeanClass
