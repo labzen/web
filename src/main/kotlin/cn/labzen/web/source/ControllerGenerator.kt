@@ -1,6 +1,6 @@
 package cn.labzen.web.source
 
-import cn.labzen.cells.core.utils.Strings
+import cn.labzen.tool.util.Strings
 import cn.labzen.logger.kernel.enums.Status
 import cn.labzen.logger.kotlin.logger
 import cn.labzen.web.LOGGER_SCENE_CONTROLLER

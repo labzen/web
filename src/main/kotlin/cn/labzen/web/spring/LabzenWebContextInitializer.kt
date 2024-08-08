@@ -1,6 +1,6 @@
 package cn.labzen.web.spring
 
-import cn.labzen.cells.core.utils.Strings
+import cn.labzen.tool.util.Strings
 import cn.labzen.meta.Labzens
 import cn.labzen.meta.spring.SpringApplicationContextInitializerOrder
 import cn.labzen.spring.Springs
@@ -17,7 +17,7 @@ import org.springframework.core.Ordered
 /**
  * 扫描 Controller 接口
  */
-class LabzenWebInitializer : ApplicationContextInitializer<ConfigurableApplicationContext>, Ordered {
+class LabzenWebContextInitializer : ApplicationContextInitializer<ConfigurableApplicationContext>, Ordered {
 
   override fun getOrder(): Int =
     SpringApplicationContextInitializerOrder.MODULE_WEB_INITIALIZER_ORDER

@@ -12,7 +12,7 @@ import org.springframework.beans.factory.support.RootBeanDefinition
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar
 import org.springframework.core.type.AnnotationMetadata
 
-class LabzenWebRegistrar : ImportBeanDefinitionRegistrar {
+class LabzenWebComponentRegistrar : ImportBeanDefinitionRegistrar {
 
   private val logger = logger { }
 

@@ -15,7 +15,7 @@ import java.lang.reflect.Method
 /**
  * 自定义通过 URI 控制API版本的 [RequestMappingHandlerMapping]
  */
-class ApiVersionRequestMappingHandlerMapping : RequestMappingHandlerMapping(), EmbeddedValueResolverAware {
+class LabzenVersionedApiRequestMappingHandlerMapping : RequestMappingHandlerMapping(), EmbeddedValueResolverAware {
 
   private val versionPrefix = Labzens.configurationWith(WebConfiguration::class.java).controllerVersionPrefix()
 

@@ -3,7 +3,7 @@ package cn.labzen.web.spring
 import cn.labzen.meta.Labzens
 import cn.labzen.web.meta.RequestMappingVersionPlace
 import cn.labzen.web.meta.WebConfiguration
-import cn.labzen.web.spring.runtime.ApiVersionRequestMappingHandlerMapping
+import cn.labzen.web.spring.runtime.LabzenVersionedApiRequestMappingHandlerMapping
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcRegistrations
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping
 
@@ -16,9 +16,8 @@ class LabzenWebMvcRegistration : WebMvcRegistrations {
     val configuration = Labzens.configurationWith(WebConfiguration::class.java)
     return if (configuration.controllerVersionEnabled()
       && configuration.controllerVersionPlace() == RequestMappingVersionPlace.URI
-    )
-      ApiVersionRequestMappingHandlerMapping()
-    else null
+    ) {
+      LabzenVersionedApiRequestMappingHandlerMapping()
+    } else null
   }
-
 }

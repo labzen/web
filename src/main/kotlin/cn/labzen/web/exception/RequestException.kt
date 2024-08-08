@@ -2,7 +2,7 @@ package cn.labzen.web.exception
 
 import cn.labzen.meta.exception.LabzenRuntimeException
 
-class RequestException : LabzenRuntimeException {
+open class RequestException : LabzenRuntimeException {
 
   internal val code: Int
 

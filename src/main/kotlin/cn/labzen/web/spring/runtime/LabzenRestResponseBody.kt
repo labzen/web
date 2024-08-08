@@ -1,8 +1,6 @@
 package cn.labzen.web.spring.runtime
 
-import cn.labzen.cells.core.utils.Strings
 import cn.labzen.meta.Labzens
-import cn.labzen.spring.Springs
 import cn.labzen.web.exception.RequestException
 import cn.labzen.web.meta.RequestMappingVersionPlace
 import cn.labzen.web.meta.WebConfiguration
@@ -30,30 +28,9 @@ import javax.servlet.http.HttpServletResponse
 class LabzenRestResponseBody : ResponseBodyAdvice<Any>, InitializingBean {
 
   private var processAllRestResponse = true
-  private val responseTransformer: ResponseTransformer = createTransformer()
+  private val responseTransformer: ResponseTransformer = LabzenResponseTransformer.createTransformer()
   private val isHeaderVersionEnabled = Labzens.configurationWith(WebConfiguration::class.java).let {
     it.controllerVersionEnabled() && it.controllerVersionPlace() == RequestMappingVersionPlace.HEADER
-  }
-
-  private fun createTransformer(): ResponseTransformer {
-    val configuration = Labzens.configurationWith(WebConfiguration::class.java)
-    val unifyRestResponseTransformer = configuration.unifyRestResponseTransformer()
-
-    return if (Strings.isBlank(unifyRestResponseTransformer)) {
-      LabzenResponseTransformer()
-    } else {
-      try {
-        val customResponseTransformerClass: Class<*> = Class.forName(unifyRestResponseTransformer)
-        if (!ResponseTransformer::class.java.isAssignableFrom(customResponseTransformerClass)) {
-          // do nothing todo
-          throw RuntimeException()
-        }
-
-        Springs.getOrCreate(customResponseTransformerClass) as ResponseTransformer
-      } catch (e: Exception) {
-        LabzenResponseTransformer()
-      }
-    }
   }
 
   override fun afterPropertiesSet() {
@@ -98,7 +75,7 @@ class LabzenRestResponseBody : ResponseBodyAdvice<Any>, InitializingBean {
   }
 
   @ExceptionHandler(RequestException::class)
-  fun handleException(request: HttpServletRequest, response: HttpServletResponse, e: RequestException): Any? {
+  fun handleLabzenException(request: HttpServletRequest, response: HttpServletResponse, e: RequestException): Any {
     return Response(e.code, e.message ?: "internal server error")
   }
 }

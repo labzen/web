@@ -1,6 +1,6 @@
-org.springframework.context.ApplicationContextInitializer=cn.labzen.web.spring.LabzenWebInitializer
+org.springframework.context.ApplicationContextInitializer=cn.labzen.web.spring.LabzenWebContextInitializer
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
     cn.labzen.web.spring.LabzenWebMvcRegistration,\
- 	cn.labzen.web.spring.LabzenWebRegistrar,\
+ 	cn.labzen.web.spring.LabzenWebComponentRegistrar,\
 	cn.labzen.web.spring.LabzenWebConfigurer
 #org.springframework.web.servlet.HandlerInterceptor=cn.labzen.web.spring.LabzenHandlerInterceptor

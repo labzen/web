@@ -61,7 +61,7 @@ data class Result private constructor(
     @JvmOverloads
     @JvmStatic
     fun withStatus(responseStatus: HttpStatusExt, value: Any? = null, message: String? = null) =
-      Result(responseStatus.code, value, null, message)
+      Result(responseStatus.code, value, null, message ?: responseStatus.description)
 
     /**
      * 指定扩展响应状态
@@ -74,7 +74,7 @@ data class Result private constructor(
       pagination: Pagination? = null,
       message: String? = null
     ) =
-      Result(responseStatus.code, values, pagination, message)
+      Result(responseStatus.code, values, pagination, message ?: responseStatus.description)
 
     /**
      * 指定扩展响应状态
@@ -91,7 +91,7 @@ data class Result private constructor(
     ): Result {
       val pageCount = recordCount / size + if (recordCount % size == 0L) 0 else 1
       val pagination = Pagination(page, size, recordCount, pageCount)
-      return Result(responseStatus.code, values, pagination, message)
+      return Result(responseStatus.code, values, pagination, message ?: responseStatus.description)
     }
 
     /**
@@ -100,7 +100,7 @@ data class Result private constructor(
     @JvmOverloads
     @JvmStatic
     fun withStatus(responseStatus: HttpStatus, value: Any? = null, message: String? = null) =
-      Result(responseStatus.value(), value, null, message)
+      Result(responseStatus.value(), value, null, message ?: responseStatus.reasonPhrase)
 
     /**
      * 指定标准响应状态
@@ -117,7 +117,7 @@ data class Result private constructor(
     ): Result {
       val pageCount = recordCount / size + if (recordCount % size == 0L) 0 else 1
       val pagination = Pagination(page, size, recordCount, pageCount)
-      return Result(responseStatus.value(), values, pagination, message)
+      return Result(responseStatus.value(), values, pagination, message ?: responseStatus.reasonPhrase)
     }
 
     /**
