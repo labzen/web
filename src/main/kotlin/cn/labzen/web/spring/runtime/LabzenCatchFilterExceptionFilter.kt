@@ -32,14 +32,23 @@ class LabzenCatchFilterExceptionFilter : OncePerRequestFilter() {
           null
         ).let { ResponseWriter.sendMessage(it, request, response) }
 
-        else -> Response(
-          HttpStatus.INTERNAL_SERVER_ERROR.value(),
-          e.message ?: HttpStatus.INTERNAL_SERVER_ERROR.reasonPhrase,
-          null,
-          null
-        ).let { ResponseWriter.sendMessage(it, request, response) }
+        else -> {
+          val throwable = findRootCause(e)
+          Response(
+            HttpStatus.INTERNAL_SERVER_ERROR.value(),
+            throwable.message ?: HttpStatus.INTERNAL_SERVER_ERROR.reasonPhrase,
+            null,
+            null
+          ).let { ResponseWriter.sendMessage(it, request, response) }
+        }
       }
     }
+  }
+
+  private fun findRootCause(exception: Throwable): Throwable {
+    return if (exception.cause == null) exception
+    else if (exception == exception.cause) exception
+    else findRootCause(exception.cause!!)
   }
 
 }
