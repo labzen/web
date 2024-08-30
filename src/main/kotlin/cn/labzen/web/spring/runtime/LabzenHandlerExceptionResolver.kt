@@ -58,7 +58,12 @@ class LabzenHandlerExceptionResolver : HandlerExceptionResolver {
     response: HttpServletResponse,
     exception: BindException
   ): ModelAndView {
-    val allErrors = exception.bindingResult.allErrors.associate { Pair((it as FieldError).field, it.defaultMessage) }
+    val allErrors = exception.bindingResult.allErrors.associate {
+      if (it is FieldError)
+        Pair(it.field, it.defaultMessage)
+      else
+        Pair(it.objectName, it.defaultMessage)
+    }
     val data = mapOf(Pair("validator", allErrors))
     responseWithData(HttpStatus.BAD_REQUEST, data, request, response)
     return ModelAndView()

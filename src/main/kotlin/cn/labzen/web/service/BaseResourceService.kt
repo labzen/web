@@ -2,9 +2,9 @@ package cn.labzen.web.service
 
 import cn.labzen.web.annotation.BaseResource
 import cn.labzen.web.annotation.MappingVersion
+import cn.labzen.web.request.ExportCondition
 import cn.labzen.web.request.PagingCondition
 import cn.labzen.web.response.result.Result
-import javax.annotation.Nonnull
 
 /**
  * 用于快速创建支持注解了[BaseResource]的Controller调用的Service
@@ -22,7 +22,7 @@ interface BaseResourceService<R, RI> {
   /**
    * 创建资源记录，对应注解[BaseResource.methodCreate]默认的方法，如果开发者修改了[BaseResource.methodCreate]的方法名，请忽略该方法实现
    */
-  fun create(@Nonnull resource: R): Result {
+  fun create(resource: R): Result {
     // will be implemented
     return Result.justSuccess()
   }
@@ -30,7 +30,7 @@ interface BaseResourceService<R, RI> {
   /**
    * 删除资源记录，对应注解[BaseResource.methodRemove]默认的方法，如果开发者修改了[BaseResource.methodRemove]的方法名，请忽略该方法实现
    */
-  fun remove(@Nonnull id: RI): Result {
+  fun remove(id: RI): Result {
     // will be implemented
     return Result.justSuccess()
   }
@@ -38,7 +38,7 @@ interface BaseResourceService<R, RI> {
   /**
    * 修改资源记录，对应注解[BaseResource.methodEdit]默认的方法，如果开发者修改了[BaseResource.methodEdit]的方法名，请忽略该方法实现
    */
-  fun edit(@Nonnull resource: R): Result {
+  fun edit(resource: R): Result {
     // will be implemented
     return Result.justSuccess()
   }
@@ -46,7 +46,7 @@ interface BaseResourceService<R, RI> {
   /**
    * 获取指定id的资源记录，对应注解[BaseResource.methodInfo]默认的方法，如果开发者修改了[BaseResource.methodInfo]的方法名，请忽略该方法实现
    */
-  fun info(@Nonnull id: RI): Result {
+  fun info(id: RI): Result {
     // will be implemented
     return Result.justSuccess()
   }
@@ -55,13 +55,26 @@ interface BaseResourceService<R, RI> {
    * 返回所有的资源记录，对应注解[BaseResource.methodAll]默认的方法，如果开发者修改了[BaseResource.methodAll]的方法名，请忽略该方法实现
    */
   fun all(): Result {
+    // will be implemented
     return Result.justSuccess()
   }
 
   /**
    * 根据条件搜索资源记录，对应注解[BaseResource.methodFind]默认的方法，如果开发者修改了[BaseResource.methodFind]的方法名，请忽略该方法实现
    */
-  fun find(@Nonnull resource: R?, @Nonnull pagination: PagingCondition?): Result {
+  fun find(resource: R?, pageCondition: PagingCondition?): Result {
+    // will be implemented
+    return Result.justSuccess()
+  }
+
+  /**
+   * 根据条件导出资源记录为文件，对应注解[BaseResource.methodExport]默认的方法，如果开发者修改了[BaseResource.methodExport]的方法名，请忽略该方法实现
+   */
+  fun export(
+    resource: R?,
+    pagination: PagingCondition?,
+    exportCondition: ExportCondition
+  ): Result {
     // will be implemented
     return Result.justSuccess()
   }

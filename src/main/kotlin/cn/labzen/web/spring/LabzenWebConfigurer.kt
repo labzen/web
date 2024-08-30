@@ -45,13 +45,9 @@ class LabzenWebConfigurer : WebMvcConfigurer {
   }
 
   @Bean
-  fun labzenCatchFilterExceptionFilter(): LabzenCatchFilterExceptionFilter =
-    LabzenCatchFilterExceptionFilter()
-
-  @Bean
   fun filterRegistrationBean(): FilterRegistrationBean<OncePerRequestFilter> {
     val filterRegistration = FilterRegistrationBean<OncePerRequestFilter>()
-    filterRegistration.filter = labzenCatchFilterExceptionFilter()
+    filterRegistration.filter = LabzenCatchFilterExceptionFilter()
     filterRegistration.addUrlPatterns("/*")
     filterRegistration.order = Int.MIN_VALUE
 
