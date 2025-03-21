@@ -5,7 +5,7 @@ import cn.labzen.logger.kotlin.logger
 import cn.labzen.meta.Labzens
 import cn.labzen.web.LOGGER_SCENE_CONTROLLER
 import cn.labzen.web.meta.WebConfiguration
-import cn.labzen.web.spring.runtime.LabzenCatchFilterExceptionFilter
+import cn.labzen.web.spring.runtime.LabzenExceptionCatcherFilter
 import cn.labzen.web.spring.runtime.LabzenHandlerExceptionResolver
 import cn.labzen.web.spring.runtime.LabzenRestRequestHandlerInterceptor
 import com.google.common.base.Strings
@@ -47,7 +47,7 @@ class LabzenWebConfigurer : WebMvcConfigurer {
   @Bean
   fun filterRegistrationBean(): FilterRegistrationBean<OncePerRequestFilter> {
     val filterRegistration = FilterRegistrationBean<OncePerRequestFilter>()
-    filterRegistration.filter = LabzenCatchFilterExceptionFilter()
+    filterRegistration.filter = LabzenExceptionCatcherFilter()
     filterRegistration.addUrlPatterns("/*")
     filterRegistration.order = Int.MIN_VALUE
 

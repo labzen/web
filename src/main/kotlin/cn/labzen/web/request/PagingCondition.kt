@@ -30,7 +30,7 @@ class PagingCondition {
       else {
         val isDesc = it.last() == '!'
         val column = if (isDesc) it.removeSuffix("!") else it
-        Order(column, isDesc)
+        Order(column, !isDesc)
       }
     }
   }

@@ -62,7 +62,7 @@ interface BaseResourceService<R, RI> {
   /**
    * 根据条件搜索资源记录，对应注解[BaseResource.methodFind]默认的方法，如果开发者修改了[BaseResource.methodFind]的方法名，请忽略该方法实现
    */
-  fun find(resource: R?, pageCondition: PagingCondition?): Result {
+  fun find(resource: R, pageCondition: PagingCondition): Result {
     // will be implemented
     return Result.justSuccess()
   }
@@ -71,8 +71,8 @@ interface BaseResourceService<R, RI> {
    * 根据条件导出资源记录为文件，对应注解[BaseResource.methodExport]默认的方法，如果开发者修改了[BaseResource.methodExport]的方法名，请忽略该方法实现
    */
   fun export(
-    resource: R?,
-    pagination: PagingCondition?,
+    resource: R,
+    pagination: PagingCondition,
     exportCondition: ExportCondition
   ): Result {
     // will be implemented

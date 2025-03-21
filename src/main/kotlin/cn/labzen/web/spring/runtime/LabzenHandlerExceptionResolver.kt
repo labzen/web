@@ -1,5 +1,7 @@
 package cn.labzen.web.spring.runtime
 
+import cn.labzen.logger.Loggers
+import cn.labzen.web.EXCEPTION_WAS_LOGGED_DURING_REQUEST
 import cn.labzen.web.response.LabzenResponseTransformer
 import cn.labzen.web.response.ResponseTransformer
 import cn.labzen.web.response.result.Result
@@ -39,8 +41,15 @@ class LabzenHandlerExceptionResolver : HandlerExceptionResolver {
     response: HttpServletResponse,
     handler: Any?,
     ex: Exception
-  ): ModelAndView? =
-    when (ex) {
+  ): ModelAndView? {
+    val attribute = request.getAttribute(EXCEPTION_WAS_LOGGED_DURING_REQUEST)
+    if (attribute == null) {
+      val logger = Loggers.getLogger(ex.stackTrace[0].className)
+      logger.error(ex)
+      request.setAttribute(EXCEPTION_WAS_LOGGED_DURING_REQUEST, true)
+    }
+
+    return when (ex) {
       is BindException -> handleBindException(request, response, ex)
       is NoHandlerFoundException -> handleNoHandlerFoundException(request, response)
       is HttpRequestMethodNotSupportedException -> handleRequestMethodNotSupportedException(request, response, ex)
@@ -52,6 +61,7 @@ class LabzenHandlerExceptionResolver : HandlerExceptionResolver {
       is TypeMismatchException -> handleTypeMismatchException(request, response, ex)
       else -> null
     }
+  }
 
   private fun handleBindException(
     request: HttpServletRequest,

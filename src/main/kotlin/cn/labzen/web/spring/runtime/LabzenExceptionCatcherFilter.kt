@@ -1,7 +1,9 @@
 package cn.labzen.web.spring.runtime
 
+import cn.labzen.logger.Loggers
 import cn.labzen.meta.exception.LabzenException
 import cn.labzen.meta.exception.LabzenRuntimeException
+import cn.labzen.web.EXCEPTION_WAS_LOGGED_DURING_REQUEST
 import cn.labzen.web.exception.RequestException
 import cn.labzen.web.response.ResponseWriter
 import cn.labzen.web.response.struct.Response
@@ -11,12 +13,20 @@ import javax.servlet.FilterChain
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 
-class LabzenCatchFilterExceptionFilter : OncePerRequestFilter() {
+
+class LabzenExceptionCatcherFilter : OncePerRequestFilter() {
 
   override fun doFilterInternal(request: HttpServletRequest, response: HttpServletResponse, filterChain: FilterChain) {
     try {
       filterChain.doFilter(request, response)
     } catch (e: Exception) {
+      val attribute = request.getAttribute(EXCEPTION_WAS_LOGGED_DURING_REQUEST)
+      if (attribute == null) {
+        val logger = Loggers.getLogger(e.stackTrace[0].className)
+        logger.error(e)
+        request.setAttribute(EXCEPTION_WAS_LOGGED_DURING_REQUEST, true)
+      }
+
       when (e) {
         is RequestException -> Response(
           e.code,
