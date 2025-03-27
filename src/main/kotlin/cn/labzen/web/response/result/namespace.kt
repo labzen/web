@@ -5,13 +5,16 @@ package cn.labzen.web.response.result
 import cn.labzen.web.response.HttpStatusExt
 import cn.labzen.web.response.Pagination
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
+import java.io.File
 
-data class Result private constructor(
+open class Result internal constructor(
   val code: Int,
   val value: Any?,
   val pagination: Pagination?,
   val message: String?
 ) {
+
   companion object {
 
     /**
@@ -20,6 +23,22 @@ data class Result private constructor(
     @JvmStatic
     fun justSuccess() =
       with(value = null)
+
+    @JvmStatic
+    fun withMessage(status: Int, message: String) =
+      Result(status, null, null, message)
+
+    @JvmStatic
+    fun withMessage(responseStatus: HttpStatusExt, message: String) =
+      Result(responseStatus.code, null, null, message)
+
+    @JvmStatic
+    fun withMessage(responseStatus: HttpStatus, message: String) =
+      Result(responseStatus.value(), null, null, message)
+
+    @JvmStatic
+    fun withMessage(message: String) =
+      Result(200, null, null, message)
 
     /**
      * 指定状态
@@ -152,5 +171,41 @@ data class Result private constructor(
       val pagination = Pagination(page, size, recordCount, pageCount)
       return Result(200, values.toList(), pagination, message)
     }
+
+//    @JvmOverloads
+//    @JvmStatic
+//    fun withDownload(message: String, file: File, filename: String? = null, mediaType: MediaType? = null) =
+//      DownloadableResult(200, message).apply {
+//        attachment = file
+//        customFileName = filename
+//        contentType = mediaType
+//      }
+
+    //    @JvmOverloads
+//    @JvmStatic
+//    fun withDownload(file: File, filename: String? = null, mediaType: MediaType? = null) =
+//      DownloadableResult(200).apply {
+//        attachment = file
+//        customFileName = filename
+//        contentType = mediaType
+//      }
+    @JvmStatic
+    fun withDownload(file: File) =
+      DownloadableResult(file)
+
+    @JvmStatic
+    fun withDownload(file: File, filename: String) =
+      DownloadableResult(file, filename)
+
+    @JvmStatic
+    fun withDownload(file: File, filename: String, contentType: MediaType) =
+      DownloadableResult(file, filename, contentType)
+
   }
 }
+
+class DownloadableResult internal constructor(
+  val attachment: File,
+  var filename: String? = null,
+  var contentType: MediaType? = null
+) : Result(200, null, null, null)

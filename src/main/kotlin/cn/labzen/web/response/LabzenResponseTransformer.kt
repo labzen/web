@@ -1,11 +1,12 @@
 package cn.labzen.web.response
 
-import cn.labzen.tool.util.Strings
 import cn.labzen.meta.Labzens
 import cn.labzen.spring.Springs
+import cn.labzen.tool.util.Strings
 import cn.labzen.web.REST_REQUEST_TIME
 import cn.labzen.web.REST_REQUEST_TIME_MILLIS
 import cn.labzen.web.meta.WebConfiguration
+import cn.labzen.web.response.result.DownloadableResult
 import cn.labzen.web.response.result.Result
 import cn.labzen.web.response.struct.Meta
 import cn.labzen.web.response.struct.Response
@@ -15,6 +16,11 @@ import javax.servlet.http.HttpServletRequest
 class LabzenResponseTransformer : ResponseTransformer {
 
   override fun transform(result: Any?, request: HttpServletRequest): Any {
+    // 文件下载的Result由LabzenResourceMessageConverter负责处理，按理说也不会执行到这儿
+    if (result is DownloadableResult) {
+      return result
+    }
+
     // 处理404
     val errorCode = request.getAttribute(RequestDispatcher.ERROR_STATUS_CODE)
     if (errorCode != null && result is Map<*, *>) {
@@ -48,7 +54,7 @@ class LabzenResponseTransformer : ResponseTransformer {
         try {
           val customResponseTransformerClass: Class<*> = Class.forName(unifyRestResponseTransformer)
           if (!ResponseTransformer::class.java.isAssignableFrom(customResponseTransformerClass)) {
-            // do nothing todo
+            // do nothing to do
             throw RuntimeException()
           }
 

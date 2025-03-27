@@ -7,10 +7,14 @@ import cn.labzen.web.LOGGER_SCENE_CONTROLLER
 import cn.labzen.web.meta.WebConfiguration
 import cn.labzen.web.spring.runtime.LabzenExceptionCatcherFilter
 import cn.labzen.web.spring.runtime.LabzenHandlerExceptionResolver
+import cn.labzen.web.spring.runtime.LabzenResourceMessageConverter
 import cn.labzen.web.spring.runtime.LabzenRestRequestHandlerInterceptor
 import com.google.common.base.Strings
 import org.springframework.boot.web.servlet.FilterRegistrationBean
 import org.springframework.context.annotation.Bean
+import org.springframework.http.converter.AbstractHttpMessageConverter
+import org.springframework.http.converter.HttpMessageConverter
+import org.springframework.http.converter.ResourceHttpMessageConverter
 import org.springframework.web.filter.OncePerRequestFilter
 import org.springframework.web.servlet.HandlerExceptionResolver
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry
@@ -44,6 +48,9 @@ class LabzenWebConfigurer : WebMvcConfigurer {
     }
   }
 
+  /**
+   * 注册异常捕捉过滤器
+   */
   @Bean
   fun filterRegistrationBean(): FilterRegistrationBean<OncePerRequestFilter> {
     val filterRegistration = FilterRegistrationBean<OncePerRequestFilter>()
@@ -58,6 +65,9 @@ class LabzenWebConfigurer : WebMvcConfigurer {
   fun labzenHandlerExceptionResolver(): HandlerExceptionResolver =
     LabzenHandlerExceptionResolver()
 
+  /**
+   * 扩展异常处理解析器
+   */
   override fun extendHandlerExceptionResolvers(resolvers: MutableList<HandlerExceptionResolver>) {
     val configuration = Labzens.configurationWith(WebConfiguration::class.java)
     if (configuration.unifyAllRestResponse()) {
@@ -65,6 +75,15 @@ class LabzenWebConfigurer : WebMvcConfigurer {
       resolvers.add(index, labzenHandlerExceptionResolver())
     }
   }
+
+  override fun extendMessageConverters(converters: MutableList<HttpMessageConverter<*>>) {
+    val resourceConverterIndex = converters.indexOfFirst { it is ResourceHttpMessageConverter }
+    converters.add(if (resourceConverterIndex >= 0) resourceConverterIndex else 0, labzenResourceMessageConverter())
+  }
+
+  @Bean
+  fun labzenResourceMessageConverter(): LabzenResourceMessageConverter =
+    LabzenResourceMessageConverter()
 
   companion object {
     private val logger = logger { }

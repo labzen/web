@@ -25,7 +25,7 @@ import javax.servlet.http.HttpServletResponse
  * 转换 Http Response 结构
  */
 @RestControllerAdvice
-class LabzenRestResponseBody : ResponseBodyAdvice<Any>, InitializingBean {
+class LabzenRestResponseBodyAdvice : ResponseBodyAdvice<Any>, InitializingBean {
 
   private var processAllRestResponse = true
   private val responseTransformer: ResponseTransformer = LabzenResponseTransformer.createTransformer()

@@ -6,7 +6,7 @@ import cn.labzen.meta.Labzens
 import cn.labzen.web.LOGGER_SCENE_CONTROLLER
 import cn.labzen.web.meta.WebConfiguration
 import cn.labzen.web.source.ControllerClassInitializer
-import cn.labzen.web.spring.runtime.LabzenRestResponseBody
+import cn.labzen.web.spring.runtime.LabzenRestResponseBodyAdvice
 import org.springframework.beans.factory.support.BeanDefinitionRegistry
 import org.springframework.beans.factory.support.RootBeanDefinition
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar
@@ -20,8 +20,8 @@ class LabzenWebComponentRegistrar : ImportBeanDefinitionRegistrar {
     val configuration = Labzens.configurationWith(WebConfiguration::class.java)
 
     if (configuration.unifyRestResponse()) {
-      // 注册 ResponseBodyAdvice [LabzenRestResponseBody]
-      registry.registerBeanDefinition("labzenRestResponseBody", RootBeanDefinition(LabzenRestResponseBody::class.java))
+      // 注册 ResponseBodyAdvice [labzenRestResponseBodyAdvice]
+      registry.registerBeanDefinition("labzenRestResponseBodyAdvice", RootBeanDefinition(LabzenRestResponseBodyAdvice::class.java))
     }
 
     // 注册在 [LabzenWebInitializer] 中生成好的 Controller 类
