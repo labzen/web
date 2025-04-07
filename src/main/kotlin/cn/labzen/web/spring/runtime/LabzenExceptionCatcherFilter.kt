@@ -22,9 +22,11 @@ class LabzenExceptionCatcherFilter : OncePerRequestFilter() {
     } catch (e: Exception) {
       val attribute = request.getAttribute(EXCEPTION_WAS_LOGGED_DURING_REQUEST)
       if (attribute == null) {
-        val logger = Loggers.getLogger(e.stackTrace[0].className)
-        logger.error(e)
-        request.setAttribute(EXCEPTION_WAS_LOGGED_DURING_REQUEST, true)
+        if (e is RequestException && e.logging || e !is RequestException) {
+          val logger = Loggers.getLogger(e.stackTrace[0].className)
+          logger.error(e)
+          request.setAttribute(EXCEPTION_WAS_LOGGED_DURING_REQUEST, true)
+        }
       }
 
       when (e) {
