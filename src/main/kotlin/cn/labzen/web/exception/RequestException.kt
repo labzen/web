@@ -11,7 +11,6 @@ open class RequestException : LabzenRuntimeException {
   constructor(code: Int = 500, logging: Boolean = true, message: String) : super(message) {
     this.code = code
     this.logging = logging
-
   }
 
   @JvmOverloads
@@ -21,14 +20,12 @@ open class RequestException : LabzenRuntimeException {
   ) {
     this.code = code
     this.logging = logging
-
   }
 
   @JvmOverloads
   constructor(code: Int = 500, logging: Boolean = true, cause: Throwable) : super(cause) {
     this.code = code
     this.logging = logging
-
   }
 
   @JvmOverloads
@@ -38,7 +35,6 @@ open class RequestException : LabzenRuntimeException {
   ) {
     this.code = code
     this.logging = logging
-
   }
 
   @JvmOverloads
@@ -55,6 +51,5 @@ open class RequestException : LabzenRuntimeException {
   ) {
     this.code = code
     this.logging = logging
-
   }
 }

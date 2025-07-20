@@ -964,3 +964,5 @@ project/boot/
 project/plugins/project/
 .history
 .lib/
+
+!/labzen.web.config

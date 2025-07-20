@@ -1,0 +1,5 @@
+cn.labzen.web.ap.evaluate.annotation.AbandonedEvaluator
+cn.labzen.web.ap.evaluate.annotation.CallEvaluator
+cn.labzen.web.ap.evaluate.annotation.MappingVersionEvaluator
+cn.labzen.web.ap.evaluate.annotation.RequestMappingEvaluator
+cn.labzen.web.ap.evaluate.annotation.LabzenControllerEvaluator

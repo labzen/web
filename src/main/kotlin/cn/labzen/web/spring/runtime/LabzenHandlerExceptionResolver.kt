@@ -2,10 +2,7 @@ package cn.labzen.web.spring.runtime
 
 import cn.labzen.logger.Loggers
 import cn.labzen.web.EXCEPTION_WAS_LOGGED_DURING_REQUEST
-import cn.labzen.web.response.LabzenResponseTransformer
-import cn.labzen.web.response.ResponseTransformer
-import cn.labzen.web.response.result.Result
-import cn.labzen.web.response.struct.Response
+import cn.labzen.web.response.bean.Response
 import org.springframework.beans.ConversionNotSupportedException
 import org.springframework.beans.TypeMismatchException
 import org.springframework.core.Ordered
@@ -29,13 +26,21 @@ import javax.annotation.Resource
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 
+/**
+ * 核心异常处理器，处理全局通用异常
+ *
+ * 将 Spring 框架抛出的一些常见异常，封装为统一的结构（与 Controller 返回的 Result 结构一致）
+ */
 @Order(value = Ordered.HIGHEST_PRECEDENCE)
 class LabzenHandlerExceptionResolver : HandlerExceptionResolver {
 
   @Resource
   lateinit var converters: List<HttpMessageConverter<Any>>
-  private val responseTransformer: ResponseTransformer = LabzenResponseTransformer.createTransformer()
+//  private val responseFormatter: ResponseFormatter = LabzenResponseFormatter.createTransformer()
 
+  /**
+   * #第2级异常拦截处理：
+   */
   override fun resolveException(
     request: HttpServletRequest,
     response: HttpServletResponse,
@@ -159,9 +164,10 @@ class LabzenHandlerExceptionResolver : HandlerExceptionResolver {
     request: HttpServletRequest,
     response: HttpServletResponse
   ) {
-    val result = Result.withStatus(status, null, message)
-    val resp = responseTransformer.transform(result, request)
-    out(resp, request, response)
+    val respData = Response(status.value(), message ?: status.reasonPhrase)
+//    val result = Result.withStatus(status, null, message)
+//    val resp = responseFormatter.format(result, request)
+    out(respData, request, response)
   }
 
   private fun responseNoData(
@@ -169,9 +175,10 @@ class LabzenHandlerExceptionResolver : HandlerExceptionResolver {
     request: HttpServletRequest,
     response: HttpServletResponse
   ) {
-    val result = Result.withStatus(status)
-    val resp = responseTransformer.transform(result, request)
-    out(resp, request, response)
+    val respData = Response(status.value(), status.reasonPhrase)
+//    val result = Result.withStatus(status)
+//    val resp = responseFormatter.format(result, request)
+    out(respData, request, response)
   }
 
   private fun responseWithData(
@@ -180,9 +187,10 @@ class LabzenHandlerExceptionResolver : HandlerExceptionResolver {
     request: HttpServletRequest,
     response: HttpServletResponse
   ) {
-    val result = Result.withStatus(status, data)
-    val resp = responseTransformer.transform(result, request)
-    out(resp, request, response)
+    val respData = Response(status.value(), status.reasonPhrase, null, data)
+//    val result = Result.withStatus(status, data)
+//    val resp = responseFormatter.format(result, request)
+    out(data, request, response)
   }
 
   private fun out(
@@ -193,13 +201,15 @@ class LabzenHandlerExceptionResolver : HandlerExceptionResolver {
     val mediaType = MediaType.parseMediaType(request.getHeader("Accept"))
 
     for (converter in converters) {
-      val genericConverter: GenericHttpMessageConverter<Any>? =
-        if (converter is GenericHttpMessageConverter) converter else null
-      val outMessage = ServletServerHttpResponse(response)
+      val genericConverter: GenericHttpMessageConverter<Any>? = if (converter is GenericHttpMessageConverter) {
+        converter
+      } else null
 
       if (genericConverter != null && genericConverter.canWrite(RESPONSE_TYPE, RESPONSE_TYPE, mediaType)) {
+        val outMessage = ServletServerHttpResponse(response)
         genericConverter.write(data, RESPONSE_TYPE, mediaType, outMessage)
       } else if (converter.canWrite(RESPONSE_TYPE, mediaType)) {
+        val outMessage = ServletServerHttpResponse(response)
         converter.write(data, mediaType, outMessage)
       }
     }

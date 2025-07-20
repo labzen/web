@@ -1,0 +1,6 @@
+cn.labzen.web.ap.processor.PrepareProcessor
+cn.labzen.web.ap.processor.ReadSourceProcessor
+cn.labzen.web.ap.processor.ReadAnnotationsProcessor
+cn.labzen.web.ap.processor.EvaluateFieldsProcessor
+cn.labzen.web.ap.processor.EvaluateMethodsProcessor
+cn.labzen.web.ap.processor.CreativeProcessor

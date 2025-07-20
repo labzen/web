@@ -5,6 +5,7 @@ package cn.labzen.web.response
  *
  * @param T 将业务系统查询后得到的分页信息类（T）转换为 Response Page
  */
+@Deprecated("")
 interface PaginationConverter<T> {
 
   fun convert(page: T): Pagination

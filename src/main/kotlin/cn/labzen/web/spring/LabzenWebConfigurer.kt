@@ -5,17 +5,14 @@ import cn.labzen.logger.kotlin.logger
 import cn.labzen.meta.Labzens
 import cn.labzen.web.LOGGER_SCENE_CONTROLLER
 import cn.labzen.web.meta.WebConfiguration
-import cn.labzen.web.spring.runtime.LabzenExceptionCatcherFilter
-import cn.labzen.web.spring.runtime.LabzenHandlerExceptionResolver
-import cn.labzen.web.spring.runtime.LabzenResourceMessageConverter
-import cn.labzen.web.spring.runtime.LabzenRestRequestHandlerInterceptor
+import cn.labzen.web.spring.runtime.*
 import com.google.common.base.Strings
 import org.springframework.boot.web.servlet.FilterRegistrationBean
 import org.springframework.context.annotation.Bean
-import org.springframework.http.converter.AbstractHttpMessageConverter
 import org.springframework.http.converter.HttpMessageConverter
 import org.springframework.http.converter.ResourceHttpMessageConverter
 import org.springframework.web.filter.OncePerRequestFilter
+import org.springframework.web.method.support.HandlerMethodArgumentResolver
 import org.springframework.web.servlet.HandlerExceptionResolver
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry
 import org.springframework.web.servlet.config.annotation.PathMatchConfigurer
@@ -24,6 +21,13 @@ import org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolv
 import org.springframework.web.util.UrlPathHelper
 
 class LabzenWebConfigurer : WebMvcConfigurer {
+
+  /**
+   * 添加参数解析器
+   */
+  override fun addArgumentResolvers(resolvers: MutableList<HandlerMethodArgumentResolver>) {
+    resolvers.add(PageableArgumentResolver())
+  }
 
   /**
    * 注册拦截器
@@ -54,7 +58,7 @@ class LabzenWebConfigurer : WebMvcConfigurer {
   @Bean
   fun filterRegistrationBean(): FilterRegistrationBean<OncePerRequestFilter> {
     val filterRegistration = FilterRegistrationBean<OncePerRequestFilter>()
-    filterRegistration.filter = LabzenExceptionCatcherFilter()
+    filterRegistration.filter = LabzenExceptionCatchingFilter()
     filterRegistration.addUrlPatterns("/*")
     filterRegistration.order = Int.MIN_VALUE
 
@@ -70,20 +74,20 @@ class LabzenWebConfigurer : WebMvcConfigurer {
    */
   override fun extendHandlerExceptionResolvers(resolvers: MutableList<HandlerExceptionResolver>) {
     val configuration = Labzens.configurationWith(WebConfiguration::class.java)
-    if (configuration.unifyAllRestResponse()) {
+    if (configuration.responseFormattingForcedAll()) {
       val index = resolvers.indexOfFirst { it is DefaultHandlerExceptionResolver }
       resolvers.add(index, labzenHandlerExceptionResolver())
     }
   }
 
-  override fun extendMessageConverters(converters: MutableList<HttpMessageConverter<*>>) {
-    val resourceConverterIndex = converters.indexOfFirst { it is ResourceHttpMessageConverter }
-    converters.add(if (resourceConverterIndex >= 0) resourceConverterIndex else 0, labzenResourceMessageConverter())
-  }
+//  override fun extendMessageConverters(converters: MutableList<HttpMessageConverter<*>>) {
+//    val resourceConverterIndex = converters.indexOfFirst { it is ResourceHttpMessageConverter }
+//    converters.add(if (resourceConverterIndex >= 0) resourceConverterIndex else 0, labzenResourceMessageConverter())
+//  }
 
-  @Bean
-  fun labzenResourceMessageConverter(): LabzenResourceMessageConverter =
-    LabzenResourceMessageConverter()
+//  @Bean
+//  fun labzenResourceMessageConverter(): LabzenResourceMessageConverter =
+//    LabzenResourceMessageConverter()
 
   companion object {
     private val logger = logger { }

@@ -1,0 +1,10 @@
+web:
+  controller:
+    file:
+      save: true
+    version:
+      enable: false
+      place: HEADER
+      forced-accept: true
+    log:
+      no-warn: false

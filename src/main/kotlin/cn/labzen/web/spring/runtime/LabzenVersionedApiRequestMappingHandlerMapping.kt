@@ -1,8 +1,7 @@
 package cn.labzen.web.spring.runtime
 
-import cn.labzen.meta.Labzens
-import cn.labzen.web.annotation.runtime.APIVersion
-import cn.labzen.web.meta.WebConfiguration
+import cn.labzen.web.defination.APIVersionCarrier
+import cn.labzen.web.runtime.annotation.APIVersion
 import org.springframework.context.EmbeddedValueResolverAware
 import org.springframework.core.annotation.AnnotatedElementUtils
 import org.springframework.util.StringValueResolver
@@ -13,11 +12,11 @@ import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 
 /**
- * 自定义通过 URI 控制API版本的 [RequestMappingHandlerMapping]
+ * 自定义 [RequestMappingHandlerMapping] ，以适配通过 [APIVersionCarrier.URI] 方式控制API版本的请求映射
+ *
+ * 仅当 `labzen.yml` 的配置项 `api-version.carrier = URI` 时生效
  */
 class LabzenVersionedApiRequestMappingHandlerMapping : RequestMappingHandlerMapping(), EmbeddedValueResolverAware {
-
-  private val versionPrefix = Labzens.configurationWith(WebConfiguration::class.java).controllerVersionPrefix()
 
   private var embeddedValueResolver: StringValueResolver? = null
 
@@ -34,9 +33,11 @@ class LabzenVersionedApiRequestMappingHandlerMapping : RequestMappingHandlerMapp
       info = typeInfo.combine(info)
     }
 
-    val mappingAnnotation = AnnotatedElementUtils.findMergedAnnotation(method, APIVersion::class.java)
-    if (mappingAnnotation != null) {
-      val version = versionPrefix + mappingAnnotation.value
+    // 从这里开始才是重点
+    val versionedMappingAnnotation = AnnotatedElementUtils.findMergedAnnotation(method, APIVersion::class.java)
+    // 如果包含APIVersion注解，才会在映射路径中加入版本标识
+    if (versionedMappingAnnotation != null) {
+      val version = versionedMappingAnnotation.value
       info = RequestMappingInfo.paths(version).options(builderConfiguration).build().combine(info)
     }
 

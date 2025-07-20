@@ -8,11 +8,13 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import java.io.File
 
+// todo 改为 data class，并废弃 DownloadableResult
+@Deprecated("使用Results替换")
 open class Result internal constructor(
   val code: Int,
-  val value: Any?,
-  val pagination: Pagination?,
-  val message: String?
+  val value: Any? = null,
+  val pagination: Pagination? = null,
+  val message: String? = null,
 ) {
 
   companion object {
@@ -172,23 +174,6 @@ open class Result internal constructor(
       return Result(200, values.toList(), pagination, message)
     }
 
-//    @JvmOverloads
-//    @JvmStatic
-//    fun withDownload(message: String, file: File, filename: String? = null, mediaType: MediaType? = null) =
-//      DownloadableResult(200, message).apply {
-//        attachment = file
-//        customFileName = filename
-//        contentType = mediaType
-//      }
-
-    //    @JvmOverloads
-//    @JvmStatic
-//    fun withDownload(file: File, filename: String? = null, mediaType: MediaType? = null) =
-//      DownloadableResult(200).apply {
-//        attachment = file
-//        customFileName = filename
-//        contentType = mediaType
-//      }
     @JvmStatic
     fun withDownload(file: File) =
       DownloadableResult(file)

@@ -12,6 +12,10 @@ import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.util.StreamUtils
 import java.io.FileNotFoundException
 
+/**
+ * 文件下载的处理，todo 重写 基于特定接口实现来处理
+ */
+@Deprecated("通过 file-io 组件实现")
 class LabzenResourceMessageConverter : AbstractHttpMessageConverter<DownloadableResult>() {
 
   override fun canRead(clazz: Class<*>, mediaType: MediaType?): Boolean {

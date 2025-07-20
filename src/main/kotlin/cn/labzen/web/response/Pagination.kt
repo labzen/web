@@ -8,6 +8,7 @@ package cn.labzen.web.response
  * @property recordCount 记录总数
  * @property pageCount 总页数
  */
+@Deprecated("")
 data class Pagination(
   val page: Int,
   val size: Int,
