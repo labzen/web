@@ -5,12 +5,13 @@ import cn.labzen.logger.kotlin.logger
 import cn.labzen.meta.Labzens
 import cn.labzen.web.LOGGER_SCENE_CONTROLLER
 import cn.labzen.web.meta.WebConfiguration
-import cn.labzen.web.spring.runtime.*
+import cn.labzen.web.spring.runtime.LabzenExceptionCatchingFilter
+import cn.labzen.web.spring.runtime.LabzenHandlerExceptionResolver
+import cn.labzen.web.spring.runtime.LabzenRestRequestHandlerInterceptor
+import cn.labzen.web.spring.runtime.PageableArgumentResolver
 import com.google.common.base.Strings
 import org.springframework.boot.web.servlet.FilterRegistrationBean
 import org.springframework.context.annotation.Bean
-import org.springframework.http.converter.HttpMessageConverter
-import org.springframework.http.converter.ResourceHttpMessageConverter
 import org.springframework.web.filter.OncePerRequestFilter
 import org.springframework.web.method.support.HandlerMethodArgumentResolver
 import org.springframework.web.servlet.HandlerExceptionResolver
@@ -79,15 +80,6 @@ class LabzenWebConfigurer : WebMvcConfigurer {
       resolvers.add(index, labzenHandlerExceptionResolver())
     }
   }
-
-//  override fun extendMessageConverters(converters: MutableList<HttpMessageConverter<*>>) {
-//    val resourceConverterIndex = converters.indexOfFirst { it is ResourceHttpMessageConverter }
-//    converters.add(if (resourceConverterIndex >= 0) resourceConverterIndex else 0, labzenResourceMessageConverter())
-//  }
-
-//  @Bean
-//  fun labzenResourceMessageConverter(): LabzenResourceMessageConverter =
-//    LabzenResourceMessageConverter()
 
   companion object {
     private val logger = logger { }

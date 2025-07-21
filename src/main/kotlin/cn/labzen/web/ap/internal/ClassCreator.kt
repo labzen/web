@@ -21,7 +21,8 @@ class ClassCreator(
 ) {
 
   fun create() {
-    val typeSpecBuilder = TypeSpec.classBuilder(root.name).addSuperinterface(root.implements).addModifiers(Modifier.PUBLIC)
+    val typeSpecBuilder =
+      TypeSpec.classBuilder(root.name).addSuperinterface(root.implements).addModifiers(Modifier.PUBLIC)
     root.annotations.sortedBy { Utils.getSimpleName(it.type) }.forEach { annotation ->
       typeSpecBuilder.addAnnotation(buildAnnotationSpec(annotation))
     }

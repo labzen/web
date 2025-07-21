@@ -1,6 +1,6 @@
 package cn.labzen.web.ap.evaluate.annotation
 
-import cn.labzen.web.ap.config.WebAPConfig
+import cn.labzen.web.ap.config.Config
 import cn.labzen.web.ap.internal.Utils
 import cn.labzen.web.ap.internal.element.ElementAnnotation
 import cn.labzen.web.ap.internal.element.ElementMethod
@@ -18,7 +18,7 @@ class RequestMappingEvaluator : MethodErasableAnnotationEvaluator {
   override fun support(type: TypeName): Boolean =
     type is ClassName && Utils.isRequestMappingAnnotation(type)
 
-  override fun evaluate(config: WebAPConfig, type: TypeName, members: Map<String, Any?>): List<Suggestion> {
+  override fun evaluate(config: Config, type: TypeName, members: Map<String, Any?>): List<Suggestion> {
     if (config.apiVersionCarrier() == DISABLE) {
       return emptyList()
     }
@@ -45,7 +45,7 @@ class RequestMappingEvaluator : MethodErasableAnnotationEvaluator {
   /**
    * 通过 Header Accept 版本控制
    */
-  private fun versionByHeader(config: WebAPConfig, version: String, clazz: TypeName): Suggestion {
+  private fun versionByHeader(config: Config, version: String, clazz: TypeName): Suggestion {
     val headerVersion = "application/vnd.${config.apiVersionHeaderVND()}.$version+json"
     val annotation = ElementAnnotation(clazz, mutableMapOf("produces" to arrayOf(headerVersion)))
     return ReplaceSuggestion(SUPPORTED_NAME, annotation)
@@ -54,7 +54,7 @@ class RequestMappingEvaluator : MethodErasableAnnotationEvaluator {
   /**
    * 通过请求参数控制版本
    */
-  private fun versionByParameter(config: WebAPConfig, version: String, clazz: TypeName): Suggestion {
+  private fun versionByParameter(config: Config, version: String, clazz: TypeName): Suggestion {
     val paramVersion = "${config.apiVersionParameterName()}=$version"
     val annotation = ElementAnnotation(clazz, mutableMapOf("params" to arrayOf(paramVersion)))
     return ReplaceSuggestion(SUPPORTED_NAME, annotation)

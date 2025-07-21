@@ -1,6 +1,6 @@
 package cn.labzen.web.ap.internal.context
 
-import cn.labzen.web.ap.config.WebAPConfig
+import cn.labzen.web.ap.config.Config
 import cn.labzen.web.ap.internal.MessagerDelegator
 import javax.annotation.processing.Filer
 import javax.annotation.processing.Messager
@@ -15,7 +15,7 @@ data class AnnotationProcessorContext(
   val typeUtils: Types,
   val messager: Messager,
   val filer: Filer,
-  val config: WebAPConfig
+  val config: Config
 ) {
 
   val messages = MessagerDelegator(messager)

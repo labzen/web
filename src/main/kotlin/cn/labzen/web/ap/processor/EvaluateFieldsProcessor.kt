@@ -18,8 +18,6 @@ import javax.lang.model.type.TypeMirror
  */
 class EvaluateFieldsProcessor : InternalProcessor {
 
-//  private lateinit var ancestorControllerType: TypeMirror
-
   override fun process(context: ControllerContext) {
     // 读取所有继承的父接口定义的泛型参数类型
     val directSupertypes = context.apc.typeUtils.directSupertypes(context.source.asType())
@@ -27,8 +25,7 @@ class EvaluateFieldsProcessor : InternalProcessor {
     directSupertypes.forEach { inter ->
       val typeArguments = detectTypeArguments(inter) ?: return@forEach
 
-//      val interfaceClass: Class<*> = ModelUtils.typeMirrorToClass(inter)
-      val interfaceClassName: TypeName = Utils.typeMirrorToClass(inter)
+      val interfaceClassName: TypeName = Utils.typeOf(inter)
 
       // 遍历每一个评价器
       val suggestions = context.genericsEvaluators.flatMap { evaluator ->
@@ -89,7 +86,7 @@ class EvaluateFieldsProcessor : InternalProcessor {
   private fun detectTypeArguments(typeMirror: TypeMirror): List<TypeName>? =
     if (typeMirror is DeclaredType) {
       val typeArguments = typeMirror.typeArguments
-      typeArguments.map { Utils.typeMirrorToClass(it) }
+      typeArguments.map { Utils.typeOf(it) }
     } else null
 
   override fun priority(): Int = PRIORITY_EVALUATE_FIELDS

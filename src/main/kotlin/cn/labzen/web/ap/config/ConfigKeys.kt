@@ -15,10 +15,10 @@ object ConfigKeys {
    *
    * 参考 [APIVersionCarrier] 枚举类
    *
-   * DISABLE - 禁用版本控制！
-   * HEADER - 通过请求头部信息 Accept: 来传递请求 API 的版本信息，例如：'Accept: application/vnd.app.v1+json'
-   * URI - 通过 API 的请求地址前置版本信息，例如 'https://www.app.com/v1/login'
-   * PARAMETER - 通过请求 API 时，使用参数来传递版本信息，例如 'https://www.app.com/login?version=v1'
+   * - DISABLE - 禁用版本控制！
+   * - HEADER - 通过请求头部信息 Accept: 来传递请求 API 的版本信息，例如：'Accept: application/vnd.app.v1+json'
+   * - URI - 通过 API 的请求地址前置版本信息，例如 'https://www.app.com/v1/login'
+   * - PARAMETER - 通过请求 API 时，使用参数来传递版本信息，例如 'https://www.app.com/login?version=v1'
    */
   const val API_VERSION_CARRIER = "processor.api-version.carrier"
 

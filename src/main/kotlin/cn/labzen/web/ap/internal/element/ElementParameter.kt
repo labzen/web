@@ -7,11 +7,11 @@ data class ElementParameter(
   val index: Int,
   val name: String,
   val type: TypeName,
-  val annotations: List<ElementAnnotation>,
+  val annotations: LinkedHashSet<ElementAnnotation>,
 ) : Element {
 
   override fun keyword(): String =
-    "${Utils.getSimpleName(type)} $name"
+    Utils.getSimpleName(type)
 
   override fun toString(): String =
     keyword()
@@ -23,7 +23,6 @@ data class ElementParameter(
     other as ElementParameter
 
     if (index != other.index) return false
-    if (name != other.name) return false
     if (type != other.type) return false
 
     return true
@@ -31,7 +30,6 @@ data class ElementParameter(
 
   override fun hashCode(): Int {
     var result = index
-    result = 31 * result + name.hashCode()
     result = 31 * result + type.hashCode()
     return result
   }

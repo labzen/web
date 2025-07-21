@@ -1,6 +1,6 @@
 package cn.labzen.web.ap.processor
 
-import cn.labzen.web.ap.config.WebAPConfig
+import cn.labzen.web.ap.config.Config
 import cn.labzen.web.ap.evaluate.annotation.MethodErasableAnnotationEvaluator
 import cn.labzen.web.ap.internal.Utils
 import cn.labzen.web.ap.internal.context.ControllerContext
@@ -10,6 +10,9 @@ import cn.labzen.web.ap.suggestion.impl.AppendSuggestion
 import cn.labzen.web.ap.suggestion.impl.DiscardSuggestion
 import cn.labzen.web.ap.suggestion.impl.RemoveSuggestion
 import cn.labzen.web.ap.suggestion.impl.ReplaceSuggestion
+import com.squareup.javapoet.TypeName
+import javax.annotation.Nonnull
+import javax.annotation.Nullable
 import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.TypeElement
@@ -22,10 +25,10 @@ import javax.lang.model.util.Types
 
 class EvaluateMethodsProcessor : InternalProcessor {
 
-  private val methodSuggestions = mutableMapOf<String, ElementMethod>()
+  private val parsedMethods = mutableMapOf<String, ElementMethod>()
   private lateinit var types: Types
   private lateinit var rootElement: ElementClass
-  private lateinit var config: WebAPConfig
+  private lateinit var config: Config
   private lateinit var evaluates: List<MethodErasableAnnotationEvaluator>
   private lateinit var sourceType: DeclaredType
 
@@ -40,15 +43,15 @@ class EvaluateMethodsProcessor : InternalProcessor {
 
     collectMethods(context, context.source)
 
-    methodSuggestions.forEach { (_, value) ->
+    parsedMethods.forEach { (_, value) ->
       rootElement.methods.add(value)
     }
-
   }
 
   private fun collectMethods(context: ControllerContext, source: TypeElement) {
     val directSupertypes = types.directSupertypes(source.asType())
     directSupertypes.forEach { superType ->
+      // 如果controller的父类型不是LabzenController及其子接口，则不处理
       val supportInterface = types.isAssignable(superType, context.ancestorControllerType)
       if (!supportInterface) {
         return@forEach
@@ -65,31 +68,47 @@ class EvaluateMethodsProcessor : InternalProcessor {
 
   private fun parseMethod(method: ExecutableElement) {
     val methodName = method.simpleName.toString()
-    val returnType = Utils.typeMirrorToClass(method.returnType)
+    val returnType = Utils.typeOf(method.returnType)
 
     val resolvedMethodType = types.asMemberOf(sourceType, method) as ExecutableType
+    // 真实的方法参数类型
     val actualParameterTypes = resolvedMethodType.parameterTypes
     val parameterTypeNames = actualParameterTypes.map {
-      val type = Utils.typeMirrorToClass(it)
+      val type = Utils.typeOf(it)
       Utils.getSimpleName(type)
     }
     val parameterNames = method.parameters.map { it.simpleName.toString() }
     val parametersSignature = parameterTypeNames.joinToString(", ")
     val methodSignature = "${Utils.getSimpleName(returnType)} $methodName($parametersSignature)"
 
-    val methodElement = methodSuggestions.computeIfAbsent(methodSignature) {
-      ElementMethod(methodName, returnType)
+    val methodElement = parsedMethods.computeIfAbsent(methodSignature) {
+      ElementMethod(methodName, returnType).apply {
+        body = ElementMethodBody("", methodName, parameterNames)
+      }
     }
-
-    methodElement.body = ElementMethodBody("", methodName, parameterNames)
 
     // 读取所有参数（及注解）
     val methodParameters = readParameters(method.parameters, actualParameterTypes)
+    methodParameters.forEach { read ->
+      val superParameterExists = methodElement.parameters.contains(read)
+      if (!superParameterExists) {
+        methodElement.parameters.add(read)
+        return@forEach
+      }
+
+      // 重写的方法，参数列表需要覆盖掉父接口中定义的注解集合
+      val found = methodElement.parameters.find { it == read }!!
+      found.annotations.addAll(read.annotations)
+    }
     methodElement.parameters.addAll(methodParameters)
 
     // 读取所有的方法注解
-    val methodAnnotations = method.annotationMirrors.map { mirror ->
-      val annotationClass = Utils.typeMirrorToClass(mirror.annotationType.asElement().asType())
+    val methodAnnotations = method.annotationMirrors.filterNot { mirror ->
+      // 过滤掉 jetbrains 的注解，主要是 NotNull 和 Nullable，强制使用 JSR305 的 javax.annotation 下的注解
+      val fqcn = mirror.annotationType.asElement().toString()
+      fqcn.startsWith("org.jetbrains.annotations.")
+    }.map { mirror ->
+      val annotationClass = Utils.typeOf(mirror.annotationType.asElement().asType())
       val annotationMembers = Utils.readAnnotationMembers(mirror)
 
       ElementAnnotation(annotationClass, annotationMembers.toMutableMap())
@@ -102,15 +121,15 @@ class EvaluateMethodsProcessor : InternalProcessor {
   private fun readParameters(parameters: List<VariableElement>, actualParameterTypes: List<TypeMirror>) =
     parameters.mapIndexed { i, param ->
       val parameterName = param.simpleName.toString()
-      val parameterType = Utils.typeMirrorToClass(actualParameterTypes[i])
+      val parameterType = Utils.typeOf(actualParameterTypes[i])
 
       val annotations = readAnnotations(param.annotationMirrors)
-      ElementParameter(i, parameterName, parameterType, annotations)
+      ElementParameter(i, parameterName, parameterType, LinkedHashSet(annotations))
     }
 
   private fun readAnnotations(annotationMirrors: List<AnnotationMirror>) =
     annotationMirrors.map { mirror ->
-      val annotationClass = Utils.elementToClass(mirror.annotationType.asElement())
+      val annotationClass = Utils.classOf(mirror.annotationType.asElement())
       val annotationMembers = Utils.readAnnotationMembers(mirror)
 
       ElementAnnotation(annotationClass, annotationMembers.toMutableMap())
@@ -192,10 +211,26 @@ class EvaluateMethodsProcessor : InternalProcessor {
   }
 
   private fun parseDiscardSuggestion(method: ElementMethod) {
-    method.annotations.clear()
+    // 移除方法上的注解，忽略Override, Nonnull等
+    method.annotations.removeIf {
+      !RESERVED_ANNOTATIONS_WHEN_DISCARD_METHOD.contains(it.type)
+    }
+    method.parameters.forEach { parameter ->
+      // 移除方法参数的注解，忽略Override, Nonnull等
+      parameter.annotations.removeIf {
+        !RESERVED_ANNOTATIONS_WHEN_DISCARD_METHOD.contains(it.type)
+      }
+    }
     method.body = ElementMethodBody("", "", emptyList())
   }
 
   override fun priority(): Int = PRIORITY_EVALUATE_METHODS
 
+  companion object {
+    private val RESERVED_ANNOTATIONS_WHEN_DISCARD_METHOD = setOf(
+      TypeName.get(Override::class.java),
+      TypeName.get(Nonnull::class.java),
+      TypeName.get(Nullable::class.java),
+    )
+  }
 }

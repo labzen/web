@@ -30,8 +30,13 @@ public interface MenuController extends StandardController<MenuRealm, MenuDto, L
   Result create(MenuDto resource);
 
   @Nonnull
+  @Override
   @Abandoned
   Result remove(Long id);
+
+  @Nonnull
+  @Override
+  Result removes(@Nonnull Long[] ids);
 
   /**
    * 这里定义了一个快速入口

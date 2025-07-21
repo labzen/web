@@ -18,7 +18,7 @@ class ReadAnnotationsProcessor : InternalProcessor {
   override fun process(context: ControllerContext) {
     // 获取接口声明的所有注解，将直接复制给生成的Controller实现类
     context.source.annotationMirrors.forEach {
-      val annotationClass = Utils.elementToClass(it.annotationType.asElement())
+      val annotationClass = Utils.classOf(it.annotationType.asElement())
       val annotationMembers = Utils.readAnnotationMembers(it)
 
       val annotation = ElementAnnotation(annotationClass, annotationMembers.toMutableMap())

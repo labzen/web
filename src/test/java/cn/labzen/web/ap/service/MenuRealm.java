@@ -4,7 +4,6 @@ import cn.labzen.web.response.bean.Result;
 import cn.labzen.web.response.bean.Results;
 import cn.labzen.web.service.StandardResourceService;
 import com.google.common.collect.Lists;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -35,7 +34,7 @@ public class MenuRealm implements StandardResourceService<MenuDto, Long> {
     return Results.with(new MenuDto());
   }
 
-  @NotNull
+  @Nonnull
   @Override
   public Result find(@Nonnull MenuDto resource) {
     // 使用code来指定 ROOT CODE

@@ -1,6 +1,6 @@
 package cn.labzen.web.ap
 
-import cn.labzen.web.ap.config.WebAPConfig
+import cn.labzen.web.ap.config.ConfigLoader
 import cn.labzen.web.ap.exception.TypeNotAvailableException
 import cn.labzen.web.ap.internal.context.AnnotationProcessorContext
 import cn.labzen.web.ap.internal.context.ControllerContext
@@ -20,18 +20,16 @@ import javax.lang.model.util.ElementKindVisitor9
 import javax.tools.Diagnostic
 
 @SupportedAnnotationTypes("cn.labzen.web.annotation.LabzenController")
-//@SupportedSourceVersion(SourceVersion.RELEASE_11)
 class LabzenWebProcessor : AbstractProcessor() {
 
   private lateinit var annotationProcessorContext: AnnotationProcessorContext
-  private val processedContexts = mutableSetOf<ControllerContext>()
+  private val processedControllers = mutableSetOf<TypeElement>()
   private val deferredControllers = mutableSetOf<DeferredController>()
-  private var round = 1
 
   override fun init(processingEnv: ProcessingEnvironment) {
     super.init(processingEnv)
 
-    val config = WebAPConfig(processingEnv.filer)
+    val config = ConfigLoader.load(processingEnv.filer)
 
     annotationProcessorContext =
       AnnotationProcessorContext(
@@ -51,7 +49,6 @@ class LabzenWebProcessor : AbstractProcessor() {
     roundEnv: RoundEnvironment
   ): Boolean {
     if (!roundEnv.processingOver()) {
-//      annotationProcessorContext.messages.info("--------- ${round++}")
       val deferredControllerContexts = getAndResetDeferredControllers()
       deferredControllerContexts.forEach(::processEachController)
 
@@ -97,23 +94,25 @@ class LabzenWebProcessor : AbstractProcessor() {
       annotatedElements.map { element ->
         ControllerContext(element, annotationProcessorContext)
       }
-//    }.filter {
-//      !processedContexts.contains(it)
     }
   }
 
   private fun processEachController(context: ControllerContext) {
+    if (processedControllers.contains(context.source)) {
+      println("%%%%%%%%%%%%%%  ${context.source.simpleName}")
+      return
+    }
+
     val processors = getProcessor()
     try {
       for (processor in processors) {
         processor.process(context)
       }
 
-//      processedContexts.add(context)
+      processedControllers.add(context.source)
     } catch (e: TypeNotAvailableException) {
       deferredControllers.add(DeferredController(context.source, e.fqcn))
     } catch (e: Throwable) {
-//      context.apc.messages.info("LabzenWebProcessor: 引用类型尚未可用，或其他异常问题 - $e")
       handleUncaughtError(context.source, e)
     }
   }

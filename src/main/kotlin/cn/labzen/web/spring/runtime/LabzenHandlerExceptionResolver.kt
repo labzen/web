@@ -165,8 +165,6 @@ class LabzenHandlerExceptionResolver : HandlerExceptionResolver {
     response: HttpServletResponse
   ) {
     val respData = Response(status.value(), message ?: status.reasonPhrase)
-//    val result = Result.withStatus(status, null, message)
-//    val resp = responseFormatter.format(result, request)
     out(respData, request, response)
   }
 
@@ -176,8 +174,6 @@ class LabzenHandlerExceptionResolver : HandlerExceptionResolver {
     response: HttpServletResponse
   ) {
     val respData = Response(status.value(), status.reasonPhrase)
-//    val result = Result.withStatus(status)
-//    val resp = responseFormatter.format(result, request)
     out(respData, request, response)
   }
 
@@ -188,8 +184,6 @@ class LabzenHandlerExceptionResolver : HandlerExceptionResolver {
     response: HttpServletResponse
   ) {
     val respData = Response(status.value(), status.reasonPhrase, null, data)
-//    val result = Result.withStatus(status, data)
-//    val resp = responseFormatter.format(result, request)
     out(data, request, response)
   }
 

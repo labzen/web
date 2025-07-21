@@ -1,7 +1,7 @@
 package cn.labzen.web.ap.evaluate.annotation
 
 import cn.labzen.web.annotation.Call
-import cn.labzen.web.ap.config.WebAPConfig
+import cn.labzen.web.ap.config.Config
 import cn.labzen.web.ap.internal.Utils
 import cn.labzen.web.ap.internal.element.*
 import cn.labzen.web.ap.suggestion.Suggestion
@@ -17,12 +17,12 @@ class CallEvaluator : MethodErasableAnnotationEvaluator {
   override fun support(type: TypeName): Boolean =
     SUPPORTED == type
 
-  override fun evaluate(config: WebAPConfig, type: TypeName, members: Map<String, Any?>): List<Suggestion> {
+  override fun evaluate(config: Config, type: TypeName, members: Map<String, Any?>): List<Suggestion> {
     val suggestions =
       mutableListOf<Suggestion>(RemoveSuggestion(SUPPORTED_NAME, ElementMethod::class.java))
 
     val fieldClass = members["target"]?.let {
-      Utils.typeMirrorToClass(it as TypeMirror)
+      Utils.typeOf(it as TypeMirror)
     }
     val fieldName = fieldClass?.let {
       val simpleName = Utils.getSimpleName(it)

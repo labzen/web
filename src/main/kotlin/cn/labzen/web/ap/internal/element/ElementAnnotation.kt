@@ -27,11 +27,16 @@ data class ElementAnnotation(
 
     other as ElementAnnotation
 
-    return type == other.type
+    if (type != other.type) return false
+    if (members != other.members) return false
+
+    return true
   }
 
   override fun hashCode(): Int {
-    return type.hashCode()
+    var result = type.hashCode()
+    result = 31 * result + members.hashCode()
+    return result
   }
 
   companion object {

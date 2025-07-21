@@ -28,9 +28,6 @@ class LabzenRestResponseBodyAdvice : ResponseBodyAdvice<Any>, InitializingBean {
 
   private val responseFormatter = CompositeResponseFormatter()
   private var processAllRestResponse = true
-//  private val responseFormatter: ResponseFormatter = LabzenResponseFormatter.createTransformer()
-//  private val isHeaderVersionEnabled = Labzens.configurationWith(WebConfiguration::class.java)
-//    .apiVersionCarrier() == APIVersionCarrier.HEADER
 
   override fun afterPropertiesSet() {
     val configuration = Labzens.configurationWith(WebConfiguration::class.java)
@@ -59,37 +56,6 @@ class LabzenRestResponseBodyAdvice : ResponseBodyAdvice<Any>, InitializingBean {
     return responseFormatter.format(body, httpRequest, httpResponse)
   }
 
-  //  override fun beforeBodyWrite(
-//    body: Any?,
-//    returnType: MethodParameter,
-//    selectedContentType: MediaType,
-//    selectedConverterType: Class<out HttpMessageConverter<*>>,
-//    request: ServerHttpRequest,
-//    response: ServerHttpResponse
-//  ): Any? {
-//    if (body is Response) {
-//      return body
-//    }
-//
-////    if (isHeaderVersionEnabled) {
-////      if (!"json".equals(selectedContentType.subtype, true) && !"application".equals(selectedContentType.type, true)) {
-////        return body
-////      }
-////    } else if (!selectedContentType.isCompatibleWith(MediaType.APPLICATION_JSON)) {
-////      return body
-////    }
-//    if (!selectedContentType.isCompatibleWith(MediaType.APPLICATION_JSON)) {
-//      logger.warn("无法处理请求[${request.method} ${request.uri} Content-Type: $selectedContentType]的返回结构")
-//      return body
-//    }
-//
-//    val httpRequest = if (request is ServletServerHttpRequest) {
-//      request.servletRequest
-//    } else return body
-//
-//    return responseFormatter.format(body, httpRequest)
-//  }
-
   /**
    * #第1级异常拦截处理：在这里处理业务相关异常，推荐统一封装为 [RequestException] !!
    */
@@ -101,8 +67,4 @@ class LabzenRestResponseBodyAdvice : ResponseBodyAdvice<Any>, InitializingBean {
   ): Any {
     return Response(e.code, e.message ?: "internal server error")
   }
-
-//  companion object {
-//    private val logger = logger { }
-//  }
 }

@@ -35,56 +35,10 @@ class Utils private constructor() {
         }
       }
 
-//    fun elementToQualifiedName(type: Element): String =
-//      (type as TypeElement).qualifiedName.toString()
-//
-//    fun declaredTypeToQualifiedName(type: DeclaredType): String =
-//      (type.asElement() as TypeElement).qualifiedName.toString()
-//
-//    fun typeMirrorToQualifiedName(type: TypeMirror, depth: Int = 0): String =
-//      when (type.kind) {
-//        VOID -> if (depth > 0) throw IllegalArgumentException("void[] is not a valid type.") else "V"
-//        ARRAY -> typeMirrorToQualifiedName((type as ArrayType).componentType, depth + 1)
-//        DECLARED -> declaredTypeToQualifiedName(type as DeclaredType).let {
-//          if (depth > 0) "[".repeat(depth) + "L" + it + ";" else it
-//        }
-//
-//        BOOLEAN, BYTE, CHAR, SHORT, INT, LONG, FLOAT, DOUBLE -> if (depth > 0) {
-//          getPrimitiveDescriptor(type.kind).let {
-//            "[".repeat(depth) + it
-//          }
-//        } else type.kind.toString().lowercase()
-//
-//        else -> throw IllegalArgumentException("unknown type: $type")
-//      }
-
-//    private fun getPrimitiveDescriptor(kind: TypeKind): String =
-//      when (kind) {
-//        BOOLEAN -> "Z"
-//        BYTE -> "B"
-//        CHAR -> "C"
-//        SHORT -> "S"
-//        INT -> "I"
-//        LONG -> "J"
-//        FLOAT -> "F"
-//        DOUBLE -> "D"
-//        else -> throw java.lang.IllegalArgumentException("Not a primitive type: $kind")
-//      }
-
-//    fun elementToClass(type: Element): Class<*> {
-//      val fqcn = elementToQualifiedName(type)
-//      return qualifiedNameToClass(fqcn)
-//    }
-
-    fun elementToClass(type: Element): ClassName =
+    fun classOf(type: Element): ClassName =
       ClassName.get(type as TypeElement)
 
-//    fun typeMirrorToClass(type: TypeMirror): Class<*> {
-//      val fqcn = typeMirrorToQualifiedName(type)
-//      return qualifiedNameToClass(fqcn)
-//    }
-
-    fun typeMirrorToClass(type: TypeMirror): TypeName {
+    fun typeOf(type: TypeMirror): TypeName {
       return TypeName.get(type)
     }
 
@@ -112,12 +66,5 @@ class Utils private constructor() {
         else -> type.toString()
       }
     }
-
-//    private fun qualifiedNameToClass(fqcn: String): Class<*> =
-//      try {
-//        Class.forName(fqcn)
-//      } catch (e: ClassNotFoundException) {
-//        throw TypeNotAvailableException(fqcn, e)
-//      }
   }
 }
