@@ -101,5 +101,5 @@ interface StandardController<BS, RB, ID> : LabzenController {
    * 示例：Restful API 分页/条件查询列表 - GET /resources
    */
   @GetMapping
-  fun find(@Validated @ModelAttribute resource: RB): Result
+  fun find(@ModelAttribute resource: RB): Result
 }

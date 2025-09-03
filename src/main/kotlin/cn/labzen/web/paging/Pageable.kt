@@ -1,5 +1,7 @@
 package cn.labzen.web.paging
 
+import cn.labzen.meta.Labzens
+import cn.labzen.web.meta.WebConfiguration
 import cn.labzen.web.spring.runtime.PageableArgumentResolver
 import java.io.Serializable
 import java.lang.reflect.Type
@@ -87,6 +89,6 @@ interface Pageable : Serializable {
 
   companion object {
     internal const val DEFAULT_PAGE_NUMBER = 1
-    internal const val DEFAULT_PAGE_SIZE = 20
+    internal val DEFAULT_PAGE_SIZE by lazy { Labzens.configurationWith(WebConfiguration::class.java).pageSize() }
   }
 }

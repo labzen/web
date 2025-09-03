@@ -1,10 +1,7 @@
 package cn.labzen.web.paging.internal
 
-import cn.labzen.meta.Labzens
-import cn.labzen.web.meta.WebConfiguration
 import cn.labzen.web.paging.Order
 import cn.labzen.web.paging.Pageable
-import cn.labzen.web.paging.Pageable.Companion.DEFAULT_PAGE_NUMBER
 
 /**
  * 存储分页条件数据，用于[Pageable]数据代理提供方
@@ -18,10 +15,10 @@ data class Paging(
 
   init {
     if (pageNumber <= 0) {
-      pageNumber = DEFAULT_PAGE_NUMBER
+      pageNumber = Pageable.DEFAULT_PAGE_NUMBER
     }
     if (pageSize <= 0) {
-      pageSize = defaultPageSize
+      pageSize = Pageable.DEFAULT_PAGE_SIZE
     }
   }
 
@@ -38,6 +35,8 @@ data class Paging(
   }
 
   companion object {
-    private val defaultPageSize by lazy { Labzens.configurationWith(WebConfiguration::class.java).pageSize() }
+    //    private val defaultPageSize by lazy { Labzens.configurationWith(WebConfiguration::class.java).pageSize() }
+    val DEFAULT_PAGING = Paging(false, Pageable.DEFAULT_PAGE_NUMBER, Pageable.DEFAULT_PAGE_SIZE, emptyList())
+    val UNPAGED_PAGING = Paging(true, Pageable.DEFAULT_PAGE_NUMBER, Pageable.DEFAULT_PAGE_SIZE, emptyList())
   }
 }

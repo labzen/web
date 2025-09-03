@@ -1,8 +1,8 @@
 package cn.labzen.web.spring.runtime
 
 import cn.labzen.web.paging.Pageable
-import cn.labzen.web.paging.internal.PageableArgumentsResolver
 import cn.labzen.web.paging.internal.PageableDelegationProcessor
+import cn.labzen.web.paging.internal.PageableResolver
 import org.springframework.beans.BeanUtils
 import org.springframework.core.MethodParameter
 import org.springframework.validation.BindException
@@ -11,12 +11,13 @@ import org.springframework.validation.annotation.ValidationAnnotationUtils
 import org.springframework.web.bind.WebDataBinder
 import org.springframework.web.bind.annotation.ModelAttribute
 import org.springframework.web.bind.support.WebDataBinderFactory
-import org.springframework.web.bind.support.WebRequestDataBinder
 import org.springframework.web.context.request.NativeWebRequest
 import org.springframework.web.method.annotation.ModelAttributeMethodProcessor
 import org.springframework.web.method.annotation.ModelFactory
 import org.springframework.web.method.support.HandlerMethodArgumentResolver
 import org.springframework.web.method.support.ModelAndViewContainer
+import org.springframework.web.servlet.mvc.method.annotation.ExtendedServletRequestDataBinder
+import javax.servlet.ServletRequest
 
 /**
  * 负责在查询请求时，对实现 [Pageable] 接口的 Resource Bean 参数的数据绑定处理
@@ -38,8 +39,8 @@ class PageableArgumentResolver : HandlerMethodArgumentResolver {
     // 1. 先绑定Bean的参数值
     val attribute = bindAttribute(parameter, mavContainer!!, webRequest, binderFactory!!)
 
-    // 2. 先尝试读取分析分页相关参数，如果没有，直接返回已绑定数据的参数实例
-    val resolvedPaging = PageableArgumentsResolver.resolve(webRequest) ?: return attribute
+    // 2. 先尝试读取分析分页相关参数，如果没有，返回默认分页条件
+    val resolvedPaging = PageableResolver.resolve(webRequest)
 
     // 3. 对数据绑定好的参数实例，进行代理，在代理中提供解析好的分页数据
     return PageableDelegationProcessor.delegate(parameter, attribute, resolvedPaging)
@@ -69,7 +70,8 @@ class PageableArgumentResolver : HandlerMethodArgumentResolver {
     val binder = binderFactory.createBinder(webRequest, attribute, name)
     if (binder.target != null) {
       if (!mavContainer.isBindingDisabled(name)) {
-        (binder as WebRequestDataBinder).bind(webRequest)
+//        (binder as WebRequestDataBinder).bind(webRequest)
+        (binder as ExtendedServletRequestDataBinder).bind(webRequest.nativeRequest as ServletRequest)
       }
       validateIfApplicable(binder, parameter)
       if (binder.bindingResult.hasErrors() && isBindExceptionRequired(parameter)) {

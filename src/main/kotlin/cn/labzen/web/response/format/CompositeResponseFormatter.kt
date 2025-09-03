@@ -15,15 +15,20 @@ class CompositeResponseFormatter : ResponseFormatter {
   private val formatters: List<ResponseFormatter>
 
   init {
+    // 第1 处理已经是 Response 结构化的情况，快速返回已经是 Response 结构的情况
     val responseAgainPF = ResponseAgainResponseFormatter()
+    // 第2 格式化不正常的 Http Status 结果，如404
     val abnormalStatusPF = AbnormalStatusResponseFormatter()
+    // 倒2 处理 Result 中的返回值格式化，标准的返回结构
     val standardResultPF = StandardResultResponseFormatter()
+    // 倒1 处理前面所有格式化器都未考虑到的请
     val unexpectedPF = UnexpectedResponseFormatter()
 
-    val allFormatters = mutableListOf(responseAgainPF, abnormalStatusPF, unexpectedPF)
+    val allFormatters = mutableListOf(responseAgainPF, abnormalStatusPF)
     val loadedFormatters = ServiceLoader.load(ResponseFormatter::class.java, javaClass.classLoader)
     allFormatters.addAll(loadedFormatters)
     allFormatters.add(standardResultPF)
+    allFormatters.add(unexpectedPF)
 
     formatters = allFormatters.toList()
   }

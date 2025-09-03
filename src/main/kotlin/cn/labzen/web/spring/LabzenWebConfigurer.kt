@@ -26,9 +26,9 @@ class LabzenWebConfigurer : WebMvcConfigurer {
   /**
    * 添加参数解析器
    */
-  override fun addArgumentResolvers(resolvers: MutableList<HandlerMethodArgumentResolver>) {
-    resolvers.add(PageableArgumentResolver())
-  }
+//  override fun addArgumentResolvers(resolvers: MutableList<HandlerMethodArgumentResolver>) {
+//    resolvers.add(0, PageableArgumentResolver())
+//  }
 
   /**
    * 注册拦截器
