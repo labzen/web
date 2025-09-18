@@ -13,11 +13,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
-import static cn.labzen.web.ConstKt.JUNIT_OUTPUT_DIR;
+import static cn.labzen.web.defination.Constants.JUNIT_OUTPUT_DIR;
 import static com.google.testing.compile.Compiler.javac;
 
 public class APTTest {
@@ -35,7 +33,10 @@ public class APTTest {
   @Test
   public void test() throws IOException {
     // 读取 test-source/TestDto.java 内容
-    File file = new File("src/test/java/cn/labzen/web/ap/MenuController.java");
+    URL resource = this.getClass().getClassLoader().getResource("MenuController.txt");
+    Assertions.assertNotNull(resource);
+    String resourcePath = resource.getPath();
+    File file = new File(resourcePath);
     String sourceCode = Files.readString(file.toPath());
 
     // 创建 JavaFileObject

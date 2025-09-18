@@ -6,13 +6,13 @@
   <parent>
     <artifactId>parent</artifactId>
     <groupId>cn.labzen</groupId>
-    <version>11.9.8-SNAPSHOT</version>
+    <version>21.0-SNAPSHOT</version>
     <relativePath/>
   </parent>
 
   <artifactId>web</artifactId>
   <packaging>jar</packaging>
-  <version>1.1.0-SNAPSHOT</version>
+  <version>1.2.0-SNAPSHOT</version>
   <name>Labzen.Web</name>
   <description>Labzen Web - simple and clear web layer structure, avoid the business logic code mixed in</description>
   <url>https://github.com/labzen/logger</url>
@@ -45,11 +45,9 @@
   </scm>
 
   <properties>
-    <labzen.logger.version>1.5.3-SNAPSHOT</labzen.logger.version>
-    <labzen.tool.version>1.3.6-SNAPSHOT</labzen.tool.version>
+    <labzen.logger.version>1.6.0-SNAPSHOT</labzen.logger.version>
+    <labzen.tool.version>1.4.0-SNAPSHOT</labzen.tool.version>
     <labzen.spring.version>1.2.3-SNAPSHOT</labzen.spring.version>
-
-    <javapoet.version>1.13.0</javapoet.version>
   </properties>
 
   <dependencyManagement>
@@ -69,25 +67,10 @@
         <artifactId>spring</artifactId>
         <version>${labzen.spring.version}</version>
       </dependency>
-
-      <dependency>
-        <groupId>com.squareup</groupId>
-        <artifactId>javapoet</artifactId>
-        <version>${javapoet.version}</version>
-      </dependency>
     </dependencies>
   </dependencyManagement>
 
   <dependencies>
-    <dependency>
-      <groupId>org.jetbrains.kotlin</groupId>
-      <artifactId>kotlin-reflect</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.jetbrains.kotlin</groupId>
-      <artifactId>kotlin-stdlib</artifactId>
-    </dependency>
-
     <dependency>
       <groupId>cn.labzen</groupId>
       <artifactId>logger</artifactId>
@@ -102,8 +85,13 @@
     </dependency>
 
     <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.google.auto.service</groupId>
+      <artifactId>auto-service</artifactId>
+      <version>1.1.1</version>
     </dependency>
     <dependency>
       <groupId>com.squareup</groupId>
@@ -114,6 +102,7 @@
       <artifactId>byte-buddy</artifactId>
     </dependency>
 
+    <!--suppress VulnerableLibrariesLocal -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
@@ -134,19 +123,10 @@
   </dependencies>
 
   <build>
-    <sourceDirectory>${project.basedir}/src/main/kotlin</sourceDirectory>
+    <sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
     <testSourceDirectory>${project.basedir}/src/test/java</testSourceDirectory>
 
     <plugins>
-      <plugin>
-        <groupId>org.jetbrains.kotlin</groupId>
-        <artifactId>kotlin-maven-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <groupId>org.jetbrains.dokka</groupId>
-        <artifactId>dokka-maven-plugin</artifactId>
-      </plugin>
-
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-gpg-plugin</artifactId>

@@ -1,13 +1,19 @@
 package cn.labzen.web.ap.service;
 
 import cn.labzen.web.paging.Pageable;
+import lombok.Getter;
+import lombok.Setter;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+@Setter
+@Getter
 public class MenuDto implements Pageable, Cloneable, Serializable {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   private Long id;
@@ -78,115 +84,4 @@ public class MenuDto implements Pageable, Cloneable, Serializable {
     return cloned;
   }
 
-  public Long getId() {
-    return id;
-  }
-
-  public void setId(Long id) {
-    this.id = id;
-  }
-
-  public String getCode() {
-    return code;
-  }
-
-  public void setCode(String code) {
-    this.code = code;
-  }
-
-  public String getParentCode() {
-    return parentCode;
-  }
-
-  public void setParentCode(String parentCode) {
-    this.parentCode = parentCode;
-  }
-
-  public String getPermissionCode() {
-    return permissionCode;
-  }
-
-  public void setPermissionCode(String permissionCode) {
-    this.permissionCode = permissionCode;
-  }
-
-  public String getTitle() {
-    return title;
-  }
-
-  public void setTitle(String title) {
-    this.title = title;
-  }
-
-  public String getRouteName() {
-    return routeName;
-  }
-
-  public void setRouteName(String routeName) {
-    this.routeName = routeName;
-  }
-
-  public Integer getRouteRank() {
-    return routeRank;
-  }
-
-  public void setRouteRank(Integer routeRank) {
-    this.routeRank = routeRank;
-  }
-
-  public String getRouteIcon() {
-    return routeIcon;
-  }
-
-  public void setRouteIcon(String routeIcon) {
-    this.routeIcon = routeIcon;
-  }
-
-  public String getLocale() {
-    return locale;
-  }
-
-  public void setLocale(String locale) {
-    this.locale = locale;
-  }
-
-  public Boolean getCacheable() {
-    return cacheable;
-  }
-
-  public void setCacheable(Boolean cacheable) {
-    this.cacheable = cacheable;
-  }
-
-  public Boolean getActive() {
-    return active;
-  }
-
-  public void setActive(Boolean active) {
-    this.active = active;
-  }
-
-  public String getUri() {
-    return uri;
-  }
-
-  public void setUri(String uri) {
-    this.uri = uri;
-  }
-
-  public String getDescription() {
-    return description;
-  }
-
-  public void setDescription(String description) {
-    this.description = description;
-  }
-
-  public List<MenuDto> getChildren() {
-    return children;
-  }
-
-  public void setChildren(List<MenuDto> children) {
-    this.children = children;
-  }
 }

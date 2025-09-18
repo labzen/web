@@ -1,7 +1,7 @@
 package cn.labzen.web.ap.service;
 
+import cn.labzen.web.response.Results;
 import cn.labzen.web.response.bean.Result;
-import cn.labzen.web.response.bean.Results;
 import cn.labzen.web.service.StandardResourceService;
 import com.google.common.collect.Lists;
 import org.springframework.http.HttpStatus;
@@ -19,13 +19,13 @@ public class MenuRealm implements StandardResourceService<MenuDto, Long> {
   @Nonnull
   @Override
   public Result create(@Nonnull MenuDto resource) {
-    return Results.justStatus(HttpStatus.NOT_ACCEPTABLE);
+    return Results.status(HttpStatus.NOT_ACCEPTABLE);
   }
 
   @Nonnull
   @Override
   public Result edit(@Nonnull Long id, @Nonnull MenuDto resource) {
-    return Results.justStatus(HttpStatus.NOT_ACCEPTABLE);
+    return Results.status(HttpStatus.NOT_ACCEPTABLE);
   }
 
   @Nonnull
@@ -45,7 +45,7 @@ public class MenuRealm implements StandardResourceService<MenuDto, Long> {
   @Nonnull
   @Override
   public Result remove(@Nonnull Long id) {
-    return Results.justStatus(HttpStatus.NOT_ACCEPTABLE);
+    return Results.status(HttpStatus.NOT_ACCEPTABLE);
   }
 
   public Result recache(Long id) {

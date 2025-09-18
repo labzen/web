@@ -20,7 +20,7 @@ public class PageableDTOTest {
 
   public static void main(String[] args) {
     Paging paging = new Paging(false, 2, 52, Lists.newArrayList());
-    System.out.println(paging.isUnpaged());
+    System.out.println(paging.unpaged());
     System.out.println(paging.pageNumber());
     System.out.println(paging.pageSize());
 
@@ -48,7 +48,7 @@ public class PageableDTOTest {
       System.out.println(proxied.getAge());
       System.out.println(proxied.getGender());
     } catch (Exception e) {
-      e.printStackTrace();
+      e.printStackTrace(System.err);
     }
 //    TestDto proxied = (TestDto) Proxy.newProxyInstance(
 //      TestDto.class.getClassLoader(),
