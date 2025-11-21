@@ -33,7 +33,7 @@ import org.springframework.web.bind.annotation.*;
  * /**
  *  * 这是一个标准的Controller定义，包含了增改查等常用入口定义。这里使用 @Abandoned 注解剔除了删除资源的入口
  *  &#42;/
- * public interface ResourceController extends StandardController<ResourceService, ResourceBean, Long> {
+ * public interface ResourceController extends StandardController<resourceervice, ResourceBean, Long> {
  *   &#64;Abandoned
  *   Result remove(Long id);
  * }
@@ -45,7 +45,7 @@ import org.springframework.web.bind.annotation.*;
  * /**
  *  * 这是一个标准的Controller定义
  *  &#42;/
- * public interface ResourceController extends StandardController<ResourceService, ResourceBean, Long> {
+ * public interface ResourceController extends StandardController<resourceervice, ResourceBean, Long> {
  *   /**
  *    * 这里定义了一个快速入口
  *    &#42;/
@@ -62,37 +62,37 @@ import org.springframework.web.bind.annotation.*;
 public interface StandardController<BS, RB, ID> extends LabzenController {
 
   /**
-   * 示例：Restful API 创建资源 - POST /resources
+   * 示例：Restful API 创建资源 - POST /resource
    */
   @PostMapping
   Result create(@Validated @ModelAttribute RB resource);
 
   /**
-   * 示例：Restful API 修改资源 - POST /resources/{id}
+   * 示例：Restful API 修改资源 - PUT /resource/{id}
    */
   @PutMapping("{id}")
   Result edit(@PathVariable ID id, @Validated @ModelAttribute RB resource);
 
   /**
-   * 示例：Restful API 删除资源 - DELETE /resources/{id}
+   * 示例：Restful API 删除资源 - DELETE /resource/{id}
    */
   @DeleteMapping("{id}")
   Result remove(@PathVariable ID id);
 
   /**
-   * 示例：Restful API 批量删除资源 - DELETE /resources/batch?ids=1,2,3
+   * 示例：Restful API 批量删除资源 - DELETE /resource/batch?ids=1,2,3
    */
   @DeleteMapping("batch")
   Result removes(@RequestParam ID[] ids);
 
   /**
-   * 示例：Restful API 获取单个资源详情 - GET /resources/{id}
+   * 示例：Restful API 获取单个资源详情 - GET /resource/{id}
    */
   @GetMapping("{id}")
   Result info(@PathVariable ID id);
 
   /**
-   * 示例：Restful API 分页/条件查询列表 - GET /resources
+   * 示例：Restful API 分页/条件查询列表 - GET /resource
    */
   @GetMapping
   Result find(@ModelAttribute RB resource);
