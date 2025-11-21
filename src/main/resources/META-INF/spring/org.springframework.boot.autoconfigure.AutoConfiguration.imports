@@ -1,0 +1,3 @@
+cn.labzen.web.spring.LabzenWebComponentRegistrar
+cn.labzen.web.spring.LabzenWebConfigurer
+cn.labzen.web.spring.LabzenWebMvcRegistration

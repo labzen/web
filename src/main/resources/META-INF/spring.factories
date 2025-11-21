@@ -1,5 +1,1 @@
 org.springframework.context.ApplicationContextInitializer=cn.labzen.web.spring.LabzenWebContextInitializer
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-    cn.labzen.web.spring.LabzenWebMvcRegistration,\
- 	cn.labzen.web.spring.LabzenWebComponentRegistrar,\
-	cn.labzen.web.spring.LabzenWebConfigurer

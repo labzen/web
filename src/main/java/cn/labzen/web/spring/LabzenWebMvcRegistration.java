@@ -5,6 +5,7 @@ import cn.labzen.web.defination.APIVersionCarrier;
 import cn.labzen.web.meta.WebConfiguration;
 import cn.labzen.web.spring.runtime.LabzenVersionedApiRequestMappingHandlerMapping;
 import cn.labzen.web.spring.runtime.PageableArgumentResolver;
+import com.google.common.collect.Lists;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcRegistrations;
 import org.springframework.context.annotation.Bean;
@@ -25,11 +26,11 @@ public class LabzenWebMvcRegistration implements WebMvcRegistrations {
         argumentResolvers = new ArrayList<>();
       }
 
-      argumentResolvers.addFirst(new PageableArgumentResolver());
-      adapter.setArgumentResolvers(argumentResolvers);
+      List<HandlerMethodArgumentResolver> newResolversCollection = Lists.newArrayList(new PageableArgumentResolver());
+      newResolversCollection.addAll(argumentResolvers);
+      adapter.setArgumentResolvers(newResolversCollection);
     };
   }
-
 
   /**
    * 注册自定义的 {@link RequestMappingHandlerMapping} 实现API的版本控制

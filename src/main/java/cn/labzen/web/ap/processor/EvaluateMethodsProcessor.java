@@ -139,6 +139,7 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
       LinkedHashSet<ElementAnnotation> annotations = readAnnotations(parameterElement.getAnnotationMirrors());
       ElementParameter parameter = new ElementParameter(index, parameterName, parameterType, annotations);
       parameters.add(parameter);
+      index++;
     }
 
     return parameters;

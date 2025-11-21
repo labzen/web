@@ -46,7 +46,7 @@ public class LabzenWebConfigurer implements WebMvcConfigurer {
     String apiPathPrefix = configuration.apiPathPrefix();
     if (!Strings.isNullOrEmpty(apiPathPrefix)) {
       ((LabzenLogger) logger).atInfo().status(Status.IMPORTANT).scene(LOGGER_SCENE_CONTROLLER)
-        .log("系统 API 请求路径统一前缀为：" + apiPathPrefix);
+        .log("系统 API 请求路径统一前缀为：'/" + apiPathPrefix + "'");
 
       configurer.addPathPrefix(apiPathPrefix, predicate -> true);
     }

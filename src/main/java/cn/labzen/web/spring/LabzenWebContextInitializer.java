@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.Ordered;
+import org.springframework.util.ClassUtils;
 
 import javax.annotation.Nonnull;
 
@@ -29,7 +30,7 @@ public class LabzenWebContextInitializer implements ApplicationContextInitialize
     String pageConverterFQCN = Strings.valueWhenBlank(configuration.pageConverter(), NONE_PAGE_CONVERTER_FQCN);
 
     try {
-      Class<?> pageConverterClass = Class.forName(pageConverterFQCN);
+      Class<?> pageConverterClass = ClassUtils.forName(pageConverterFQCN, applicationContext.getClassLoader());
       if (PageConverter.class.isAssignableFrom(pageConverterClass)) {
         PageConverter<?> converter = ((PageConverter<?>) Springs.getOrCreate(pageConverterClass));
         PageConverterHolder.setConverter(converter);

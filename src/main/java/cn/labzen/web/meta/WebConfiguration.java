@@ -22,6 +22,12 @@ public interface WebConfiguration {
   APIVersionCarrier apiVersionCarrier();
 
   /**
+   * API 版本控制的版本前缀，默认小写 v
+   */
+  @Item(path = "api-version.prefix", required = false, defaultValue = "v")
+  String apiVersionPrefix();
+
+  /**
    * todo 再考虑考虑，这个是不是真的有必要<br/>
    * API 版本控制强制要求访问API时带有Accept Header信息，默认false，如果访问API的Header种没有Accept，
    * Spring默认会选择一个可以匹配的 produces 方法进行响应，当 api-version.carrier 为 HEADER 时有效

@@ -50,11 +50,13 @@ public final class PageableResolver {
     }
 
     int pageNumber = Optional.ofNullable(webRequest.getParameter("page_number"))
+      .or(() -> Optional.ofNullable(webRequest.getParameter("pageNumber")))
       .or(() -> Optional.ofNullable(webRequest.getParameter("pn")))
       .flatMap(PageableResolver::parseInt)
       .orElse(DEFAULT_PAGE_NUMBER);
 
     int pageSize = Optional.ofNullable(webRequest.getParameter("page_size"))
+      .or(() -> Optional.ofNullable(webRequest.getParameter("pageSize")))
       .or(() -> Optional.ofNullable(webRequest.getParameter("ps")))
       .flatMap(PageableResolver::parseInt)
       .orElse(DEFAULT_PAGE_SIZE);

@@ -52,8 +52,8 @@ public class LabzenExceptionCatchingFilter extends OncePerRequestFilter {
 
   private void output(HttpServletRequest request, HttpServletResponse response, Exception e) {
     if (e instanceof RequestException re) {
-      Loggers.getLogger(LabzenExceptionCatchingFilter.class)
-        .warn("RequestException 应该在 LabzenRestResponseBodyAdvice 的 handleLabzenRequestException() 方法中被转化，而不是被抛出到最外层");
+//      Loggers.getLogger(LabzenExceptionCatchingFilter.class)
+//        .debug("RequestException 应该在 LabzenRestResponseBodyAdvice 的 handleLabzenRequestException() 方法中被转化，而不是被抛出到最外层");
       var data = new Response(re.getCode(), re.getMessage() != null ? re.getMessage() : HttpStatus.BAD_REQUEST.getReasonPhrase(), null, null);
       sendMessage(data, request, response);
     } else if (e instanceof LabzenRuntimeException || e instanceof LabzenException) {
