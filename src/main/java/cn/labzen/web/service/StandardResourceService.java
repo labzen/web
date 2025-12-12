@@ -4,6 +4,8 @@ import cn.labzen.web.controller.StandardController;
 import cn.labzen.web.response.Results;
 import cn.labzen.web.response.bean.Result;
 
+import java.util.List;
+
 /**
  * 兼容 {@link StandardController} 接口调用的业务逻辑层方法
  * <p>
@@ -42,7 +44,7 @@ public interface StandardResourceService<RB, ID> {
   /**
    * 删除资源记录
    */
-  default Result removes(ID[] ids) {
+  default Result removes(List<ID> ids) {
     // will be implemented
     return Results.success();
   }

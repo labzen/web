@@ -4,7 +4,7 @@ import cn.labzen.meta.Labzens;
 import cn.labzen.web.defination.APIVersionCarrier;
 import cn.labzen.web.meta.WebConfiguration;
 import cn.labzen.web.spring.runtime.LabzenVersionedApiRequestMappingHandlerMapping;
-import cn.labzen.web.spring.runtime.PageableArgumentResolver;
+import cn.labzen.web.spring.runtime.PageableCompatibleArgumentResolver;
 import com.google.common.collect.Lists;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcRegistrations;
@@ -26,7 +26,7 @@ public class LabzenWebMvcRegistration implements WebMvcRegistrations {
         argumentResolvers = new ArrayList<>();
       }
 
-      List<HandlerMethodArgumentResolver> newResolversCollection = Lists.newArrayList(new PageableArgumentResolver());
+      List<HandlerMethodArgumentResolver> newResolversCollection = Lists.newArrayList(new PageableCompatibleArgumentResolver());
       newResolversCollection.addAll(argumentResolvers);
       adapter.setArgumentResolvers(newResolversCollection);
     };

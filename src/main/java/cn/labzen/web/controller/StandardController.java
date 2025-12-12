@@ -2,8 +2,12 @@ package cn.labzen.web.controller;
 
 import cn.labzen.web.annotation.*;
 import cn.labzen.web.response.bean.Result;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 基于Restful的标准Spring Controller标准定义模板。继承本接口（是继承！）的接口，会快速拥有一个标准的Controller实现。<br/>
@@ -70,25 +74,25 @@ public interface StandardController<BS, RB, ID> extends LabzenController {
   /**
    * 示例：Restful API 修改资源 - PUT /resource/{id}
    */
-  @PutMapping("{id}")
+  @PutMapping("{id:\\d{1,19}}")
   Result edit(@PathVariable ID id, @Validated @ModelAttribute RB resource);
 
   /**
    * 示例：Restful API 删除资源 - DELETE /resource/{id}
    */
-  @DeleteMapping("{id}")
+  @DeleteMapping("{id:\\d{1,19}}")
   Result remove(@PathVariable ID id);
 
   /**
-   * 示例：Restful API 批量删除资源 - DELETE /resource/batch?ids=1,2,3
+   * 示例：Restful API 批量删除资源 - DELETE /resource?ids=1,2,3
    */
-  @DeleteMapping("batch")
-  Result removes(@RequestParam ID[] ids);
+  @DeleteMapping
+  Result removes(@NotEmpty @RequestParam("ids") List<@NotNull ID> ids);
 
   /**
    * 示例：Restful API 获取单个资源详情 - GET /resource/{id}
    */
-  @GetMapping("{id}")
+  @GetMapping("{id:\\d{1,19}}")
   Result info(@PathVariable ID id);
 
   /**

@@ -24,7 +24,7 @@ import java.util.Objects;
 /**
  * 负责在查询请求时，对实现 {@link Pageable} 接口的 Resource Bean 参数的数据绑定处理
  */
-public class PageableArgumentResolver implements HandlerMethodArgumentResolver {
+public class PageableCompatibleArgumentResolver implements HandlerMethodArgumentResolver {
 
   @Override
   public boolean supportsParameter(MethodParameter parameter) {

@@ -3,9 +3,18 @@ package cn.labzen.web.meta;
 import cn.labzen.meta.configuration.annotation.Configured;
 import cn.labzen.meta.configuration.annotation.Item;
 import cn.labzen.web.defination.APIVersionCarrier;
+import cn.labzen.web.paging.Pageable;
 
 @Configured(namespace = "web")
 public interface WebConfiguration {
+
+  /**
+   * 是否开启 Debug 模式，默认 false。
+   * <p>
+   * 开启后，实现了 {@link Pageable} 接口的 Bean，在调试窗口中可以直接看到参数值，否则参数值看到的全是默认值（但不影响其实际保存的值）
+   */
+  @Item(path = "debug", required = false, defaultValue = "false")
+  boolean debug();
 
   /**
    * todo 考虑个合适的方式，在生成代码的时候，通过某个合适途径，将这个值传递给runtime环境，而不是两边配置<br/>
