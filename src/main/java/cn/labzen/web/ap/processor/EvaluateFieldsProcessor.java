@@ -21,16 +21,17 @@ public final class EvaluateFieldsProcessor implements InternalProcessor {
   @Override
   public void process(ControllerContext context) {
     // 读取所有继承的父接口定义的泛型参数类型
-    List<? extends TypeMirror> directSupertypes = context.getApc().getTypes().directSupertypes(context.getSource().asType());
+    List<? extends TypeMirror> directSupertypes = context.getApc().types().directSupertypes(context.getSource().asType());
 
     directSupertypes.forEach(inter -> {
       List<TypeName> typeArguments = detectTypeArguments(inter);
-      if (typeArguments == null) return;
+      if (typeArguments == null || typeArguments.isEmpty()) return;
 
       TypeName interfaceClassName = Utils.typeOf(inter);
 
       // 遍历每一个评价器
       List<Suggestion> suggestions = context.getGenericsEvaluators().stream()
+        .peek(evaluator -> evaluator.init(context.getApc()))
         .filter(evaluator -> evaluator.support(interfaceClassName))
         .flatMap(evaluator -> evaluator.evaluate(typeArguments).stream())
         .collect(Collectors.toList());

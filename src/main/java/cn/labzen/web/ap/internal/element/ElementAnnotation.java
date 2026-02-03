@@ -5,14 +5,13 @@ import com.google.common.collect.Maps;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.TypeName;
 import lombok.Getter;
-import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.Map;
 
+import static cn.labzen.web.ap.definition.TypeNames.ANNOTATION_SPRING_REQUEST_MAPPING;
+
 @Getter
 public final class ElementAnnotation implements Element {
-
-  private static final String MAPPING_TYPE_NAME = Utils.getSimpleName(ClassName.get(RequestMapping.class));
 
   private final TypeName type;
   private final Map<String, Object> members;
@@ -29,7 +28,7 @@ public final class ElementAnnotation implements Element {
   @Override
   public String keyword() {
     if (Utils.isRequestMappingAnnotation((ClassName) type)) {
-      return MAPPING_TYPE_NAME;
+      return ANNOTATION_SPRING_REQUEST_MAPPING;
     }
 
     return Utils.getSimpleName(type);

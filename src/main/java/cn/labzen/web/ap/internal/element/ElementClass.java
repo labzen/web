@@ -22,18 +22,6 @@ public final class ElementClass implements Element {
     this.implementTypes = implementTypes;
   }
 
-  public void addAnnotation(ElementAnnotation annotation) {
-    annotations.add(annotation);
-  }
-
-  public void addField(ElementField field) {
-    fields.add(field);
-  }
-
-  public void addMethod(ElementMethod method) {
-    methods.add(method);
-  }
-
   @Override
   public String keyword() {
     return pkg + "." + name;

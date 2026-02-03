@@ -1,6 +1,6 @@
 package cn.labzen.web.ap.processor;
 
-import cn.labzen.web.ap.evaluate.annotation.MethodErasableAnnotationEvaluator;
+import cn.labzen.web.ap.evaluate.annotation.MethodAnnotationErasableEvaluator;
 import cn.labzen.web.ap.evaluate.generics.InterfaceGenericsEvaluator;
 import cn.labzen.web.ap.internal.context.ControllerContext;
 
@@ -19,11 +19,11 @@ public final class PrepareProcessor implements InternalProcessor {
   public void process(ControllerContext context) {
     TypeElement source = context.getSource();
     if (source.getKind() != ElementKind.INTERFACE) {
-      context.getApc().getMessaging().warning("注解了 @LabzenController 的源文件必须是接口(interface)类");
+      context.getApc().messaging().warning("注解了 @LabzenController 的源文件必须是接口(interface)类");
     }
 
     if (source.getNestingKind() != NestingKind.TOP_LEVEL) {
-      context.getApc().getMessaging().warning("注解了 @LabzenController 的接口必须是顶级类");
+      context.getApc().messaging().warning("注解了 @LabzenController 的接口必须是顶级类");
     }
 
     context.setGenericsEvaluators(getClassGenerators());
@@ -34,8 +34,8 @@ public final class PrepareProcessor implements InternalProcessor {
     return ServiceLoader.load(InterfaceGenericsEvaluator.class, this.getClass().getClassLoader()).stream().map(ServiceLoader.Provider::get).toList();
   }
 
-  private List<MethodErasableAnnotationEvaluator> getAnnotationEvaluators() {
-    return ServiceLoader.load(MethodErasableAnnotationEvaluator.class, this.getClass().getClassLoader()).stream().map(ServiceLoader.Provider::get).toList();
+  private List<MethodAnnotationErasableEvaluator> getAnnotationEvaluators() {
+    return ServiceLoader.load(MethodAnnotationErasableEvaluator.class, this.getClass().getClassLoader()).stream().map(ServiceLoader.Provider::get).toList();
   }
 
   @Override

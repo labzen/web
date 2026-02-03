@@ -33,11 +33,14 @@ public final class PageableDelegator {
   // Pageable接口定义的几个方法
   private static final ElementMatcher.Junction<MethodDescription> PAGEABLE_METHOD_NAMES = ElementMatchers.namedOneOf("unpaged", "pageNumber", "pageSize", "orders", "convertTo");
 
-  private static boolean friendlyForDebuggerView;
+  private static final boolean FRIENDLY_FOR_DEBUGGER_VIEW;
+
+  static {
+    WebConfiguration configuration = Labzens.configurationWith(WebConfiguration.class);
+    FRIENDLY_FOR_DEBUGGER_VIEW = configuration.debug();
+  }
 
   private PageableDelegator() {
-    WebConfiguration configuration = Labzens.configurationWith(WebConfiguration.class);
-    friendlyForDebuggerView = configuration.debug();
   }
 
   public static Object delegate(MethodParameter parameter, Object attribute, Paging resolvedPaging) {
@@ -46,7 +49,7 @@ public final class PageableDelegator {
     PageableValuesInterceptor pageableInterceptor = new PageableValuesInterceptor(resolvedPaging);
     PageableBeanAttributesInterceptor beanAttributesInterceptor = new PageableBeanAttributesInterceptor(attribute);
 
-    if (friendlyForDebuggerView) {
+    if (FRIENDLY_FOR_DEBUGGER_VIEW) {
       return delegateForDebugger(parameterType, pageableInterceptor, beanAttributesInterceptor);
     } else {
       return delegateDirectly(parameterType, pageableInterceptor, beanAttributesInterceptor);

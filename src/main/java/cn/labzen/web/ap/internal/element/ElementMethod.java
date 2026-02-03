@@ -25,14 +25,6 @@ public final class ElementMethod implements Element {
     this.returnType = returnType;
   }
 
-//  public void addParameter(ElementParameter parameter) {
-//    parameters.add(parameter);
-//  }
-//
-//  public void addAnnotation(ElementAnnotation annotation) {
-//    annotations.add(annotation);
-//  }
-
   @Override
   public String keyword() {
     String parameters = this.parameters.stream().sorted(Comparator.comparingInt(ElementParameter::getIndex)).map(ElementParameter::keyword).collect(Collectors.joining(", "));

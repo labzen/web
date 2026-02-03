@@ -13,6 +13,6 @@ public class NonePageConverter implements PageConverter<Paging> {
 
   @Override
   public Pagination<?> from(Paging paging) {
-    return new Pagination<Object>(paging.pageNumber(), paging.pageSize(), 0, 0, null);
+    return new Pagination<>(!paging.unpaged(), paging.pageNumber(), paging.pageSize(), 0, 0, null);
   }
 }

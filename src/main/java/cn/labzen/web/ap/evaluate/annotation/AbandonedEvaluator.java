@@ -1,8 +1,8 @@
 package cn.labzen.web.ap.evaluate.annotation;
 
-import cn.labzen.web.annotation.Abandoned;
 import cn.labzen.web.ap.config.Config;
 import cn.labzen.web.ap.internal.Utils;
+import cn.labzen.web.ap.internal.context.AnnotationProcessorContext;
 import cn.labzen.web.ap.internal.element.ElementMethod;
 import cn.labzen.web.ap.suggestion.DiscardSuggestion;
 import cn.labzen.web.ap.suggestion.RemoveSuggestion;
@@ -12,13 +12,20 @@ import com.squareup.javapoet.TypeName;
 import java.util.List;
 import java.util.Map;
 
-public final class AbandonedEvaluator implements MethodErasableAnnotationEvaluator {
+import static cn.labzen.web.ap.definition.TypeNames.AP_ANNOTATION_ABANDONED;
 
-  private static final TypeName SUPPORTED = TypeName.get(Abandoned.class);
+public final class AbandonedEvaluator implements MethodAnnotationErasableEvaluator {
+
+  private TypeName supportedAnnotationType;
+
+  @Override
+  public void init(AnnotationProcessorContext context) {
+    supportedAnnotationType = TypeName.get(context.elements().getTypeElement(AP_ANNOTATION_ABANDONED).asType());
+  }
 
   @Override
   public boolean support(TypeName type) {
-    return SUPPORTED.equals(type);
+    return supportedAnnotationType.equals(type);
   }
 
   @Override

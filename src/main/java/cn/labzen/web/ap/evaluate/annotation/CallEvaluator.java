@@ -1,9 +1,9 @@
 package cn.labzen.web.ap.evaluate.annotation;
 
 import cn.labzen.tool.util.Strings;
-import cn.labzen.web.annotation.Call;
 import cn.labzen.web.ap.config.Config;
 import cn.labzen.web.ap.internal.Utils;
+import cn.labzen.web.ap.internal.context.AnnotationProcessorContext;
 import cn.labzen.web.ap.internal.element.*;
 import cn.labzen.web.ap.suggestion.AppendSuggestion;
 import cn.labzen.web.ap.suggestion.RemoveSuggestion;
@@ -18,19 +18,25 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public final class CallEvaluator implements MethodErasableAnnotationEvaluator {
+import static cn.labzen.web.ap.definition.TypeNames.AP_ANNOTATION_CALL;
 
-  private static final TypeName SUPPORTED = TypeName.get(Call.class);
-  private static final String SUPPORTED_NAME = Utils.getSimpleName(SUPPORTED);
+public final class CallEvaluator implements MethodAnnotationErasableEvaluator {
+
+  private TypeName supportedAnnotationType;
+
+  @Override
+  public void init(AnnotationProcessorContext context) {
+    supportedAnnotationType = TypeName.get(context.elements().getTypeElement(AP_ANNOTATION_CALL).asType());
+  }
 
   @Override
   public boolean support(TypeName type) {
-    return SUPPORTED.equals(type);
+    return supportedAnnotationType.equals(type);
   }
 
   @Override
   public List<? extends Suggestion> evaluate(Config config, TypeName type, Map<String, Object> members) {
-    List<Suggestion> suggestions = Lists.newArrayList(new RemoveSuggestion(SUPPORTED_NAME, ElementMethod.class));
+    List<Suggestion> suggestions = Lists.newArrayList(new RemoveSuggestion(Utils.getSimpleName(supportedAnnotationType), ElementMethod.class));
 
     Object target = members.get("target");
 

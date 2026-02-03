@@ -9,6 +9,7 @@ import cn.labzen.web.ap.service.MenuRealm;
 import cn.labzen.web.ap.service.RoleRealm;
 import cn.labzen.web.controller.StandardController;
 import cn.labzen.web.response.bean.Result;
+import java.util.List;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;

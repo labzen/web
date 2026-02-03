@@ -1,23 +1,23 @@
 package cn.labzen.web.ap.evaluate.generics;
 
+import cn.labzen.web.ap.internal.context.AnnotationProcessorContext;
 import cn.labzen.web.ap.suggestion.Suggestion;
-import cn.labzen.web.controller.StandardController;
-import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 
 import java.util.List;
 
+import static cn.labzen.web.ap.definition.TypeNames.INTERFACE_STANDARD_CONTROLLER;
+
+/**
+ * 对应 cn.labzen.web.controller.StandardController
+ */
 public class StandardControllerInterfaceGenericsEvaluator extends PrimaryServiceGenericsAssign {
 
-  private static final TypeName TYPE = TypeName.get(StandardController.class);
-
   @Override
-  public boolean support(TypeName type) {
-    if (type instanceof ParameterizedTypeName parameterizedTypeName) {
-      return TYPE.equals(parameterizedTypeName.rawType);
-    } else {
-      return TYPE.equals(type);
-    }
+  public void init(AnnotationProcessorContext context) {
+    super.init(context);
+
+    supportedInterfaceType = TypeName.get(context.elements().getTypeElement(INTERFACE_STANDARD_CONTROLLER).asType());
   }
 
   @Override

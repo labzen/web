@@ -43,11 +43,6 @@ public class LabzenWebProcessor extends AbstractProcessor {
     this.annotationProcessorContext = new AnnotationProcessorContext(processingEnv.getElementUtils(), processingEnv.getTypeUtils(), processingEnv.getMessager(), processingEnv.getFiler(), config);
   }
 
-//  @Override
-//  public SourceVersion getSupportedSourceVersion() {
-//    return SourceVersion.latestSupported();
-//  }
-
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
     if (!roundEnv.processingOver()) {
@@ -65,8 +60,8 @@ public class LabzenWebProcessor extends AbstractProcessor {
 
   private void outputFailedControllers() {
     deferredControllers.forEach(deferred -> {
-      TypeElement deferredElement = annotationProcessorContext.getElements().getTypeElement(deferred.element().getQualifiedName());
-      annotationProcessorContext.getMessaging().warning("LabzenWebProcessor: 无法实现 Controller " + deferredElement.getQualifiedName());
+      TypeElement deferredElement = annotationProcessorContext.elements().getTypeElement(deferred.element().getQualifiedName());
+      annotationProcessorContext.messaging().warning("LabzenWebProcessor: 无法实现 Controller " + deferredElement.getQualifiedName());
     });
   }
 

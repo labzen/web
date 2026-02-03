@@ -1,5 +1,6 @@
 package cn.labzen.web.ap.evaluate.generics;
 
+import cn.labzen.web.ap.internal.context.AnnotationProcessorContext;
 import cn.labzen.web.ap.suggestion.Suggestion;
 import com.squareup.javapoet.TypeName;
 
@@ -9,6 +10,11 @@ import java.util.List;
  * Controller 父接口泛型评价器
  */
 public sealed interface InterfaceGenericsEvaluator permits PrimaryServiceGenericsAssign {
+
+  /**
+   * 初始化
+   */
+  void init(AnnotationProcessorContext context);
 
   /**
    * 是否支持父接口

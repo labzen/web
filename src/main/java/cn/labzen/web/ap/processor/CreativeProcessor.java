@@ -7,7 +7,7 @@ public final class CreativeProcessor implements InternalProcessor {
 
   @Override
   public void process(ControllerContext context) {
-    new ClassCreator(context.getRoot(), context.getApc().getFiler()).create();
+    new ClassCreator(context.getRoot(), context.getApc().filer()).create();
   }
 
   @Override

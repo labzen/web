@@ -1,6 +1,6 @@
 package cn.labzen.web.ap.internal.context;
 
-import cn.labzen.web.ap.evaluate.annotation.MethodErasableAnnotationEvaluator;
+import cn.labzen.web.ap.evaluate.annotation.MethodAnnotationErasableEvaluator;
 import cn.labzen.web.ap.evaluate.generics.InterfaceGenericsEvaluator;
 import cn.labzen.web.ap.internal.element.ElementClass;
 import lombok.Getter;
@@ -21,14 +21,14 @@ public class ControllerContext {
   private final TypeMirror ancestorControllerType;
 
   private List<InterfaceGenericsEvaluator> genericsEvaluators;
-  private List<MethodErasableAnnotationEvaluator> annotationEvaluators;
+  private List<MethodAnnotationErasableEvaluator> annotationEvaluators;
   private ElementClass root;
 
   public ControllerContext(TypeElement source, AnnotationProcessorContext apc) {
     this.source = source;
     this.apc = apc;
 
-    ancestorControllerType = apc.getElements().getTypeElement(ANCESTOR_NAME).asType();
+    ancestorControllerType = apc.elements().getTypeElement(ANCESTOR_NAME).asType();
   }
 
 }

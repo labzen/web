@@ -8,7 +8,6 @@ import com.google.common.primitives.Longs;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import java.util.List;
 import java.util.Optional;
 
 import static cn.labzen.web.defination.Constants.REST_REQUEST_TIME;
@@ -38,9 +37,8 @@ public class StandardResultResponseFormatter implements ResponseFormatter {
     Object value = data.value();
 
     if (value instanceof Pagination<?> pagination) {
-      List<?> records = pagination.records();
-      Meta meta = new Meta(requestTime, executionTime, pagination.copyWithoutRecords(), null, null);
-      return new Response(code, message, meta, records);
+      Meta meta = new Meta(requestTime, executionTime, pagination.pageable() ? pagination.copyWithoutRecords() : null, null, null);
+      return new Response(code, message, meta, pagination.records());
     } else {
       Meta meta = new Meta(requestTime, executionTime, null, null, null);
       return new Response(code, message, meta, value);

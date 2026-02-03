@@ -9,8 +9,8 @@ public final class ReadSourceProcessor implements InternalProcessor {
 
   @Override
   public void process(ControllerContext context) {
-    String className = context.getSource().getSimpleName().toString() + context.getApc().getConfig().classNameSuffix();
-    String pkg = context.getApc().getElements().getPackageOf(context.getSource()).getQualifiedName().toString();
+    String className = context.getSource().getSimpleName().toString() + context.getApc().config().classNameSuffix();
+    String pkg = context.getApc().elements().getPackageOf(context.getSource()).getQualifiedName().toString();
 
     TypeMirror implementTypes = context.getSource().asType();
 

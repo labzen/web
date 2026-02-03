@@ -2,8 +2,7 @@ package cn.labzen.web.ap.processor;
 
 import cn.labzen.tool.util.Collections;
 import cn.labzen.tool.util.Strings;
-import cn.labzen.web.ap.config.Config;
-import cn.labzen.web.ap.evaluate.annotation.MethodErasableAnnotationEvaluator;
+import cn.labzen.web.ap.evaluate.annotation.MethodAnnotationErasableEvaluator;
 import cn.labzen.web.ap.internal.Utils;
 import cn.labzen.web.ap.internal.context.ControllerContext;
 import cn.labzen.web.ap.internal.element.*;
@@ -21,7 +20,6 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
-import javax.lang.model.util.Types;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -36,38 +34,36 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
 
   private final Map<String, ElementMethod> parsedMethods = new ConcurrentHashMap<>();
 
-  private Types types;
+  private ControllerContext context;
   private DeclaredType sourceType;
   private ElementClass elementClass;
-  private Config config;
-  private List<MethodErasableAnnotationEvaluator> evaluators;
+  private List<MethodAnnotationErasableEvaluator> evaluators;
 
   @Override
   public void process(ControllerContext context) {
-    this.types = context.getApc().getTypes();
+    this.context = context;
     this.sourceType = (DeclaredType) context.getSource().asType();
     this.elementClass = context.getRoot();
-    this.config = context.getApc().getConfig();
     this.evaluators = context.getAnnotationEvaluators();
 
-    collectMethods(context, context.getSource());
+    collectMethods(context.getSource());
 
     parsedMethods.forEach((key, method) -> {
       elementClass.getMethods().add(method);
     });
   }
 
-  private void collectMethods(ControllerContext context, TypeElement source) {
-    List<? extends TypeMirror> directSupertypes = types.directSupertypes(source.asType());
+  private void collectMethods(TypeElement source) {
+    List<? extends TypeMirror> directSupertypes = context.getApc().types().directSupertypes(source.asType());
     directSupertypes.forEach(superType -> {
       // 如果controller的父类型不是LabzenController及其子接口，则不处理
-      boolean supportInterface = types.isAssignable(superType, context.getAncestorControllerType());
+      boolean supportInterface = context.getApc().types().isAssignable(superType, context.getAncestorControllerType());
       if (!supportInterface) {
         return;
       }
 
       TypeElement superElement = (TypeElement) ((DeclaredType) superType).asElement();
-      collectMethods(context, superElement);
+      collectMethods(superElement);
     });
 
     ElementFilter.methodsIn(source.getEnclosedElements()).forEach(this::parseMethod);
@@ -77,7 +73,7 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
     String methodName = method.getSimpleName().toString();
     TypeName returnType = Utils.typeOf(method.getReturnType());
 
-    ExecutableType resolvedMethodType = (ExecutableType) types.asMemberOf(sourceType, method);
+    ExecutableType resolvedMethodType = (ExecutableType) context.getApc().types().asMemberOf(sourceType, method);
     // 真实的方法参数类型
     List<? extends TypeMirror> actualParameterTypes = resolvedMethodType.getParameterTypes();
     List<String> parameterTypeNames = actualParameterTypes.stream().map(pt -> {
@@ -164,8 +160,9 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
       .flatMap(annotation ->
         evaluators.stream().flatMap(evaluator -> {
           TypeName type = annotation.getType();
+          evaluator.init(context.getApc());
           if (evaluator.support(type)) {
-            return evaluator.evaluate(config, type, annotation.getMembers()).stream();
+            return evaluator.evaluate(context.getApc().config(), type, annotation.getMembers()).stream();
           } else {
             return Stream.of();
           }

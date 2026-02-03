@@ -33,12 +33,12 @@ public record HttpStatusExt(int code, String description) {
   /**
    * 访问API的凭证并非是服务器颁发，或凭证已过期。（该状态是401的细化）
    */
-  public static final HttpStatusExt USELESS_PROOF = new HttpStatusExt(480, "使用非法的API访问凭证");
+  public static final HttpStatusExt USELESS_PROOF = new HttpStatusExt(480, "访问凭证无法被正确识别");
 
   /**
    * 访问API的凭证，对于当前请求的资源，不具备权限。（该状态是401的细化）
    */
-  public static final HttpStatusExt NO_PERMISSION = new HttpStatusExt(481, "使用的API访问凭证无权限");
+  public static final HttpStatusExt NO_PERMISSION = new HttpStatusExt(481, "访问凭证无权限访问当前资源");
 
   /**
    * 提交的参数（query string 或 form data）校验失败
@@ -49,6 +49,11 @@ public record HttpStatusExt(int code, String description) {
    * 在某些需要使用签名保证请求的真实性的情况，验证签名错误
    */
   public static final HttpStatusExt INVALID_SIGNATURE = new HttpStatusExt(483, "无效签名");
+
+  /**
+   * 当前没有足够的配额来完成请求的资源
+   */
+  public static final HttpStatusExt NO_MORE_QUOTA = new HttpStatusExt(484, "没有足够的配额访问资源");
 
   /* ==========  5** 服务器错误，必须带有错误信息  ========== */
   /**

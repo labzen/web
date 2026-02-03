@@ -98,7 +98,7 @@ public final class Results {
       totalOfPages = totalOfRecords / pageSize + ((totalOfRecords % pageSize == 0) ? 0 : 1);
     }
 
-    Pagination<?> pagination = new Pagination<>(pageNumber, pageSize, totalOfRecords == null ? 0 : totalOfRecords, totalOfPages, records);
+    Pagination<?> pagination = new Pagination<>(true, pageNumber, pageSize, totalOfRecords == null ? 0 : totalOfRecords, totalOfPages, records);
     return new Result(200, pagination, null);
   }
 }
