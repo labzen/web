@@ -1,0 +1,5 @@
+cn.labzen.web.apt.evaluate.annotation.AbandonedEvaluator
+cn.labzen.web.apt.evaluate.annotation.CallEvaluator
+cn.labzen.web.apt.evaluate.annotation.MappingVersionEvaluator
+cn.labzen.web.apt.evaluate.annotation.RequestMappingEvaluator
+cn.labzen.web.apt.evaluate.annotation.LabzenControllerEvaluator

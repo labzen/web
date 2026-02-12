@@ -11,11 +11,17 @@
   </parent>
 
   <artifactId>web</artifactId>
-  <packaging>jar</packaging>
+  <packaging>pom</packaging>
   <version>1.2.0-SNAPSHOT</version>
   <name>Labzen.Web</name>
   <description>Labzen Web - simple and clear web layer structure, avoid the business logic code mixed in</description>
   <url>https://github.com/labzen/logger</url>
+
+  <modules>
+    <module>web-api</module>
+    <module>web-core</module>
+    <module>web-processor</module>
+  </modules>
 
   <licenses>
     <license>
@@ -72,63 +78,8 @@
 
   <dependencies>
     <dependency>
-      <groupId>cn.labzen</groupId>
-      <artifactId>logger</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>cn.labzen</groupId>
-      <artifactId>tool</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>cn.labzen</groupId>
-      <artifactId>spring</artifactId>
-    </dependency>
-
-    <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.google.auto.service</groupId>
-      <artifactId>auto-service</artifactId>
-      <version>1.1.1</version>
-    </dependency>
-    <dependency>
-      <groupId>com.squareup</groupId>
-      <artifactId>javapoet</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>net.bytebuddy</groupId>
-      <artifactId>byte-buddy</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.objenesis</groupId>
-      <artifactId>objenesis</artifactId>
-      <version>3.4</version>
-    </dependency>
-
-    <!--suppress VulnerableLibrariesLocal -->
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-web</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>jakarta.validation</groupId>
-      <artifactId>jakarta.validation-api</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>com.google.testing.compile</groupId>
-      <artifactId>compile-testing</artifactId>
-      <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>junit</groupId>
-          <artifactId>junit</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
   </dependencies>
 

@@ -1,0 +1,2 @@
+cn.labzen.web.apt.evaluate.generics.SimplestControllerInterfaceGenericsEvaluator
+cn.labzen.web.apt.evaluate.generics.StandardControllerInterfaceGenericsEvaluator
