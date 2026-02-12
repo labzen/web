@@ -1,7 +1,6 @@
 package cn.labzen.web.paging;
 
 import cn.labzen.web.api.paging.PageConverter;
-import cn.labzen.web.api.paging.Pageable;
 import cn.labzen.web.api.paging.Pagination;
 import cn.labzen.web.paging.convert.PageConverterHolder;
 
@@ -31,7 +30,7 @@ public record DefaultPagination<R>(
   }
 
   @SuppressWarnings("unchecked")
-  public static <T extends Pageable, B> DefaultPagination<B> from(T page) {
+  public static <T, B> DefaultPagination<B> from(T page) {
     return (DefaultPagination<B>) ((PageConverter<T>) PageConverterHolder.getConverter()).from(page);
   }
 

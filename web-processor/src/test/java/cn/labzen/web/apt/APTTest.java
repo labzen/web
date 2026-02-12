@@ -32,15 +32,8 @@ public class APTTest {
 
   @Test
   public void test() throws IOException {
-    // 读取 test-source/TestDto.java 内容
-    URL resource = this.getClass().getClassLoader().getResource("MenuController.txt");
-    Assertions.assertNotNull(resource);
-    String resourcePath = resource.getPath();
-    File file = new File(resourcePath);
-    String sourceCode = Files.readString(file.toPath());
-
     // 创建 JavaFileObject
-    JavaFileObject fileObject = JavaFileObjects.forSourceString("cn.labzen.web.example.MenuController", sourceCode);
+    JavaFileObject fileObject = readTextFile();
 
     // 执行编译 + 注解处理器
     Compilation compilation = javac()
@@ -55,5 +48,26 @@ public class APTTest {
 
     // 断言编译成功
     Assertions.assertEquals(Compilation.Status.SUCCESS, compilation.status());
+  }
+
+  private JavaFileObject readTextFile() throws IOException {
+    // 读取 test-source/TestDto.java 内容
+    URL resource = this.getClass().getClassLoader().getResource("MenuController.txt");
+    Assertions.assertNotNull(resource);
+    String resourcePath = resource.getPath();
+    File file = new File(resourcePath);
+    String sourceCode = Files.readString(file.toPath());
+
+    // 创建 JavaFileObject
+    return JavaFileObjects.forSourceString("cn.labzen.web.example.MenuController", sourceCode);
+  }
+
+  private JavaFileObject readJavaFile() throws IOException {
+    // 读取 test-source/TestDto.java 内容
+    File file = new File("src/test/java/cn/labzen/web/ap/MenuController.java");
+    String sourceCode = Files.readString(file.toPath());
+
+    // 创建 JavaFileObject
+    return JavaFileObjects.forSourceString("cn.labzen.web.example.MenuController", sourceCode);
   }
 }

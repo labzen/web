@@ -15,6 +15,7 @@ public final class TypeNames {
   public static final String APT_ANNOTATION_THRESHOLD = "cn.labzen.web.api.annotation.Threshold";
 
   public static final String ANNOTATION_API_VERSION = "cn.labzen.web.api.annotation.runtime.APIVersion";
+  public static final String INTERFACE_BASE_CONTROLLER = "cn.labzen.web.api.controller.LabzenController";
   public static final String INTERFACE_SIMPLEST_CONTROLLER = "cn.labzen.web.api.controller.SimplestController";
   public static final String INTERFACE_STANDARD_CONTROLLER = "cn.labzen.web.api.controller.StandardController";
 

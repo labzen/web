@@ -10,7 +10,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import java.util.List;
 
-import static cn.labzen.web.apt.definition.TypeNames.APT_ANNOTATION_LABZEN_CONTROLLER;
+import static cn.labzen.web.apt.definition.TypeNames.INTERFACE_BASE_CONTROLLER;
 
 @Getter
 @Setter
@@ -28,7 +28,7 @@ public class ControllerContext {
     this.source = source;
     this.apc = apc;
 
-    ancestorControllerType = apc.elements().getTypeElement(APT_ANNOTATION_LABZEN_CONTROLLER).asType();
+    ancestorControllerType = apc.elements().getTypeElement(INTERFACE_BASE_CONTROLLER).asType();
   }
 
 }

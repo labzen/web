@@ -1,4 +1,4 @@
 - [ ] 自动生成API文档
 - [ ] 一部分关于controller导出方法生成的代码，在mac本上
 - [ ] 关于import和export两个方法，是否需要自动生成？还是通过另一种形式来生成
-- [ ] 将 APT 的部分，单独出来一个 processor 的jar
+- [x] 将 APT 的部分，单独出来一个 processor 的jar
