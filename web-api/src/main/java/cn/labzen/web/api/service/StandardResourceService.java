@@ -1,8 +1,8 @@
 package cn.labzen.web.api.service;
 
 import cn.labzen.web.api.controller.StandardController;
-import cn.labzen.web.api.response.Results;
 import cn.labzen.web.api.response.Result;
+import cn.labzen.web.api.response.Results;
 
 import java.util.List;
 

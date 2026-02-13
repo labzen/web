@@ -62,7 +62,7 @@ import static cn.labzen.web.api.definition.Constants.DEFAULT_PAGE_NUMBER;
  */
 public interface Pageable extends Serializable {
 
-   int DEFAULT_PAGE_SIZE = 20;
+  int DEFAULT_PAGE_SIZE = 20;
 
   /**
    * 忽略分页规则（即并未传递任何的分页条件）

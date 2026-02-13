@@ -37,6 +37,7 @@ import static cn.labzen.web.api.definition.Constants.EXCEPTION_WAS_LOGGED_DURING
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class LabzenHandlerExceptionResolver implements HandlerExceptionResolver {
 
+  private static final Class<Response> RESPONSE_TYPE = Response.class;
   @Resource
   private List<HttpMessageConverter<Object>> converters;
 
@@ -195,6 +196,4 @@ public class LabzenHandlerExceptionResolver implements HandlerExceptionResolver 
       }
     }
   }
-
-  private static final Class<Response> RESPONSE_TYPE = Response.class;
 }

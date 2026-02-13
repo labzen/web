@@ -1,8 +1,8 @@
 package cn.labzen.web.apt.config;
 
 import cn.labzen.web.api.definition.APIVersionCarrier;
+import cn.labzen.web.apt.LabzenWebProcessor;
 import com.google.common.primitives.Ints;
-import lombok.extern.slf4j.Slf4j;
 
 import java.util.Optional;
 import java.util.Properties;
@@ -10,7 +10,6 @@ import java.util.Properties;
 import static cn.labzen.web.apt.config.ConfigKeys.*;
 import static cn.labzen.web.apt.config.ConfigValues.*;
 
-@Slf4j
 public class Config {
 
   private final Properties properties;
@@ -29,7 +28,7 @@ public class Config {
     try {
       return APIVersionCarrier.valueOf(carrier);
     } catch (IllegalArgumentException e) {
-      logger.warn("未配置有效的 processor.api-version.carrier ，将使用 DISABLE，生成的 Controller 实现类将禁用API版本控制能力");
+      LabzenWebProcessor.getContext().messaging().warning("未配置有效的 processor.api-version.carrier ，将使用 DISABLE，生成的 Controller 实现类将禁用API版本控制能力");
       return APIVersionCarrier.DISABLE;
     }
   }
@@ -42,7 +41,7 @@ public class Config {
   public int apiVersionBased() {
     var based = properties.getOrDefault(API_VERSION_BASED.getValue(), API_VERSION_BASED_VALUE.getValue()).toString();
     return Optional.ofNullable(Ints.tryParse(based)).orElseGet(() -> {
-      logger.warn("未配置有效的 processor.api-version.based ，默认使用 1");
+      LabzenWebProcessor.getContext().messaging().warning("未配置有效的 processor.api-version.based ，默认使用 1");
       return 1;
     });
   }

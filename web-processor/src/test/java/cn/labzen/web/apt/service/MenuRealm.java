@@ -1,7 +1,7 @@
 package cn.labzen.web.apt.service;
 
-import cn.labzen.web.api.response.Results;
 import cn.labzen.web.api.response.Result;
+import cn.labzen.web.api.response.Results;
 import cn.labzen.web.api.service.StandardResourceService;
 import com.google.common.collect.Lists;
 import org.springframework.http.HttpStatus;

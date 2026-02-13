@@ -1,5 +1,6 @@
 package cn.labzen.web.apt.internal.context;
 
+import cn.labzen.web.apt.LabzenWebProcessor;
 import cn.labzen.web.apt.evaluate.annotation.MethodAnnotationErasableEvaluator;
 import cn.labzen.web.apt.evaluate.generics.InterfaceGenericsEvaluator;
 import cn.labzen.web.apt.internal.element.ElementClass;
@@ -17,18 +18,19 @@ import static cn.labzen.web.apt.definition.TypeNames.INTERFACE_BASE_CONTROLLER;
 public class ControllerContext {
 
   private final TypeElement source;
-  private final AnnotationProcessorContext apc;
   private final TypeMirror ancestorControllerType;
 
   private List<InterfaceGenericsEvaluator> genericsEvaluators;
   private List<MethodAnnotationErasableEvaluator> annotationEvaluators;
   private ElementClass root;
 
-  public ControllerContext(TypeElement source, AnnotationProcessorContext apc) {
+  public ControllerContext(TypeElement source) {
     this.source = source;
-    this.apc = apc;
 
-    ancestorControllerType = apc.elements().getTypeElement(INTERFACE_BASE_CONTROLLER).asType();
+    ancestorControllerType = LabzenWebProcessor.getContext().elements().getTypeElement(INTERFACE_BASE_CONTROLLER).asType();
   }
-
+  
+  public AnnotationProcessorContext getApc() {
+    return LabzenWebProcessor.getContext();
+  }
 }

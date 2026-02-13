@@ -29,12 +29,21 @@ import static cn.labzen.web.apt.definition.TypeNames.APT_ANNOTATION_LABZEN_CONTR
 @AutoService(Processor.class) // 真邪了门儿了，最朴实的方式javax.annotation.processing.Processor文件，编译会报错，用这个注解自动生成SPI文件就没事儿，MLGB！
 public class LabzenWebProcessor extends AbstractProcessor {
 
-  private static final Comparator<InternalProcessor> PROCESSOR_COMPARATOR = Comparator.comparing(InternalProcessor::priority);
+  private static final Comparator<InternalProcessor> PROCESSOR_COMPARATOR = Comparator
+    .comparing(InternalProcessor::priority);
+
+  // 全局静态可访问的 AnnotationProcessorContext，使用 ThreadLocal 确保线程安全
+  private static final ThreadLocal<AnnotationProcessorContext> CONTEXT_HOLDER = new ThreadLocal<>();
+
+  /**
+   * 获取当前线程的 AnnotationProcessorContext
+   */
+  public static AnnotationProcessorContext getContext() {
+    return CONTEXT_HOLDER.get();
+  }
 
   private final Set<TypeElement> processedControllers = Sets.newConcurrentHashSet();
   private final Set<DeferredController> deferredControllers = Sets.newConcurrentHashSet();
-
-  private AnnotationProcessorContext annotationProcessorContext;
 
   @Override
   public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -42,12 +51,18 @@ public class LabzenWebProcessor extends AbstractProcessor {
 
     Config config = ConfigLoader.load(processingEnv.getFiler());
 
-    this.annotationProcessorContext = new AnnotationProcessorContext(processingEnv.getElementUtils(), processingEnv.getTypeUtils(), processingEnv.getMessager(), processingEnv.getFiler(), config);
+    AnnotationProcessorContext context = new AnnotationProcessorContext(processingEnv.getElementUtils(),
+      processingEnv.getTypeUtils(), processingEnv.getMessager(), processingEnv.getFiler(), config);
+
+    // 设置全局静态访问的上下文
+    CONTEXT_HOLDER.set(context);
   }
 
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
     if (!roundEnv.processingOver()) {
+      // getContext().messaging().info("Labzen web processor is running.");
+
       List<ControllerContext> deferredControllerContexts = getAndResetDeferredControllers();
       deferredControllerContexts.forEach(this::processEachController);
 
@@ -62,23 +77,25 @@ public class LabzenWebProcessor extends AbstractProcessor {
 
   private void outputFailedControllers() {
     deferredControllers.forEach(deferred -> {
-      TypeElement deferredElement = annotationProcessorContext.elements().getTypeElement(deferred.element().getQualifiedName());
-      annotationProcessorContext.messaging().warning("LabzenWebProcessor: 无法实现 Controller " + deferredElement.getQualifiedName());
+      TypeElement deferredElement = getContext().elements()
+        .getTypeElement(deferred.element().getQualifiedName());
+      getContext().messaging()
+        .warning("LabzenWebProcessor: 无法实现 Controller " + deferredElement.getQualifiedName());
     });
   }
 
   private List<ControllerContext> getAndResetDeferredControllers() {
-    return deferredControllers.stream().map(controller -> new ControllerContext(controller.element(), annotationProcessorContext)).toList();
+    return deferredControllers.stream()
+      .map(controller -> new ControllerContext(controller.element())).toList();
   }
 
   private List<ControllerContext> getControllers(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
     return annotations.stream()
       .filter(annotation -> annotation.getKind() == ElementKind.ANNOTATION_TYPE)
-      .flatMap(annotation ->
-        roundEnv.getElementsAnnotatedWith(annotation).stream()
-          .map(this::asTypeElement)
-          .map(element -> new ControllerContext(element, annotationProcessorContext))
-      ).toList();
+      .flatMap(annotation -> roundEnv.getElementsAnnotatedWith(annotation).stream()
+        .map(this::asTypeElement)
+        .map(ControllerContext::new))
+      .toList();
   }
 
   private void processEachController(ControllerContext context) {
@@ -93,9 +110,11 @@ public class LabzenWebProcessor extends AbstractProcessor {
       }
 
       processedControllers.add(context.getSource());
+      getContext().messaging().info("Labzen web processor -     process success controller: " + context.getSource().getQualifiedName());
     } catch (Throwable e) {
       deferredControllers.add(new DeferredController(context.getSource()));
       handleUncaughtError(context.getSource(), e);
+      getContext().messaging().info("Labzen web processor -     process failed controller: " + context.getSource().getQualifiedName());
     }
   }
 
@@ -105,11 +124,15 @@ public class LabzenWebProcessor extends AbstractProcessor {
 
     String reportableStacktrace = sw.toString().replace(System.lineSeparator(), "  ");
 
-    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Internal error in the mapping processor: " + reportableStacktrace, element);
+    getContext().messaging().delegate().printMessage(Diagnostic.Kind.ERROR,
+      "Labzen web processor - Internal error in the mapping processor: " + reportableStacktrace, element);
   }
 
   private List<InternalProcessor> getProcessors() {
-    return ServiceLoader.load(InternalProcessor.class, this.getClass().getClassLoader()).stream().map(ServiceLoader.Provider::get).sorted(PROCESSOR_COMPARATOR).toList();
+    // 使用当前线程的上下文类加载器，提高兼容性
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    return ServiceLoader.load(InternalProcessor.class, classLoader).stream().map(ServiceLoader.Provider::get)
+      .sorted(PROCESSOR_COMPARATOR).toList();
   }
 
   private TypeElement asTypeElement(Element element) {

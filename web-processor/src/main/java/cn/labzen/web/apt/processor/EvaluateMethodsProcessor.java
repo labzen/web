@@ -84,6 +84,13 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
 
     List<String> parameterNames = method.getParameters().stream()
       .map(param -> param.getSimpleName().toString()).toList();
+
+    // 检查参数名是否为arg0、arg1等形式，如果是，给出警告
+    boolean hasArgParameters = parameterNames.stream().anyMatch(name -> name.matches("arg\\d+"));
+    if (hasArgParameters) {
+      context.getApc().messaging().warning("LabzenWebProcessor: 方法 " + methodName + " 的参数名显示为 arg0, arg1 等形式，这可能导致生成的代码中参数名不正确。请在项目的 pom.xml 中为 maven-compiler-plugin 添加 <parameters>true</parameters> 配置，以启用编译时保留方法参数名。");
+    }
+
     String methodSignature = Utils.getSimpleName(returnType) + " " + methodName + "(" + parametersSignature + ")";
 
     ElementMethod elementMethod = parsedMethods.computeIfAbsent(methodSignature, key -> {

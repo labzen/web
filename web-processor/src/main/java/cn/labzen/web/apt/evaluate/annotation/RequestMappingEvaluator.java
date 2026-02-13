@@ -1,5 +1,6 @@
 package cn.labzen.web.apt.evaluate.annotation;
 
+import cn.labzen.web.api.definition.APIVersionCarrier;
 import cn.labzen.web.apt.config.Config;
 import cn.labzen.web.apt.internal.Utils;
 import cn.labzen.web.apt.internal.context.AnnotationProcessorContext;
@@ -8,7 +9,6 @@ import cn.labzen.web.apt.internal.element.ElementMethod;
 import cn.labzen.web.apt.suggestion.AppendSuggestion;
 import cn.labzen.web.apt.suggestion.ReplaceSuggestion;
 import cn.labzen.web.apt.suggestion.Suggestion;
-import cn.labzen.web.api.definition.APIVersionCarrier;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.TypeName;
 
