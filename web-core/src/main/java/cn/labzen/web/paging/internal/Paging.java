@@ -3,7 +3,7 @@ package cn.labzen.web.paging.internal;
 import cn.labzen.meta.Labzens;
 import cn.labzen.web.api.paging.Order;
 import cn.labzen.web.api.paging.Pageable;
-import cn.labzen.web.meta.WebConfiguration;
+import cn.labzen.web.meta.WebCoreConfiguration;
 
 import java.util.Collections;
 import java.util.List;
@@ -16,7 +16,7 @@ import static cn.labzen.web.api.definition.Constants.DEFAULT_PAGE_NUMBER;
 
 public record Paging(boolean unpaged, int pageNumber, int pageSize, List<Order> orders) implements Pageable {
 
-  public static final int DEFAULT_PAGE_SIZE = Labzens.configurationWith(WebConfiguration.class).pageSize();
+  public static final int DEFAULT_PAGE_SIZE = Labzens.configurationWith(WebCoreConfiguration.class).pageSize();
   public static final Paging DEFAULT_PAGING = new Paging(false, 0, 0, Collections.emptyList());
   public static final Paging UNPAGED_PAGING = new Paging(true, 0, 0, Collections.emptyList());
 

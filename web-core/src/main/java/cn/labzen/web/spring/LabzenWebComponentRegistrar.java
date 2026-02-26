@@ -1,7 +1,7 @@
 package cn.labzen.web.spring;
 
 import cn.labzen.meta.Labzens;
-import cn.labzen.web.meta.WebConfiguration;
+import cn.labzen.web.meta.WebCoreConfiguration;
 import cn.labzen.web.spring.runtime.LabzenRestResponseBodyAdvice;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.RootBeanDefinition;
@@ -14,7 +14,7 @@ public class LabzenWebComponentRegistrar implements ImportBeanDefinitionRegistra
 
   @Override
   public void registerBeanDefinitions(@Nonnull AnnotationMetadata importingClassMetadata, @Nonnull BeanDefinitionRegistry registry) {
-    WebConfiguration configuration = Labzens.configurationWith(WebConfiguration.class);
+    WebCoreConfiguration configuration = Labzens.configurationWith(WebCoreConfiguration.class);
 
     // 注册转换 Http Response 结构的组件
     if (configuration.responseFormattingEnabled()) {

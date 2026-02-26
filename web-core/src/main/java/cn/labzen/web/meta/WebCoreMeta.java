@@ -2,15 +2,16 @@ package cn.labzen.web.meta;
 
 import cn.labzen.meta.component.DeclaredComponent;
 
-public class WebMeta implements DeclaredComponent {
+public class WebCoreMeta implements DeclaredComponent {
+
   @Override
   public String mark() {
-    return "Labzen-Web";
+    return "Labzen-Web-Core";
   }
 
   @Override
   public String packageBased() {
-    return "cn.labzen.web";
+    return "cn.labzen.web.core";
   }
 
   @Override

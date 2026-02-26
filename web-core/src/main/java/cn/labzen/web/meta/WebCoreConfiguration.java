@@ -5,8 +5,8 @@ import cn.labzen.meta.configuration.annotation.Item;
 import cn.labzen.web.api.definition.APIVersionCarrier;
 import cn.labzen.web.api.paging.Pageable;
 
-@Configured(namespace = "web")
-public interface WebConfiguration {
+@Configured(namespace = "web.core")
+public interface WebCoreConfiguration {
 
   /**
    * 是否开启 Debug 模式，默认 false。

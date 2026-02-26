@@ -2,7 +2,7 @@ package cn.labzen.web.paging.internal;
 
 import cn.labzen.meta.Labzens;
 import cn.labzen.web.api.paging.Pageable;
-import cn.labzen.web.meta.WebConfiguration;
+import cn.labzen.web.meta.WebCoreConfiguration;
 import cn.labzen.web.paging.convert.PageConverterHolder;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -36,7 +36,7 @@ public final class PageableDelegator {
   private static final boolean FRIENDLY_FOR_DEBUGGER_VIEW;
 
   static {
-    WebConfiguration configuration = Labzens.configurationWith(WebConfiguration.class);
+    WebCoreConfiguration configuration = Labzens.configurationWith(WebCoreConfiguration.class);
     FRIENDLY_FOR_DEBUGGER_VIEW = configuration.debug();
   }
 

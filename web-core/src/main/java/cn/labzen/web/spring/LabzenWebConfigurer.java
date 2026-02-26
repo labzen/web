@@ -3,7 +3,7 @@ package cn.labzen.web.spring;
 import cn.labzen.logger.kernel.LabzenLogger;
 import cn.labzen.logger.kernel.enums.Status;
 import cn.labzen.meta.Labzens;
-import cn.labzen.web.meta.WebConfiguration;
+import cn.labzen.web.meta.WebCoreConfiguration;
 import cn.labzen.web.spring.runtime.LabzenExceptionCatchingFilter;
 import cn.labzen.web.spring.runtime.LabzenHandlerExceptionResolver;
 import cn.labzen.web.spring.runtime.LabzenRestRequestHandlerInterceptor;
@@ -41,7 +41,7 @@ public class LabzenWebConfigurer implements WebMvcConfigurer {
   public void configurePathMatch(@Nonnull PathMatchConfigurer configurer) {
     configurer.setUrlPathHelper(new UrlPathHelper());
 
-    WebConfiguration configuration = Labzens.configurationWith(WebConfiguration.class);
+    WebCoreConfiguration configuration = Labzens.configurationWith(WebCoreConfiguration.class);
 
     String apiPathPrefix = configuration.apiPathPrefix();
     if (!Strings.isNullOrEmpty(apiPathPrefix)) {
@@ -74,7 +74,7 @@ public class LabzenWebConfigurer implements WebMvcConfigurer {
    */
   @Override
   public void extendHandlerExceptionResolvers(@Nonnull List<HandlerExceptionResolver> resolvers) {
-    WebConfiguration configuration = Labzens.configurationWith(WebConfiguration.class);
+    WebCoreConfiguration configuration = Labzens.configurationWith(WebCoreConfiguration.class);
     if (configuration.responseFormattingForcedAll()) {
       OptionalInt found = IntStream.range(0, resolvers.size()).filter(i -> resolvers.get(i) instanceof DefaultHandlerExceptionResolver).findFirst();
       found.ifPresent(i -> {

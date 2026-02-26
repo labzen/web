@@ -4,7 +4,7 @@ import cn.labzen.meta.Labzens;
 import cn.labzen.tool.util.DateTimes;
 import cn.labzen.tool.util.Strings;
 import cn.labzen.web.api.definition.APIVersionCarrier;
-import cn.labzen.web.meta.WebConfiguration;
+import cn.labzen.web.meta.WebCoreConfiguration;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
@@ -22,7 +22,7 @@ import static cn.labzen.web.api.definition.Constants.REST_REQUEST_TIME_MILLIS;
 public class LabzenRestRequestHandlerInterceptor implements HandlerInterceptor {
 
   private final Supplier<Boolean> forceRequestWithVersionHeader = () -> {
-    var configuration = Labzens.configurationWith(WebConfiguration.class);
+    var configuration = Labzens.configurationWith(WebCoreConfiguration.class);
     return configuration.apiVersionCarrier() == APIVersionCarrier.HEADER
       && configuration.apiVersionHeaderAcceptForced();
   };

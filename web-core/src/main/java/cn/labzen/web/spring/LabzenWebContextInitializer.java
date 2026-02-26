@@ -5,7 +5,7 @@ import cn.labzen.meta.spring.SpringInitializationOrder;
 import cn.labzen.spring.Springs;
 import cn.labzen.tool.util.Strings;
 import cn.labzen.web.api.paging.PageConverter;
-import cn.labzen.web.meta.WebConfiguration;
+import cn.labzen.web.meta.WebCoreConfiguration;
 import cn.labzen.web.paging.convert.NonePageConverter;
 import cn.labzen.web.paging.convert.PageConverterHolder;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +26,7 @@ public class LabzenWebContextInitializer implements ApplicationContextInitialize
    */
   @Override
   public void initialize(@Nonnull ConfigurableApplicationContext applicationContext) {
-    WebConfiguration configuration = Labzens.configurationWith(WebConfiguration.class);
+    WebCoreConfiguration configuration = Labzens.configurationWith(WebCoreConfiguration.class);
     String pageConverterFQCN = Strings.valueWhenBlank(configuration.pageConverter(), NONE_PAGE_CONVERTER_FQCN);
 
     try {
