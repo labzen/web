@@ -20,6 +20,7 @@
   <modules>
     <module>web-api</module>
     <module>web-core</module>
+    <module>web-file</module>
     <module>web-processor</module>
   </modules>
 

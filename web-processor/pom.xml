@@ -11,7 +11,7 @@
 
   <artifactId>web-processor</artifactId>
   <packaging>jar</packaging>
-  <name>Labzen.Web-Processor</name>
+  <name>Labzen.Web.Processor</name>
   <description>Labzen Web Processor - Annotation Processing Tool</description>
 
   <dependencies>

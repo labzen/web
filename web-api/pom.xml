@@ -11,7 +11,7 @@
 
   <artifactId>web-api</artifactId>
   <packaging>jar</packaging>
-  <name>Labzen Web API</name>
+  <name>Labzen.Web.API</name>
   <description>Labzen.Web-API - Web API definition classes</description>
 
   <dependencies>

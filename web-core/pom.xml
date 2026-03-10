@@ -11,7 +11,7 @@
 
   <artifactId>web-core</artifactId>
   <packaging>jar</packaging>
-  <name>Labzen Web Core</name>
+  <name>Labzen.Web.Core</name>
   <description>Labzen.Web-Core - Runtime environment classes</description>
 
   <dependencies>
