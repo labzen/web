@@ -2,7 +2,7 @@ package cn.labzen.web.spring;
 
 import cn.labzen.meta.Labzens;
 import cn.labzen.web.api.definition.APIVersionCarrier;
-import cn.labzen.web.meta.WebConfiguration;
+import cn.labzen.web.meta.WebCoreConfiguration;
 import cn.labzen.web.spring.runtime.LabzenVersionedApiRequestMappingHandlerMapping;
 import cn.labzen.web.spring.runtime.PageableCompatibleArgumentResolver;
 import com.google.common.collect.Lists;
@@ -37,7 +37,7 @@ public class LabzenWebMvcRegistration implements WebMvcRegistrations {
    */
   @Override
   public RequestMappingHandlerMapping getRequestMappingHandlerMapping() {
-    WebConfiguration configuration = Labzens.configurationWith(WebConfiguration.class);
+    WebCoreConfiguration configuration = Labzens.configurationWith(WebCoreConfiguration.class);
     if (configuration.apiVersionCarrier() == APIVersionCarrier.URI) {
       return new LabzenVersionedApiRequestMappingHandlerMapping();
     } else {
