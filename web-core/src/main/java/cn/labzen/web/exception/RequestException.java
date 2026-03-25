@@ -1,7 +1,9 @@
 package cn.labzen.web.exception;
 
 import cn.labzen.meta.exception.LabzenRuntimeException;
+import lombok.Getter;
 
+@Getter
 public class RequestException extends LabzenRuntimeException {
 
   private final int code;
@@ -95,13 +97,5 @@ public class RequestException extends LabzenRuntimeException {
     super(cause, message, args);
     this.code = code;
     this.logging = logging;
-  }
-
-  public int getCode() {
-    return code;
-  }
-
-  public boolean isLogging() {
-    return logging;
   }
 }

@@ -1,7 +1,7 @@
 package cn.labzen.web.response.format;
 
 import cn.labzen.web.api.definition.HttpStatusExt;
-import cn.labzen.web.api.response.Response;
+import cn.labzen.web.api.response.out.Response;
 import com.google.common.primitives.Ints;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletRequest;

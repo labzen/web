@@ -1,6 +1,6 @@
 package cn.labzen.web.apt.service;
 
-import cn.labzen.web.api.response.Result;
+import cn.labzen.web.api.response.result.Result;
 
 public class RoleRealm {
   public Result add(MenuDto resource) {

@@ -1,7 +1,7 @@
 package cn.labzen.web.api.controller;
 
 import cn.labzen.web.api.annotation.*;
-import cn.labzen.web.api.response.Result;
+import cn.labzen.web.api.response.result.Result;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.validation.annotation.Validated;

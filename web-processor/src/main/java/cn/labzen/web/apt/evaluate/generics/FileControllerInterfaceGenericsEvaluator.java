@@ -5,16 +5,16 @@ import com.squareup.javapoet.TypeName;
 
 import java.util.List;
 
-import static cn.labzen.web.apt.definition.TypeNames.INTERFACE_STANDARD_CONTROLLER;
+import static cn.labzen.web.apt.definition.TypeNames.INTERFACE_FILE_CONTROLLER;
 
 /**
- * 对应 cn.labzen.web.controller.StandardController
+ * 对应 cn.labzen.web.api.controller.FileController
  */
-public class StandardControllerInterfaceGenericsEvaluator extends PrimaryServiceGenericsAssign {
+public class FileControllerInterfaceGenericsEvaluator extends PrimaryServiceGenericsAssign {
 
   @Override
   protected String supportedInterfaceName() {
-    return INTERFACE_STANDARD_CONTROLLER;
+    return INTERFACE_FILE_CONTROLLER;
   }
 
   @Override

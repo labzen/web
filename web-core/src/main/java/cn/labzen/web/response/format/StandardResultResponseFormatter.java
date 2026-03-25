@@ -1,9 +1,9 @@
 package cn.labzen.web.response.format;
 
 import cn.labzen.web.api.paging.Pagination;
-import cn.labzen.web.api.response.Meta;
-import cn.labzen.web.api.response.Response;
-import cn.labzen.web.api.response.Result;
+import cn.labzen.web.api.response.out.Meta;
+import cn.labzen.web.api.response.out.Response;
+import cn.labzen.web.api.response.result.ValueResult;
 import com.google.common.primitives.Longs;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -14,13 +14,13 @@ import static cn.labzen.web.api.definition.Constants.REST_REQUEST_TIME;
 import static cn.labzen.web.api.definition.Constants.REST_REQUEST_TIME_MILLIS;
 
 /**
- * 处理 {@link Result} 中的返回值格式化，通用的格式化器，在 {@link CompositeResponseFormatter} 中的执行顺序最晚，如果其他的格式化器不处理返回值，则在这里格式化，算是最后托底的
+ * 处理 {@link ValueResult} 中的返回值格式化，通用的格式化器，在 {@link CompositeResponseFormatter} 中的执行顺序最晚，如果其他的格式化器不处理返回值，则在这里格式化，算是最后托底的
  */
 public class StandardResultResponseFormatter implements ResponseFormatter {
 
   @Override
   public boolean support(Class<?> clazz, HttpServletRequest request) {
-    return Result.class.isAssignableFrom(clazz);
+    return ValueResult.class.isAssignableFrom(clazz);
   }
 
   @Override
@@ -30,7 +30,7 @@ public class StandardResultResponseFormatter implements ResponseFormatter {
     long requestMills = Optional.ofNullable(Longs.tryParse(requestMillsStr)).orElse(0L);
     long executionTime = System.currentTimeMillis() - requestMills;
 
-    Result data = (Result) result;
+    ValueResult data = (ValueResult) result;
 
     int code = data.code();
     String message = Optional.ofNullable(data.message()).orElse("success");

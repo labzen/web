@@ -1,6 +1,6 @@
 package cn.labzen.web.response.format;
 
-import cn.labzen.web.api.response.Response;
+import cn.labzen.web.api.response.out.Response;
 import com.google.common.collect.Lists;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -19,6 +19,9 @@ public class CompositeResponseFormatter implements ResponseFormatter {
     ResponseAgainResponseFormatter responseAgainRF = new ResponseAgainResponseFormatter();
     // 第2 格式化不正常的 Http Status 结果，如404
     AbnormalStatusResponseFormatter abnormalStatusRF = new AbnormalStatusResponseFormatter();
+
+    // 倒3 处理文件下载的情况
+    FileDownloadResponseFormatter fileDownloadRF = new FileDownloadResponseFormatter();
     // 倒2 处理 Result 中的返回值格式化，标准的返回结构
     StandardResultResponseFormatter standardResultRF = new StandardResultResponseFormatter();
     // 倒1 处理前面所有格式化器都未考虑到的请
@@ -29,6 +32,7 @@ public class CompositeResponseFormatter implements ResponseFormatter {
     for (ResponseFormatter loadedFormatter : loadedFormatters) {
       allFormatters.add(loadedFormatter);
     }
+    allFormatters.add(fileDownloadRF);
     allFormatters.add(standardResultRF);
     allFormatters.add(unexpectedRF);
 

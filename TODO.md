@@ -3,3 +3,4 @@
 - [ ] 关于import和export两个方法，是否需要自动生成？还是通过另一种形式来生成
 - [x] 将 APT 的部分，单独出来一个 processor 的jar
 - [ ] 添加基于Controller API入口方法的日志打印
+- [ ] 将web-file独立出来为一个项目 labzen-file，而不是放在web中

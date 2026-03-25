@@ -1,7 +1,7 @@
 package cn.labzen.web.spring.runtime;
 
 import cn.labzen.logger.Loggers;
-import cn.labzen.web.api.response.Response;
+import cn.labzen.web.api.response.out.Response;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

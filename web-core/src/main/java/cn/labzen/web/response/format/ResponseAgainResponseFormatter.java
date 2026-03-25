@@ -1,6 +1,6 @@
 package cn.labzen.web.response.format;
 
-import cn.labzen.web.api.response.Response;
+import cn.labzen.web.api.response.out.Response;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 

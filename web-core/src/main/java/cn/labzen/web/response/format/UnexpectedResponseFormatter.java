@@ -1,8 +1,8 @@
 package cn.labzen.web.response.format;
 
-import cn.labzen.web.api.response.Meta;
-import cn.labzen.web.api.response.Response;
-import cn.labzen.web.api.response.Result;
+import cn.labzen.web.api.response.out.Meta;
+import cn.labzen.web.api.response.out.Response;
+import cn.labzen.web.api.response.result.Result;
 import com.google.common.primitives.Longs;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

@@ -2,9 +2,11 @@ package cn.labzen.web.apt;
 
 import cn.labzen.web.api.annotation.Abandoned;
 import cn.labzen.web.api.annotation.Call;
+import cn.labzen.web.api.annotation.LabzenController;
 import cn.labzen.web.api.annotation.MappingVersion;
+import cn.labzen.web.api.controller.FileController;
 import cn.labzen.web.api.controller.StandardController;
-import cn.labzen.web.api.response.Result;
+import cn.labzen.web.api.response.result.Result;
 import cn.labzen.web.apt.service.MenuDto;
 import cn.labzen.web.apt.service.MenuRealm;
 import cn.labzen.web.apt.service.RoleRealm;
@@ -20,7 +22,7 @@ import javax.annotation.Nonnull;
 @RestController("abc")
 @RequestMapping(value = "system/demo/test", produces = {"application/vnd.app.v1+json"})
 //@LabzenController
-public interface MenuController extends StandardController<MenuRealm, MenuDto, Long> {
+public interface MenuController extends StandardController<MenuRealm, MenuDto, Long>, FileController<MenuDto> {
 
   @Override
   @MappingVersion(4)

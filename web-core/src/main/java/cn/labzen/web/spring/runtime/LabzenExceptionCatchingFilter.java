@@ -5,7 +5,7 @@ import cn.labzen.meta.exception.LabzenException;
 import cn.labzen.meta.exception.LabzenRuntimeException;
 import cn.labzen.spring.Springs;
 import cn.labzen.tool.definition.Constants;
-import cn.labzen.web.api.response.Response;
+import cn.labzen.web.api.response.out.Response;
 import cn.labzen.web.exception.RequestException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;

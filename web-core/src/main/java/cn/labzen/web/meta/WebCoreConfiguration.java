@@ -5,11 +5,13 @@ import cn.labzen.meta.configuration.annotation.Item;
 import cn.labzen.web.api.definition.APIVersionCarrier;
 import cn.labzen.web.api.paging.Pageable;
 
-@Configured(namespace = "web.core")
+import java.util.List;
+
+@Configured(namespace = "web")
 public interface WebCoreConfiguration {
 
   /**
-   * 是否开启 Debug 模式，默认 false。
+   * 是否开启 Debug 模式，默认 false。在开发阶段使用。
    * <p>
    * 开启后，实现了 {@link Pageable} 接口的 Bean，在调试窗口中可以直接看到参数值，否则参数值看到的全是默认值（但不影响其实际保存的值）
    */
@@ -27,13 +29,13 @@ public interface WebCoreConfiguration {
    * <li>URI - 通过 API 的请求地址前置版本信息，例如 'https://www.app.com/v1/login'
    * <li>PARAMETER - 通过请求 API 时，使用参数来传递版本信息，例如 'https://www.app.com/login?version=v1'
    */
-  @Item(path = "api-version.carrier", required = false, defaultValue = "HEADER")
+  @Item(path = "core.api-version.carrier", required = false, defaultValue = "HEADER")
   APIVersionCarrier apiVersionCarrier();
 
   /**
    * API 版本控制的版本前缀，默认小写 v
    */
-  @Item(path = "api-version.prefix", required = false, defaultValue = "v")
+  @Item(path = "core.api-version.prefix", required = false, defaultValue = "v")
   String apiVersionPrefix();
 
   /**
@@ -42,36 +44,50 @@ public interface WebCoreConfiguration {
    * Spring默认会选择一个可以匹配的 produces 方法进行响应，当 api-version.carrier 为 HEADER 时有效
    */
   @Deprecated
-  @Item(path = "api-version.header-accept-forced", required = false, defaultValue = "true")
+  @Item(path = "core.api-version.header-accept-forced", required = false, defaultValue = "true")
   boolean apiVersionHeaderAcceptForced();
 
   /**
    * 定义统一的 API 路径前缀，默认：/api；可根据项目实际情况自定义，如不需要前缀则将该值设置为空字符
    */
-  @Item(path = "api-path-prefix", required = false, defaultValue = "api")
+  @Item(path = "core.api-path-prefix", required = false, defaultValue = "api")
   String apiPathPrefix();
 
   /**
    * 启用 Response 响应内容统一格式化，默认 true，否则使用 Spring 默认的格式化
    */
-  @Item(path = "response.formatting.enable", required = false, defaultValue = "true")
+  @Item(path = "core.response.formatting.enable", required = false, defaultValue = "true")
   boolean responseFormattingEnabled();
 
   /**
    * 默认会格式化所有返回类型为 [Result] 的响应数据。如果设置为 true，则会对所有的 Controller 返回类型进行格式化
    */
-  @Item(path = "response.formatting.all-forced", required = false, defaultValue = "true")
+  @Item(path = "core.response.formatting.all-forced", required = false, defaultValue = "true")
   boolean responseFormattingForcedAll();
 
   /**
    * 设置一个对 [Pageable] 和 [Pagination] 的转换器（实现 [PageConverter]）类的 FQCN。将会尝试先从 Spring 容器中寻找是否有注册过的组件对象，如果不存在则创建一个实例
    */
-  @Item(path = "page-converter", required = false, defaultValue = "")
+  @Item(path = "core.page-converter", required = false, defaultValue = "")
   String pageConverter();
 
   /**
    * 设置默认分页大小，默认20
    */
-  @Item(path = "page-size", required = false, defaultValue = "20")
+  @Item(path = "core.page-size", required = false, defaultValue = "20")
   int pageSize();
+
+  // ===================================================================================================================
+
+  /**
+   * 允许上传的文件扩展名
+   */
+  @Item(path = "file.upload.accept-extension", required = false, defaultValue = "xlsx,png,jpg,jpeg,bmp")
+  List<String> acceptedUploadFileExtensions();
+
+  /**
+   * 临时文件清理间隔时间（单位：秒），默认一小时清理一次，每次清理会将上一次清理时间之前的所有文件删除掉
+   */
+  @Item(path = "file.upload.temp-cleanup-interval", required = false, defaultValue = "3600")
+  long tempFileCleanupInterval();
 }

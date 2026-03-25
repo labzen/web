@@ -25,10 +25,13 @@ public abstract non-sealed class PrimaryServiceGenericsAssign implements Interfa
   @Override
   public void init(AnnotationProcessorContext context) {
     resourceType = TypeName.get(context.elements().getTypeElement(ANNOTATION_JAKARTA_RESOURCE).asType());
+    supportedInterfaceType = TypeName.get(context.elements().getTypeElement(supportedInterfaceName()).asType());
   }
 
+  protected abstract String supportedInterfaceName();
+
   @Override
-  public boolean support(TypeName type) {
+  public final boolean support(TypeName type) {
     if (type instanceof ParameterizedTypeName parameterizedTypeName) {
       if (supportedInterfaceType instanceof ParameterizedTypeName parameterizedInterfaceType) {
         return parameterizedInterfaceType.rawType.equals(parameterizedTypeName.rawType);

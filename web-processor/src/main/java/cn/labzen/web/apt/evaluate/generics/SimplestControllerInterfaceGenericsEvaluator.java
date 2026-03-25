@@ -14,10 +14,8 @@ import static cn.labzen.web.apt.definition.TypeNames.INTERFACE_SIMPLEST_CONTROLL
 public final class SimplestControllerInterfaceGenericsEvaluator extends PrimaryServiceGenericsAssign {
 
   @Override
-  public void init(AnnotationProcessorContext context) {
-    super.init(context);
-
-    supportedInterfaceType = TypeName.get(context.elements().getTypeElement(INTERFACE_SIMPLEST_CONTROLLER).asType());
+  protected String supportedInterfaceName() {
+    return INTERFACE_SIMPLEST_CONTROLLER;
   }
 
   @Override

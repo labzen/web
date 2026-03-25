@@ -1,8 +1,8 @@
 package cn.labzen.web.spring.runtime;
 
 import cn.labzen.meta.Labzens;
-import cn.labzen.web.api.response.Response;
-import cn.labzen.web.api.response.Result;
+import cn.labzen.web.api.response.out.Response;
+import cn.labzen.web.api.response.result.Result;
 import cn.labzen.web.exception.RequestException;
 import cn.labzen.web.meta.WebCoreConfiguration;
 import cn.labzen.web.response.format.CompositeResponseFormatter;
@@ -40,7 +40,7 @@ public class LabzenRestResponseBodyAdvice implements ResponseBodyAdvice<Object>,
   @Override
   public boolean supports(@Nonnull MethodParameter returnType,
                           @Nonnull Class<? extends HttpMessageConverter<?>> converterType) {
-    return processAllRestResponse || returnType.getParameterType() == Result.class;
+    return processAllRestResponse || Result.class.isAssignableFrom(returnType.getParameterType());
   }
 
   @Override
