@@ -3,9 +3,11 @@ package cn.labzen.web.api.annotation;
 import java.lang.annotation.*;
 
 /**
- * 注解在 Controller 接口或方法上，对API响应内容进行缓存
+ * API 响应缓存注解。
  * <p>
- * todo 待实现，定义缓存参数
+ * 注解在 Controller 接口或方法上，对 API 响应内容进行缓存处理。
+ * <p>
+ * <b>待实现：</b> 定义缓存参数，如缓存时长、缓存策略等。
  */
 @Documented
 @Retention(RetentionPolicy.SOURCE)

@@ -3,13 +3,14 @@ package cn.labzen.web.api.annotation;
 import java.lang.annotation.*;
 
 /**
- * 注解在 Controller 接口或方法上，处理（特定/所有）异常抛出时，定制有意义的响应数据
+ * 异常捕获处理注解。
  * <p>
- * Labzen Web 组件已经对所有的异常抛出进行了封装，统一了返回数据结构，响应内容默认是异常信息。
+ * 注解在 Controller 接口或方法上，用于处理特定异常时的定制响应数据。
  * <p>
- * 在声明本注解后，根据抛出的异常，返回有意义的响应数据。即在发生异常后，也可以返回有效数据
+ * Labzen Web 组件已对所有异常进行统一封装，默认返回统一的响应数据结构。
+ * 声明本注解后，可以根据抛出的异常类型，返回有意义的响应数据。
  * <p>
- * todo 待实现
+ * <b>待实现：</b> 改为接口方式，定义支持的异常类型及对应的处理逻辑。
  */
 @Documented
 @Retention(RetentionPolicy.SOURCE)

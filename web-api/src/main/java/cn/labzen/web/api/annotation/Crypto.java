@@ -3,9 +3,11 @@ package cn.labzen.web.api.annotation;
 import java.lang.annotation.*;
 
 /**
- * 注解在 Controller 接口或方法上，对API响应数据进行加密
+ * API 响应数据加密注解。
  * <p>
- * todo 待实现
+ * 注解在 Controller 接口或方法上，对 API 响应数据进行加密处理。
+ * <p>
+ * <b>待实现：</b> 定义加密算法、密钥配置等参数。
  */
 @Documented
 @Retention(RetentionPolicy.SOURCE)

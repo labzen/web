@@ -1,14 +1,17 @@
 package cn.labzen.web.api.controller;
 
 /**
- * 继承本接口，为了明确Restful入口可调用的业务逻辑处理类组件
+ * 简化版 Controller 接口。
  * <p>
- * 这个接口的目的是为了没有明确（或单一）资源的业务场景提供的；继承本接口后，方法的定义以及方法注解的使用，可参考 {@link StandardController}
+ * 用于没有明确（或单一）资源的业务场景。继承本接口后，方法的定义以及注解的使用方式，
+ * 可参考 {@link StandardController}。
  * <p>
- * <b>A.</b> 本接口的泛型定义：
- * <li> BS: Business Service Component - 指定当前Controller入口需要调用的业务逻辑处理类，一般为XXXService
+ * <b>泛型参数说明：</b>
+ * <ul>
+ *   <li>BS: 业务服务组件，指定当前 Controller 入口需要调用的业务逻辑处理类（通常为 XXXService）</li>
+ * </ul>
  *
- * @param <BS> Business Service Component
+ * @param <BS> 业务服务组件类
  */
 public interface SimplestController<BS> extends LabzenController {
 }

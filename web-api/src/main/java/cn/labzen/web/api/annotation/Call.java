@@ -3,10 +3,13 @@ package cn.labzen.web.api.annotation;
 import java.lang.annotation.*;
 
 /**
- * 注解在 Controller 接口方法上，指定在方法中调用的业务逻辑层组件（XXXService）及方法名
+ * 指定业务逻辑层组件调用的注解。
  * <p>
- * 在不使用本注解的情况下，一个 Controller 接口方法，将会调用默认的业务逻辑层组件（XXXService）的同方法名
- * <code>
+ * 注解在 Controller 接口方法上，用于指定该方法需要调用的业务逻辑层组件（Service）及方法名。
+ * <p>
+ * 在不使用本注解的情况下，一个 Controller 接口方法，将会调用默认的业务逻辑层组件（XXXService）的同方法名：
+ * <p>
+ * <b>未使用 @Call 注解：</b>
  * <pre>
  * public interface ResourceController extends StandardController&#60;ResourceService, ResourceBean, Long> {
  *   &#47;**
@@ -16,14 +19,13 @@ import java.lang.annotation.*;
  *   Result recache(Long id);
  * }
  * </pre>
- * </code>
  * <p>
- * 如果方法上声明本注解后：
- * <code>
+ * <b>使用 @Call 注解：</b>
  * <pre>
  * public interface ResourceController extends StandardController&#60;ResourceService, ResourceBean, Long> {
  *   &#47;**
- *    * 这个方法在实现类中，方法体代码为：`return cachingHandlerService.recacheResource(id);`
+ *    * 这个方法在实现类中，方法体代码为：
+ *    * `return cachingHandlerService.recacheResource(id);`
  *    *
  *    * 同时，CachingHandlerService这个类实例也会注入到 Controller 接口实现类对象中
  *    &#42;/
@@ -32,7 +34,6 @@ import java.lang.annotation.*;
  *   Result recache(Long id);
  * }
  * </pre>
- * </code>
  */
 @Documented
 @Retention(RetentionPolicy.SOURCE)
