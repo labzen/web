@@ -6,12 +6,12 @@ public class WebCoreMeta implements DeclaredComponent {
 
   @Override
   public String mark() {
-    return "Labzen-Web-Core";
+    return "Labzen-Web";
   }
 
   @Override
   public String packageBased() {
-    return "cn.labzen.web.core";
+    return "cn.labzen.web";
   }
 
   @Override

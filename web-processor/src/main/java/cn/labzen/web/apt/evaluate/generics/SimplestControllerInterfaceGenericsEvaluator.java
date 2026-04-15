@@ -1,6 +1,5 @@
 package cn.labzen.web.apt.evaluate.generics;
 
-import cn.labzen.web.apt.internal.context.AnnotationProcessorContext;
 import cn.labzen.web.apt.suggestion.Suggestion;
 import com.squareup.javapoet.TypeName;
 
@@ -21,6 +20,6 @@ public final class SimplestControllerInterfaceGenericsEvaluator extends PrimaryS
   @Override
   public List<? extends Suggestion> evaluate(List<TypeName> arguments) {
     assert !arguments.isEmpty();
-    return internalEvaluate(arguments.getFirst());
+    return internalServiceBeanEvaluate(arguments.getFirst());
   }
 }

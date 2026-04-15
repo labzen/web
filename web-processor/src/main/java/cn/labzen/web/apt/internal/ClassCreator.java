@@ -9,24 +9,20 @@ import com.squareup.javapoet.*;
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.Generated;
 import javax.lang.model.element.Modifier;
-import java.io.*;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
+import javax.tools.FileObject;
+import javax.tools.StandardLocation;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
-import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static cn.labzen.web.apt.definition.UnitConstants.JUNIT_OUTPUT_DIR;
 
@@ -35,7 +31,7 @@ public final class ClassCreator {
   private static final String PROCESSOR_NAME = LabzenWebProcessor.class.getName();
   private static final String PROCESSOR_COMMENTS = "labzen web version: 1.2.0, generating: com.squareup:javapoet, based Java 21";
   private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
-  private static final String METHOD_BODY_TEMPLATE_ERROR = "error";
+  private static final String METHOD_BODY_TEMPLATE_ERROR_INVALID_METHOD = "error-invalid-method";
   private static final String METHOD_BODY_TEMPLATE_GENERAL = "general";
   private static final Pattern METHOD_PARAMETER_PATTERN = Pattern.compile("\\{#parameter[0-9]+}");
 
@@ -51,61 +47,45 @@ public final class ClassCreator {
   }
 
   private void loadMethodBodyTemplates() {
+    if (!methodBodyTemplates.isEmpty()) {
+      return;
+    }
+
     try {
-      Enumeration<URL> resources = Thread.currentThread().getContextClassLoader().getResources("templates");
-      if (!resources.hasMoreElements()) {
-        return;
-      }
+      FileObject indexFile = filer.getResource(StandardLocation.CLASS_PATH, "templates", "index.txt");
 
-      URL resource = resources.nextElement();
-      String protocol = resource.getProtocol();
-
-      // 处理 jar 包和文件系统的不同情况
-      if ("jar".equalsIgnoreCase(protocol)) {
-        String path = resource.getPath();
-        // jar 包内的资源，使用 JarFile 读取
-        String jarPath = path.substring(0, path.indexOf("!"));
-        URI jarURI = new URI(jarPath);
-        File file = new File(jarURI);
-
-        try (JarFile jarFile = new JarFile(file)) {
-          var entries = jarFile.entries();
-          while (entries.hasMoreElements()) {
-            var entry = entries.nextElement();
-            if (entry.getName().startsWith("templates/") && entry.getName().endsWith(".txt")) {
-              String fileName = entry.getName().substring(entry.getName().lastIndexOf("/") + 1);
-              String key = Strings.frontUntil(fileName, ".", false);
-              try (InputStream is = jarFile.getInputStream(entry);
-                   InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8);
-                   BufferedReader reader = new BufferedReader(isr)) {
-                String content = reader.lines().collect(Collectors.joining("\n"));
-                methodBodyTemplates.put(key, content);
-              }
-            }
+      try (BufferedReader reader = new BufferedReader(
+        new InputStreamReader(indexFile.openInputStream(), StandardCharsets.UTF_8))) {
+        String fileName;
+        while ((fileName = reader.readLine()) != null) {
+          fileName = fileName.trim();
+          if (fileName.isEmpty()) {
+            continue;
           }
+
+          // 逐个读取 txt 文件
+          FileObject txtFile = filer.getResource(StandardLocation.CLASS_PATH, "templates", fileName);
+
+          String content = readContent(txtFile);
+          String key = Strings.frontUntil(fileName, ".", false);
+          methodBodyTemplates.put(key, content);
         }
-      } else if ("file".equalsIgnoreCase(protocol)) {
-        // 文件系统资源，使用 Files.list 读取
-        Path controllerDir = Paths.get(resource.toURI());
-        try (var stream = Files.list(controllerDir)) {
-          stream.filter(p -> p.toString().endsWith(".txt"))
-            .forEach(p -> {
-              try {
-                String fileName = p.getFileName().toString();
-                String key = Strings.frontUntil(fileName, ".", false);
-                String content = Files.readString(p, StandardCharsets.UTF_8);
-                methodBodyTemplates.put(key, content);
-              } catch (IOException e) {
-                throw new RuntimeException("读取文件失败：" + p, e);
-              }
-            });
-        }
-      } else {
-        throw new RuntimeException("未知的资源协议：" + protocol);
       }
-    } catch (IOException | URISyntaxException e) {
+    } catch (IOException e) {
       throw new RuntimeException("加载方法体模板失败", e);
     }
+  }
+
+  private String readContent(FileObject fileObject) throws IOException {
+    StringBuilder sb = new StringBuilder();
+    try (BufferedReader reader = new BufferedReader(
+      new InputStreamReader(fileObject.openInputStream(), StandardCharsets.UTF_8))) {
+      String line;
+      while ((line = reader.readLine()) != null) {
+        sb.append(line);
+      }
+    }
+    return sb.toString();
   }
 
   public void create() {
@@ -177,9 +157,10 @@ public final class ClassCreator {
   }
 
   private String buildMethodBody(ElementMethod method, ElementField defaultFieldElement) {
+    boolean healthyBody = true;
     if (method.getBody().getInvokeMethodName().isEmpty()) {
       // 约定如果没有调用方法，则废弃该方法
-      return methodBodyTemplates.get(METHOD_BODY_TEMPLATE_ERROR);
+      return methodBodyTemplates.get(METHOD_BODY_TEMPLATE_ERROR_INVALID_METHOD);
     }
 
     var fieldName = method.getBody().getFieldName().isBlank()
@@ -194,25 +175,30 @@ public final class ClassCreator {
       body = methodBodyTemplates.get(METHOD_BODY_TEMPLATE_GENERAL);
     }
     if (Strings.isBlank(body)) {
-      body = "";
+      healthyBody = false;
+      body = "throw new IllegalStateException(\"无法确定方法体内容\");";
     }
 
-    body = body.replace("{#field}", fieldName);
-    body = body.replace("{#method}", methodName);
-    body = body.replace("{#parameters}", parameterNames);
+    if (healthyBody) {
+      body = body.replace("{#field}", fieldName);
+      body = body.replace("{#method}", methodName);
+      body = body.replace("{#parameters}", parameterNames);
 
-    Matcher matcher = METHOD_PARAMETER_PATTERN.matcher(body);
-    StringBuilder bodySB = new StringBuilder();
-    while (matcher.find()) {
-      String group = matcher.group(0);
-      String substring = group.substring(11, group.length() - 1);
-      int index = Integer.parseInt(substring);
-      String value = parameters.get(index);
-      matcher.appendReplacement(bodySB, value);
+      Matcher matcher = METHOD_PARAMETER_PATTERN.matcher(body);
+      StringBuilder bodySB = new StringBuilder();
+      while (matcher.find()) {
+        String group = matcher.group(0);
+        String substring = group.substring(11, group.length() - 1);
+        int index = Integer.parseInt(substring);
+        String value = parameters.get(index);
+        matcher.appendReplacement(bodySB, value);
+      }
+      matcher.appendTail(bodySB);
+
+      body = bodySB.toString();
     }
-    matcher.appendTail(bodySB);
 
-    return bodySB.toString();
+    return body;
   }
 
   private AnnotationSpec buildAnnotationSpec(ElementAnnotation annotation) {

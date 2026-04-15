@@ -42,7 +42,7 @@ public abstract non-sealed class PrimaryServiceGenericsAssign implements Interfa
     }
   }
 
-  protected List<AppendSuggestion> internalEvaluate(TypeName primaryComponentClass) {
+  protected List<AppendSuggestion> internalServiceBeanEvaluate(TypeName primaryComponentClass) {
     String simpleName = Utils.getSimpleName(primaryComponentClass);
     String fieldName = Strings.camelCase(simpleName);
     ElementAnnotation annotation = new ElementAnnotation(resourceType);

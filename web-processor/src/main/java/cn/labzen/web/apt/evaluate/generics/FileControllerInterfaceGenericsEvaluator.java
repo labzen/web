@@ -3,6 +3,7 @@ package cn.labzen.web.apt.evaluate.generics;
 import cn.labzen.web.apt.suggestion.Suggestion;
 import com.squareup.javapoet.TypeName;
 
+import java.util.Collections;
 import java.util.List;
 
 import static cn.labzen.web.apt.definition.TypeNames.INTERFACE_FILE_CONTROLLER;
@@ -19,7 +20,7 @@ public class FileControllerInterfaceGenericsEvaluator extends PrimaryServiceGene
 
   @Override
   public List<? extends Suggestion> evaluate(List<TypeName> arguments) {
-    assert !arguments.isEmpty();
-    return internalEvaluate(arguments.getFirst());
+//    assert !arguments.isEmpty();
+    return Collections.emptyList();
   }
 }

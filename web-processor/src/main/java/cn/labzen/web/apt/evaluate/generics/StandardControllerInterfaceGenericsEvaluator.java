@@ -20,6 +20,6 @@ public class StandardControllerInterfaceGenericsEvaluator extends PrimaryService
   @Override
   public List<? extends Suggestion> evaluate(List<TypeName> arguments) {
     assert !arguments.isEmpty();
-    return internalEvaluate(arguments.getFirst());
+    return internalServiceBeanEvaluate(arguments.getFirst());
   }
 }

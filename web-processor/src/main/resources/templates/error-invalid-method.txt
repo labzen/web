@@ -1,0 +1,1 @@
+throw new UnsupportedOperationException("无效方法调用");
