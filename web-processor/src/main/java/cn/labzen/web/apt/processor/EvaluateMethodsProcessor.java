@@ -25,8 +25,22 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+/**
+ * 评价 Controller 接口的方法
+ * <p>
+ * 核心处理逻辑：
+ * <ul>
+ *   <li>递归收集所有继承自 LabzenController 体系的接口方法</li>
+ *   <li>解析方法参数、返回值类型、注解信息</li>
+ *   <li>根据方法注解生成代码生成建议</li>
+ *   <li>处理 @Abandoned 等特殊注解，标记废弃方法</li>
+ * </ul>
+ */
 public final class EvaluateMethodsProcessor implements InternalProcessor {
 
+  /**
+   * 废弃方法时需要保留的注解集合
+   */
   private static final Set<TypeName> RESERVED_ANNOTATIONS_WHEN_DISCARD_METHOD = Set.of(
     TypeName.get(Override.class),
     TypeName.get(Nonnull.class),
@@ -39,6 +53,11 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
   private ElementClass elementClass;
   private List<MethodAnnotationErasableEvaluator> evaluators;
 
+  /**
+   * 处理接口方法，生成方法元素
+   *
+   * @param context 控制器上下文
+   */
   @Override
   public void process(ControllerContext context) {
     this.context = context;
@@ -53,6 +72,13 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
     });
   }
 
+  /**
+   * 递归收集接口及其父接口中定义的方法
+   * <p>
+   * 只处理继承自 LabzenController 体系的接口，忽略其他无关接口。
+   *
+   * @param source 接口类型元素
+   */
   private void collectMethods(TypeElement source) {
     List<? extends TypeMirror> directSupertypes = context.getApc().types().directSupertypes(source.asType());
     directSupertypes.forEach(superType -> {
@@ -69,6 +95,18 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
     ElementFilter.methodsIn(source.getEnclosedElements()).forEach(this::parseMethod);
   }
 
+  /**
+   * 解析单个方法的完整信息
+   * <p>
+   * 核心逻辑：
+   * <ul>
+   *   <li>1. 提取方法签名、返回类型、参数信息</li>
+   *   <li>2. 检查参数名是否被编译器优化为 argN 形式</li>
+   *   <li>3. 处理方法注解并生成代码建议</li>
+   * </ul>
+   *
+   * @param method 方法元素
+   */
   private void parseMethod(ExecutableElement method) {
     String methodName = method.getSimpleName().toString();
     TypeName returnType = Utils.typeOf(method.getReturnType());
@@ -135,6 +173,13 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
     parseMethodAnnotations(elementMethod);
   }
 
+  /**
+   * 读取方法参数及其注解信息
+   *
+   * @param parameterElements 参数元素列表
+   * @param actualParameterTypes 实际参数类型列表
+   * @return 参数元素列表
+   */
   private List<ElementParameter> readParameters(List<? extends VariableElement> parameterElements, List<? extends TypeMirror> actualParameterTypes) {
     List<ElementParameter> parameters = new ArrayList<>();
     int index = 0;
@@ -152,6 +197,12 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
     return parameters;
   }
 
+  /**
+   * 从注解镜像列表中提取注解信息
+   *
+   * @param annotationMirrors 注解镜像列表
+   * @return 注解元素列表
+   */
   private LinkedHashSet<ElementAnnotation> readAnnotations(List<? extends AnnotationMirror> annotationMirrors) {
     LinkedHashSet<ElementAnnotation> annotations = new LinkedHashSet<>();
 
@@ -166,6 +217,11 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
     return annotations;
   }
 
+  /**
+   * 解析方法上的注解，生成代码建议
+   *
+   * @param method 方法元素
+   */
   private void parseMethodAnnotations(ElementMethod method) {
     List<? extends Suggestion> suggestions = method.getAnnotations().stream()
       .flatMap(annotation ->
@@ -188,6 +244,12 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
     });
   }
 
+  /**
+   * 解析追加建议，添加字段或注解
+   *
+   * @param method 方法元素
+   * @param suggestion 追加建议
+   */
   private void parseAppendSuggestion(ElementMethod method, AppendSuggestion suggestion) {
     if (suggestion.element() instanceof ElementField elementField) {
       elementClass.getFields().add(elementField);
@@ -200,6 +262,12 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
     }
   }
 
+  /**
+   * 解析移除建议，删除字段或注解
+   *
+   * @param method 方法元素
+   * @param suggestion 移除建议
+   */
   private void parseRemoveSuggestion(ElementMethod method, RemoveSuggestion suggestion) {
     if (ElementClass.class.equals(suggestion.kind())) {
       removeNeedlessElements(elementClass.getFields(), field -> field.keyword().equals(suggestion.keyword()));
@@ -210,6 +278,12 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
     }
   }
 
+  /**
+   * 解析替换建议，修改方法体或注解属性
+   *
+   * @param method 方法元素
+   * @param suggestion 替换建议
+   */
   private void parseReplaceSuggestion(ElementMethod method, ReplaceSuggestion suggestion) {
     if (suggestion.element() instanceof ElementMethodBody elementMethodBody) {
       String fieldName = Strings.valueWhenBlank(elementMethodBody.getFieldName(), method.getBody().getFieldName());
@@ -227,6 +301,11 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
     }
   }
 
+  /**
+   * 处理废弃方法，将方法体置空并保留必要注解
+   *
+   * @param method 方法元素
+   */
   private void parseDiscardSuggestion(ElementMethod method) {
     // 移除方法上的注解，忽略Override, Nonnull等
     removeNeedlessElements(method.getAnnotations(), annotation -> !RESERVED_ANNOTATIONS_WHEN_DISCARD_METHOD.contains(((ElementAnnotation) annotation).getType()));
@@ -239,6 +318,12 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
     method.setBody(new ElementMethodBody("", "", java.util.Collections.emptyList()));
   }
 
+  /**
+   * 从集合中移除符合条件的元素
+   *
+   * @param elements 元素集合
+   * @param condition 移除条件
+   */
   private void removeNeedlessElements(LinkedHashSet<? extends Element> elements, Function<Element, Boolean> condition) {
     List<? extends Element> needlessElements = elements.stream().filter(condition::apply).toList();
     for (Element element : needlessElements) {

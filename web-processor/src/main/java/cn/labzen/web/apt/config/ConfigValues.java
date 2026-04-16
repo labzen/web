@@ -3,6 +3,11 @@ package cn.labzen.web.apt.config;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * APT 处理器配置的默认值
+ * <p>
+ * 定义所有配置项的默认值，当 labzen.web.config 中未设置对应项时使用。
+ */
 @Getter
 @RequiredArgsConstructor
 public enum ConfigValues {

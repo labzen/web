@@ -13,8 +13,19 @@ import javax.lang.model.type.TypeMirror;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * 评价 Controller 父接口的泛型参数
+ * <p>
+ * 分析 Controller 继承的父接口（如 StandardController&lt;S, T, ID>）的泛型类型参数，
+ * 根据泛型类型生成服务层依赖注入字段的建议。
+ */
 public final class EvaluateFieldsProcessor implements InternalProcessor {
 
+  /**
+   * 处理父接口泛型参数，生成字段建议
+   *
+   * @param context 控制器上下文
+   */
   @Override
   public void process(ControllerContext context) {
     // 读取所有继承的父接口定义的泛型参数类型
@@ -44,6 +55,12 @@ public final class EvaluateFieldsProcessor implements InternalProcessor {
     });
   }
 
+  /**
+   * 解析追加建议，添加新字段或注解
+   *
+   * @param root 根节点
+   * @param suggestion 追加建议
+   */
   private void parseAppendSuggestion(ElementClass root, AppendSuggestion suggestion) {
     if (suggestion.element() instanceof ElementField field) {
       root.getFields().add(field);
@@ -54,6 +71,12 @@ public final class EvaluateFieldsProcessor implements InternalProcessor {
     }
   }
 
+  /**
+   * 解析移除建议，删除指定字段
+   *
+   * @param root 根节点
+   * @param suggestion 移除建议
+   */
   private void parseRemoveSuggestion(ElementClass root, RemoveSuggestion suggestion) {
     if (ElementClass.class.equals(suggestion.kind())) {
       return;
@@ -65,6 +88,12 @@ public final class EvaluateFieldsProcessor implements InternalProcessor {
     needlessAnnotations.forEach(field -> root.getAnnotations().remove(field));
   }
 
+  /**
+   * 解析替换建议，修改注解属性
+   *
+   * @param root 根节点
+   * @param suggestion 替换建议
+   */
   private void parseReplaceSuggestion(ElementClass root, ReplaceSuggestion suggestion) {
     if (suggestion.element() instanceof ElementAnnotation annotation) {
       List<ElementAnnotation> annotations = root.getAnnotations().stream().filter(ann -> ann.keyword().equals(suggestion.keyword())).toList();
@@ -72,6 +101,12 @@ public final class EvaluateFieldsProcessor implements InternalProcessor {
     }
   }
 
+  /**
+   * 从类型镜像中提取泛型类型参数列表
+   *
+   * @param typeMirror 类型镜像
+   * @return 泛型类型参数列表，如果无泛型参数则返回 null
+   */
   private List<TypeName> detectTypeArguments(TypeMirror typeMirror) {
     if (typeMirror instanceof DeclaredType declaredType) {
       List<? extends TypeMirror> typeArguments = declaredType.getTypeArguments();

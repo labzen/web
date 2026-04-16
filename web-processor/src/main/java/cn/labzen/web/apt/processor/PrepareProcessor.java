@@ -11,10 +11,18 @@ import java.util.List;
 import java.util.ServiceLoader;
 
 /**
- * 检查Controller接口合法性
+ * Controller 接口合法性检查处理器
+ * <p>
+ * 在处理流程的最早阶段执行，负责验证被 @LabzenController 注解的接口是否符合规范，
+ * 并初始化所有后续处理所需的评价器。
  */
 public final class PrepareProcessor implements InternalProcessor {
 
+  /**
+   * 执行合法性检查和评价器初始化
+   *
+   * @param context 控制器上下文
+   */
   @Override
   public void process(ControllerContext context) {
     TypeElement source = context.getSource();
@@ -30,6 +38,12 @@ public final class PrepareProcessor implements InternalProcessor {
     context.setAnnotationEvaluators(getAnnotationEvaluators(context));
   }
 
+  /**
+   * 加载并初始化所有泛型评价器
+   *
+   * @param context 注解处理器上下文
+   * @return 已初始化的评价器列表
+   */
   private List<InterfaceGenericsEvaluator> getClassGenerators(ControllerContext context) {
     return ServiceLoader.load(InterfaceGenericsEvaluator.class, this.getClass().getClassLoader())
       .stream()
@@ -38,6 +52,12 @@ public final class PrepareProcessor implements InternalProcessor {
       .toList();
   }
 
+  /**
+   * 加载并初始化所有注解评价器
+   *
+   * @param context 注解处理器上下文
+   * @return 已初始化的评价器列表
+   */
   private List<MethodAnnotationErasableEvaluator> getAnnotationEvaluators(ControllerContext context) {
     return ServiceLoader.load(MethodAnnotationErasableEvaluator.class, this.getClass().getClassLoader())
       .stream()

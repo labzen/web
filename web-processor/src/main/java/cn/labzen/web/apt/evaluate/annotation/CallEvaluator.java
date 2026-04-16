@@ -20,20 +20,50 @@ import java.util.Map;
 
 import static cn.labzen.web.apt.definition.TypeNames.APT_ANNOTATION_CALL;
 
+/**
+ * @Call 注解评价器
+ * <p>
+ * 处理 @Call 注解，该注解用于声明接口方法调用其他服务的方法。
+ * 评价结果为：
+ * <ul>
+ *   <li>移除 @Call 注解本身</li>
+ *   <li>根据 target 属性添加服务层依赖注入字段</li>
+ *   <li>根据 method 属性设置方法调用体</li>
+ * </ul>
+ */
 public final class CallEvaluator implements MethodAnnotationErasableEvaluator {
 
   private TypeName supportedAnnotationType;
 
+  /**
+   * 初始化评价器，加载 @Call 注解类型
+   *
+   * @param context 注解处理器上下文
+   */
   @Override
   public void init(AnnotationProcessorContext context) {
     supportedAnnotationType = TypeName.get(context.elements().getTypeElement(APT_ANNOTATION_CALL).asType());
   }
 
+  /**
+   * 判断是否支持该注解类型
+   *
+   * @param type 注解类型
+   * @return 是否支持
+   */
   @Override
   public boolean support(TypeName type) {
     return supportedAnnotationType.equals(type);
   }
 
+  /**
+   * 评价 @Call 注解，生成服务调用建议
+   *
+   * @param config 处理器配置
+   * @param type 注解类型
+   * @param members 注解成员值
+   * @return 代码生成建议列表
+   */
   @Override
   public List<? extends Suggestion> evaluate(Config config, TypeName type, Map<String, Object> members) {
     List<Suggestion> suggestions = Lists.newArrayList(new RemoveSuggestion(Utils.getSimpleName(supportedAnnotationType), ElementMethod.class));

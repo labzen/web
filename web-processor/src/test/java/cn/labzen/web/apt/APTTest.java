@@ -15,7 +15,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.util.List;
 
-import static cn.labzen.web.apt.definition.UnitConstants.JUNIT_OUTPUT_DIR;
+import static cn.labzen.web.apt.definition.JUnitConstants.JUNIT_OUTPUT_DIR;
 import static com.google.testing.compile.Compiler.javac;
 
 public class APTTest {

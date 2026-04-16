@@ -3,6 +3,11 @@ package cn.labzen.web.apt.config;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * APT 处理器配置项枚举
+ * <p>
+ * 定义所有支持的配置项，配置值对应 labzen.web.config 文件中的 key。
+ */
 @Getter
 @RequiredArgsConstructor
 public enum ConfigKeys {

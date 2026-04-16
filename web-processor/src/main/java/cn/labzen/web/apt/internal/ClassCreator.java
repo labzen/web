@@ -24,8 +24,21 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static cn.labzen.web.apt.definition.UnitConstants.JUNIT_OUTPUT_DIR;
+import static cn.labzen.web.apt.definition.JUnitConstants.JUNIT_OUTPUT_DIR;
 
+/**
+ * JavaPoet 代码生成器
+ * <p>
+ * 负责将内存中的 ElementClass 结构转换为 Java 源代码文件。
+ * 主要功能：
+ * <ul>
+ *   <li>加载方法体模板文件</li>
+ *   <li>构建类结构（类名、父接口、注解）</li>
+ *   <li>构建字段（服务层依赖注入）</li>
+ *   <li>构建方法（Controller 接口实现）</li>
+ *   <li>输出 Java 源文件</li>
+ * </ul>
+ */
 public final class ClassCreator {
 
   private static final String PROCESSOR_NAME = LabzenWebProcessor.class.getName();
@@ -39,6 +52,11 @@ public final class ClassCreator {
   private final Filer filer;
   private final Map<String, String> methodBodyTemplates = Maps.newHashMap();
 
+  /**
+   * 从 Maven 属性文件中读取版本号
+   *
+   * @return 版本号，读取失败时返回 "unknown"
+   */
   private static String readVersionFromPom() {
     try (var is = ClassCreator.class.getResourceAsStream("/META-INF/maven/cn.labzen/web-processor/pom.properties")) {
       if (is != null) {
@@ -59,6 +77,12 @@ public final class ClassCreator {
     loadMethodBodyTemplates();
   }
 
+  /**
+   * 加载方法体模板文件
+   * <p>
+   * 从 classpath 的 templates 目录读取 index.txt 获取模板文件列表，
+   * 然后逐个读取模板内容存入缓存。
+   */
   private void loadMethodBodyTemplates() {
     if (!methodBodyTemplates.isEmpty()) {
       return;
@@ -101,6 +125,18 @@ public final class ClassCreator {
     return sb.toString();
   }
 
+  /**
+   * 创建 Java 源文件
+   * <p>
+   * 核心构建流程：
+   * <ul>
+   *   <li>1. 构建类规范（名称、父接口、修饰符）</li>
+   *   <li>2. 添加类注解（包括 @Generated）</li>
+   *   <li>3. 构建并添加字段</li>
+   *   <li>4. 构建并添加方法</li>
+   *   <li>5. 输出到文件</li>
+   * </ul>
+   */
   public void create() {
     var typeSpecBuilder = TypeSpec.classBuilder(root.getName())
       .addSuperinterface(root.getImplementTypes())
@@ -151,6 +187,17 @@ public final class ClassCreator {
     output(javaFile);
   }
 
+  /**
+   * 输出 Java 文件
+   * <p>
+   * 根据系统属性 JUNIT_OUTPUT_DIR 判断运行环境：
+   * <ul>
+   *   <li>若设置了该属性，则输出到指定目录（用于测试）</li>
+   *   <li>否则使用 Filer 输出到编译目标目录</li>
+   * </ul>
+   *
+   * @param javaFile 要输出的 Java 文件对象
+   */
   private void output(JavaFile javaFile) {
     var outputTarget = System.getProperty(JUNIT_OUTPUT_DIR, "");
     if (!outputTarget.isBlank()) {
@@ -169,6 +216,22 @@ public final class ClassCreator {
     }
   }
 
+  /**
+   * 构建方法体内容
+   * <p>
+   * 核心逻辑：
+   * <ul>
+   *   <li>1. 检查方法是否有调用目标，无则返回错误模板</li>
+   *   <li>2. 确定字段名和方法名</li>
+   *   <li>3. 从模板中获取方法体内容</li>
+   *   <li>4. 替换模板中的占位符（{#field}、{#method}、{#parameters}）</li>
+   *   <li>5. 处理参数索引占位符（{#parameter0}、{#parameter1} 等）</li>
+   * </ul>
+   *
+   * @param method 方法元素
+   * @param defaultFieldElement 默认字段元素
+   * @return 方法体代码字符串
+   */
   private String buildMethodBody(ElementMethod method, ElementField defaultFieldElement) {
     boolean healthyBody = true;
     if (method.getBody().getInvokeMethodName().isEmpty()) {
@@ -214,6 +277,12 @@ public final class ClassCreator {
     return body;
   }
 
+  /**
+   * 构建注解规范
+   *
+   * @param annotation 注解元素
+   * @return 注解规范对象
+   */
   private AnnotationSpec buildAnnotationSpec(ElementAnnotation annotation) {
     var annotationSpecBuilder = AnnotationSpec.builder((ClassName) annotation.getType());
     annotation.getMembers().forEach((key, value) -> {
@@ -235,6 +304,14 @@ public final class ClassCreator {
     return annotationSpecBuilder.build();
   }
 
+  /**
+   * 构建注解的数组类型成员值
+   * <p>
+   * 将 List 或数组转换为注解的数组语法，如 { "value1", "value2" }
+   *
+   * @param values 值列表
+   * @return 代码块对象
+   */
   private CodeBlock buildAnnotationArrayMemberValue(List<?> values) {
     var block = CodeBlock.builder().add("{");
     for (int i = 0; i < values.size(); i++) {
