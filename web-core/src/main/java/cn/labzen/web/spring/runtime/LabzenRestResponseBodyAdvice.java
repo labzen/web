@@ -23,7 +23,18 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 import javax.annotation.Nonnull;
 
 /**
- * 对 Controller 返回的响应结果进行增强处理（转换 Http Response 结构）
+ * REST 响应体增强处理
+ * <p>
+ * 在 ResponseBody 写入之前拦截，对响应内容进行格式化转换。
+ * <p>
+ * 核心功能：
+ * <ul>
+ *   <li>统一响应结构：所有 Controller 返回值都会被包装成标准 Response 格式</li>
+ *   <li>异常处理：捕获 RequestException 并转换为标准响应</li>
+ *   <li>格式化器链：通过 CompositeResponseFormatter 处理不同类型的返回值</li>
+ * </ul>
+ *
+ * @see CompositeResponseFormatter
  */
 @RestControllerAdvice
 public class LabzenRestResponseBodyAdvice implements ResponseBodyAdvice<Object>, InitializingBean {
@@ -31,18 +42,33 @@ public class LabzenRestResponseBodyAdvice implements ResponseBodyAdvice<Object>,
   private final CompositeResponseFormatter responseFormatter = new CompositeResponseFormatter();
   private boolean processAllRestResponse = true;
 
+  /**
+   * 初始化配置
+   * <p>
+   * 从配置中读取是否强制处理所有响应。
+   */
   @Override
   public void afterPropertiesSet() {
     var configuration = Labzens.configurationWith(WebCoreConfiguration.class);
     processAllRestResponse = configuration.responseFormattingForcedAll();
   }
 
+  /**
+   * 判断是否支持当前返回值类型
+   * <p>
+   * 当强制格式化开启时处理所有响应，否则只处理 Result 类型。
+   */
   @Override
   public boolean supports(@Nonnull MethodParameter returnType,
                           @Nonnull Class<? extends HttpMessageConverter<?>> converterType) {
     return processAllRestResponse || Result.class.isAssignableFrom(returnType.getParameterType());
   }
 
+  /**
+   * 在响应体写入之前进行格式化
+   * <p>
+   * 核心处理：将原始返回值通过格式化器链转换为标准响应结构。
+   */
   @Override
   public Object beforeBodyWrite(Object body,
                                 @Nonnull MethodParameter returnType,
@@ -65,7 +91,9 @@ public class LabzenRestResponseBodyAdvice implements ResponseBodyAdvice<Object>,
   }
 
   /**
-   * #第1级异常拦截处理：在这里处理业务相关异常，推荐统一封装为 RequestException !!
+   * 处理业务异常
+   * <p>
+   * 捕获 Controller 中抛出的 RequestException，转换为标准响应结构。
    */
   @ExceptionHandler(RequestException.class)
   public Object handleLabzenRequestException(HttpServletRequest request,

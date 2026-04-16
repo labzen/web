@@ -10,10 +10,30 @@ import org.springframework.http.HttpStatus;
 import java.util.List;
 import java.util.ServiceLoader;
 
+/**
+ * 响应格式化器组合
+ * <p>
+ * 负责协调多个响应格式化器，按优先级顺序处理 Controller 返回值。
+ * <p>
+ * 内置格式化器顺序：
+ * <ol>
+ *   <li>ResponseAgainResponseFormatter - 已经是 Response 结构则快速返回</li>
+ *   <li>AbnormalStatusResponseFormatter - 处理异常的 HTTP 状态码（如404）</li>
+ *   <li>... SPI 加载的格式化器 ...</li>
+ *   <li>FileDownloadResponseFormatter - 处理文件下载响应</li>
+ *   <li>StandardResultResponseFormatter - 处理标准的 Result 返回结构</li>
+ *   <li>UnexpectedResponseFormatter - 处理未预期的返回值</li>
+ * </ol>
+ */
 public class CompositeResponseFormatter implements ResponseFormatter {
 
   private final List<ResponseFormatter> formatters;
 
+  /**
+   * 构造方法
+   * <p>
+   * 初始化内置格式化器，并加载 SPI 扩展的格式化器。
+   */
   public CompositeResponseFormatter() {
     // 第1 处理已经是 Response 结构化的情况，快速返回已经是 Response 结构的情况
     ResponseAgainResponseFormatter responseAgainRF = new ResponseAgainResponseFormatter();
@@ -44,6 +64,12 @@ public class CompositeResponseFormatter implements ResponseFormatter {
     return true;
   }
 
+  /**
+   * 格式化响应
+   * <p>
+   * 遍历所有格式化器，找到第一个支持当前返回值类型的格式化器进行处理。
+   * 如果结果为 null，返回 204 NO_CONTENT 响应。
+   */
   @Override
   public Object format(Object result, HttpServletRequest request, HttpServletResponse response) {
     if (result == null) {

@@ -10,13 +10,26 @@ import static cn.labzen.web.api.definition.Constants.DEFAULT_PAGE_NUMBER;
 import static cn.labzen.web.paging.internal.Paging.DEFAULT_PAGE_SIZE;
 
 /**
- * 查询请求分页条件解析器，分页条件参数传递规则参考 {@link Pageable}
+ * 分页条件解析器
+ * <p>
+ * 将 HTTP 请求参数解析为分页条件对象。
+ * 支持两种参数格式：
+ * <ul>
+ *   <li>紧凑格式：paging=1,20,field1,-field2（页码,每页数量,排序字段）</li>
+ *   <li>普通格式：pageNumber=1&pageSize=20&orders=field1,!field2</li>
+ * </ul>
  */
 public final class PageableResolver {
 
   private PageableResolver() {
   }
 
+  /**
+   * 解析分页条件
+   *
+   * @param webRequest Web 请求
+   * @return 解析后的分页条件
+   */
   public static Paging resolve(NativeWebRequest webRequest) {
     String parameter = webRequest.getParameter("paging");
     if (parameter != null) {
@@ -26,6 +39,14 @@ public final class PageableResolver {
     }
   }
 
+  /**
+   * 从紧凑格式解析分页条件
+   * <p>
+   * 格式：page,size,field1,-field2,nulls+
+   * - 第一部分：页码（必填）
+   * - 第二部分：每页数量（可选）
+   * - 第三部分及之后：排序字段（可选，!开头表示降序，+结尾表示nulls first，-结尾表示nulls last）
+   */
   private static Paging resolveFromCompact(String raw) {
     String[] parts = raw.split(",");
 
@@ -44,6 +65,15 @@ public final class PageableResolver {
     return new Paging(false, pageNumber, pageSize, orders);
   }
 
+  /**
+   * 从普通格式解析分页条件
+   * <p>
+   * 支持的参数名：
+   * - 页码：page_number, pageNumber, pn
+   * - 每页数量：page_size, pageSize, ps
+   * - 排序：orders, od
+   * - 禁用分页：unpaged
+   */
   private static Paging resolveFromNormal(NativeWebRequest webRequest) {
     if (webRequest.getParameter("unpaged") != null) {
       return Paging.UNPAGED_PAGING;
@@ -73,6 +103,9 @@ public final class PageableResolver {
     return new Paging(false, pageNumber, pageSize, orders);
   }
 
+  /**
+   * 解析排序字段列表
+   */
   private static List<Order> resolveOrders(List<String> orderParts) {
     List<Order> orders = new ArrayList<>();
     for (String chip : orderParts) {
@@ -90,6 +123,11 @@ public final class PageableResolver {
     return orders;
   }
 
+  /**
+   * 从排序字符串中提取字段名
+   * <p>
+   * 排序修饰符：! 降序，+ nulls first，- nulls last
+   */
   private static String extractName(String trimmed) {
     StringBuilder name = new StringBuilder();
     for (int i = 0; i < trimmed.length(); i++) {
@@ -102,6 +140,9 @@ public final class PageableResolver {
     return name.toString();
   }
 
+  /**
+   * 从排序字符串中提取 nulls 处理方式
+   */
   private static String extractNulls(String trimmed) {
     if (trimmed.endsWith("+")) {
       return "first";
@@ -111,6 +152,11 @@ public final class PageableResolver {
     return null;
   }
 
+  /**
+   * 安全解析整数
+   * <p>
+   * 如果字符串为空或格式不正确，返回空 Optional。
+   */
   private static Optional<Integer> parseInt(String value) {
     if (value == null || value.isBlank()) {
       return Optional.empty();

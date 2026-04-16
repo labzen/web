@@ -17,16 +17,35 @@ import static cn.labzen.web.api.definition.Constants.REST_REQUEST_TIME;
 import static cn.labzen.web.api.definition.Constants.REST_REQUEST_TIME_MILLIS;
 
 /**
- * 拦截器，用于统计请求处理时长、以及其他与 Labzen Web 组件相关的功能处理
+ * 请求拦截器
+ * <p>
+ * 在请求处理之前执行，用于：
+ * <ul>
+ *   <li>强制验证 API 版本 Header（当配置要求时）</li>
+ *   <li>记录请求开始时间，用于统计处理时长</li>
+ * </ul>
  */
 public class LabzenRestRequestHandlerInterceptor implements HandlerInterceptor {
 
+  /**
+   * 判断是否强制要求版本 Header
+   * <p>
+   * 条件：版本携带方式为 HEADER 且启用了强制验证。
+   */
   private final Supplier<Boolean> forceRequestWithVersionHeader = () -> {
     var configuration = Labzens.configurationWith(WebCoreConfiguration.class);
     return configuration.apiVersionCarrier() == APIVersionCarrier.HEADER
       && configuration.apiVersionHeaderAcceptForced();
   };
 
+  /**
+   * 前置处理
+   * <p>
+   * <ul>
+   *   <li>1. 验证 Accept Header 是否包含有效的 API 版本信息</li>
+   *   <li>2. 记录请求开始时间</li>
+   * </ul>
+   */
   @Override
   public boolean preHandle(@Nonnull HttpServletRequest request, @Nonnull HttpServletResponse response, @Nonnull Object handler) {
     // 强制请求的Header中带有Accept版本信息

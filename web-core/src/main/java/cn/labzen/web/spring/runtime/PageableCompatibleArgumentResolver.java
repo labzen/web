@@ -22,15 +22,36 @@ import javax.annotation.Nonnull;
 import java.util.Objects;
 
 /**
- * 负责在查询请求时，对实现 {@link Pageable} 接口的 Resource Bean 参数的数据绑定处理
+ * Pageable 参数解析器
+ * <p>
+ * 负责将 HTTP 请求参数绑定到实现 {@link Pageable} 接口的方法参数上。
+ * 核心功能：
+ * <ul>
+ *   <li>支持两种分页参数格式：紧凑格式（paging=1,20）和普通格式（pageNumber=1, pageSize=20）</li>
+ *   <li>支持排序条件解析</li>
+ *   <li>使用 ByteBuddy 动态代理实现分页数据的懒加载</li>
+ * </ul>
  */
 public class PageableCompatibleArgumentResolver implements HandlerMethodArgumentResolver {
 
+  /**
+   * 判断是否支持该参数类型
+   */
   @Override
   public boolean supportsParameter(MethodParameter parameter) {
     return Pageable.class.isAssignableFrom(parameter.getParameterType());
   }
 
+  /**
+   * 解析 Pageable 参数
+   * <p>
+   * 核心流程：
+   * <ul>
+   *   <li>1. 绑定 Bean 参数值（处理 @ModelAttribute 注解的参数）</li>
+   *   <li>2. 解析分页条件（页码、每页数量、排序）</li>
+   *   <li>3. 使用动态代理创建可访问分页数据的对象</li>
+   * </ul>
+   */
   @Override
   public Object resolveArgument(@Nonnull MethodParameter parameter,
                                 ModelAndViewContainer mavContainer,
@@ -54,7 +75,9 @@ public class PageableCompatibleArgumentResolver implements HandlerMethodArgument
   }
 
   /**
-   * 参数解析及绑定逻辑
+   * 绑定请求参数到 Bean 对象
+   * <p>
+   * 包含完整的 Spring 数据绑定和验证流程。
    */
   private Object bindAttribute(MethodParameter parameter, ModelAndViewContainer mavContainer,
                                NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {

@@ -6,6 +6,7 @@ import org.springframework.context.EmbeddedValueResolverAware;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.StringValueResolver;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.mvc.condition.RequestCondition;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
@@ -31,6 +32,17 @@ public class LabzenVersionedApiRequestMappingHandlerMapping
     super.setEmbeddedValueResolver(resolver);
   }
 
+  /**
+   * 构建 Controller 方法的请求映射信息
+   * <p>
+   * 核心构建流程：
+   * <ul>
+   *   <li>1. 根据方法上的 @RequestMapping 创建基础映射信息</li>
+   *   <li>2. 合并类级别的 @RequestMapping 注解</li>
+   *   <li>3. 如果方法标注了 @APIVersion，添加版本前缀路径</li>
+   *   <li>4. 应用配置的路径前缀（如 /api）</li>
+   * </ul>
+   */
   @Override
   protected RequestMappingInfo getMappingForMethod(@Nonnull Method method, @Nonnull Class<?> handlerType) {
     RequestMappingInfo info = createRequestMappingInfo(method);
@@ -64,17 +76,33 @@ public class LabzenVersionedApiRequestMappingHandlerMapping
     return info;
   }
 
+  /**
+   * 为指定的类或方法创建 RequestMappingInfo
+   * <p>
+   * 提取 @RequestMapping 注解的属性，并获取自定义条件。
+   */
   private RequestMappingInfo createRequestMappingInfo(AnnotatedElement element) {
     var requestMapping = AnnotatedElementUtils.findMergedAnnotation(element, RequestMapping.class);
-    var condition = (element instanceof Class<?> clazz)
-      ? getCustomTypeCondition(clazz)
-      : getCustomMethodCondition((Method) element);
+    RequestCondition<?> condition;
+    if (element instanceof Class<?> clazz) {
+      condition = getCustomTypeCondition(clazz);
+    } else if (element instanceof Method method) {
+      condition = getCustomMethodCondition(method);
+    } else {
+      throw new IllegalArgumentException("Unsupported element type: " + element.getClass().getName());
+    }
 
     return (requestMapping != null)
       ? super.createRequestMappingInfo(requestMapping, condition)
       : null;
   }
 
+  /**
+   * 获取处理器类配置的路径前缀
+   * <p>
+   * 遍历配置的路径前缀映射，找到匹配当前处理器类的前缀，
+   * 并解析其中的占位符（如 ${}）。
+   */
   private String getPathPrefix(Class<?> handlerType) {
     // 假设 pathPrefixes 是一个 Map<String, Predicate<Class<?>>> 类型的字段
     // 这里需要根据实际实现调整

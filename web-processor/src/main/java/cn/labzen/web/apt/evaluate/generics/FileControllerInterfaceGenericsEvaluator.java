@@ -20,7 +20,6 @@ public class FileControllerInterfaceGenericsEvaluator extends PrimaryServiceGene
 
   @Override
   public List<? extends Suggestion> evaluate(List<TypeName> arguments) {
-//    assert !arguments.isEmpty();
     return Collections.emptyList();
   }
 }

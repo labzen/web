@@ -50,10 +50,6 @@ public class PageableDTOTest {
     } catch (Exception e) {
       e.printStackTrace(System.err);
     }
-//    TestDto proxied = (TestDto) Proxy.newProxyInstance(
-//      TestDto.class.getClassLoader(),
-//      new Class[]{TestDto.class}, (proxy, method, args1) -> method.invoke(dto, args1));
-
   }
 
   // 委托其他方法给原始实例

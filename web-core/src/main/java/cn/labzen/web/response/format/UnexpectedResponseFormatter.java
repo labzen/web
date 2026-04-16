@@ -13,15 +13,24 @@ import static cn.labzen.web.api.definition.Constants.REST_REQUEST_TIME;
 import static cn.labzen.web.api.definition.Constants.REST_REQUEST_TIME_MILLIS;
 
 /**
- * 格式化非 {@link Result} 类型的返回值
+ * 兜底格式化器
+ * <p>
+ * 处理所有未被其他格式化器处理的返回值类型。
+ * 将任意类型的返回值包装成标准响应结构。
  */
 public class UnexpectedResponseFormatter implements ResponseFormatter {
 
+  /**
+   * 接受所有类型
+   */
   @Override
   public boolean support(Class<?> clazz, HttpServletRequest request) {
     return true;
   }
 
+  /**
+   * 包装为标准响应
+   */
   @Override
   public Object format(Object result, HttpServletRequest request, HttpServletResponse response) {
     String requestTime = request.getAttribute(REST_REQUEST_TIME).toString();

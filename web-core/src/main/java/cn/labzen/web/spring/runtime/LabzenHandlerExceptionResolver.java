@@ -1,6 +1,7 @@
 package cn.labzen.web.spring.runtime;
 
 import cn.labzen.logger.Loggers;
+import cn.labzen.tool.util.Strings;
 import cn.labzen.web.api.response.out.Response;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,6 +35,25 @@ import java.util.Map;
 
 import static cn.labzen.web.api.definition.Constants.EXCEPTION_WAS_LOGGED_DURING_REQUEST;
 
+/**
+ * Spring MVC 异常解析器
+ * <p>
+ * 处理 Spring MVC 请求处理过程中的各类异常，将它们转换为标准化的 JSON 响应。
+ * <p>
+ * 支持的异常类型：
+ * <ul>
+ *   <li>BindException - 参数绑定失败（400）</li>
+ *   <li>NoHandlerFoundException - 无对应处理器（404）</li>
+ *   <li>HttpRequestMethodNotSupportedException - 请求方法不支持（405）</li>
+ *   <li>HttpMediaTypeNotSupportedException - 媒体类型不支持（415）</li>
+ *   <li>MissingServletRequestParameterException - 缺少请求参数（400）</li>
+ *   <li>TypeMismatchException - 类型不匹配（400）</li>
+ *   <li>ConversionNotSupportedException - 转换不支持（500）</li>
+ *   <li>MissingPathVariableException - 缺少路径变量（500）</li>
+ * </ul>
+ *
+ * @see HandlerExceptionResolver
+ */
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class LabzenHandlerExceptionResolver implements HandlerExceptionResolver {
 
@@ -41,6 +61,11 @@ public class LabzenHandlerExceptionResolver implements HandlerExceptionResolver 
   @Resource
   private List<HttpMessageConverter<Object>> converters;
 
+  /**
+   * 解析异常并生成响应
+   * <p>
+   * 使用 pattern matching 匹配异常类型，分发到对应的处理器。
+   */
   @Override
   public ModelAndView resolveException(@Nonnull HttpServletRequest request,
                                        @Nonnull HttpServletResponse response,
@@ -68,6 +93,11 @@ public class LabzenHandlerExceptionResolver implements HandlerExceptionResolver 
     };
   }
 
+  /**
+   * 处理参数绑定异常
+   * <p>
+   * 将验证错误信息提取为 Map，格式为 {字段名: 错误消息}。
+   */
   private ModelAndView handleBindException(HttpServletRequest request,
                                            HttpServletResponse response,
                                            BindException exception) {
@@ -84,11 +114,19 @@ public class LabzenHandlerExceptionResolver implements HandlerExceptionResolver 
     return new ModelAndView();
   }
 
+  /**
+   * 处理无处理器异常（404）
+   */
   private ModelAndView handleNoHandlerFoundException(HttpServletRequest request, HttpServletResponse response) {
     responseNoData(HttpStatus.NOT_FOUND, request, response);
     return new ModelAndView();
   }
 
+  /**
+   * 处理请求方法不支持异常
+   * <p>
+   * 返回支持的方法列表。
+   */
   private ModelAndView handleRequestMethodNotSupportedException(HttpServletRequest request,
                                                                 HttpServletResponse response,
                                                                 HttpRequestMethodNotSupportedException exception) {
@@ -143,6 +181,9 @@ public class LabzenHandlerExceptionResolver implements HandlerExceptionResolver 
     return new ModelAndView();
   }
 
+  /**
+   * 使用消息创建响应
+   */
   private void responseWithMessage(HttpStatus status,
                                    String message,
                                    HttpServletRequest request,
@@ -155,6 +196,9 @@ public class LabzenHandlerExceptionResolver implements HandlerExceptionResolver 
     }
   }
 
+  /**
+   * 创建无数据的响应
+   */
   private void responseNoData(HttpStatus status,
                               HttpServletRequest request,
                               HttpServletResponse response) {
@@ -166,6 +210,9 @@ public class LabzenHandlerExceptionResolver implements HandlerExceptionResolver 
     }
   }
 
+  /**
+   * 创建带数据的响应
+   */
   private void responseWithData(HttpStatus status,
                                 Object data,
                                 HttpServletRequest request,
@@ -178,10 +225,22 @@ public class LabzenHandlerExceptionResolver implements HandlerExceptionResolver 
     }
   }
 
+  /**
+   * 输出响应
+   * <p>
+   * 根据 Accept Header 选择合适的 HttpMessageConverter 进行序列化。
+   * 默认使用 application/json。
+   */
   private void out(Object data,
                    HttpServletRequest request,
                    HttpServletResponse response) throws IOException {
-    MediaType mediaType = MediaType.parseMediaType(request.getHeader("Accept"));
+    String accept = request.getHeader("Accept");
+    MediaType mediaType;
+    if (Strings.isBlank(accept)) {
+      mediaType = MediaType.APPLICATION_JSON;
+    } else {
+      mediaType = MediaType.parseMediaType(accept);
+    }
     for (HttpMessageConverter<Object> converter : converters) {
       if (converter instanceof GenericHttpMessageConverter<Object> genericConverter) {
         if (genericConverter.canWrite(RESPONSE_TYPE, RESPONSE_TYPE, mediaType)) {

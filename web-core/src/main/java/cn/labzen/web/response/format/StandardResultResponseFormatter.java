@@ -14,15 +14,32 @@ import static cn.labzen.web.api.definition.Constants.REST_REQUEST_TIME;
 import static cn.labzen.web.api.definition.Constants.REST_REQUEST_TIME_MILLIS;
 
 /**
- * 处理 {@link ValueResult} 中的返回值格式化，通用的格式化器，在 {@link CompositeResponseFormatter} 中的执行顺序最晚，如果其他的格式化器不处理返回值，则在这里格式化，算是最后托底的
+ * 标准结果格式化器
+ * <p>
+ * 处理 {@link ValueResult} 类型的返回值，将其转换为标准响应结构。
+ * <p>
+ * 核心功能：
+ * <ul>
+ *   <li>提取 ValueResult 中的 code、message、value</li>
+ *   <li>计算请求执行时长</li>
+ *   <li>如果是分页数据，分离分页信息和记录列表</li>
+ * </ul>
  */
 public class StandardResultResponseFormatter implements ResponseFormatter {
 
+  /**
+   * 仅支持 ValueResult 类型
+   */
   @Override
   public boolean support(Class<?> clazz, HttpServletRequest request) {
     return ValueResult.class.isAssignableFrom(clazz);
   }
 
+  /**
+   * 格式化 ValueResult
+   * <p>
+   * 构建包含执行时长、元数据、分页信息和实际数据的完整响应。
+   */
   @Override
   public Object format(Object result, HttpServletRequest request, HttpServletResponse response) {
     String requestTime = request.getAttribute(REST_REQUEST_TIME).toString();

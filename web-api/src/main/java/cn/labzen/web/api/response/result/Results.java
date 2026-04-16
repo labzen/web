@@ -223,19 +223,4 @@ public final class Results {
     return new ValueResult(status.code(), null, message);
   }
 
-//  /* ======================== with paging records ======================== */
-//
-//  public static Result asPaging(List<?> records, int pageNumber, int pageSize) {
-//    return asPaging(records, pageNumber, pageSize, null);
-//  }
-//
-//  public static Result asPaging(List<?> records, int pageNumber, int pageSize, Long totalOfRecords) {
-//    long totalOfPages = 0;
-//    if (totalOfRecords != null) {
-//      totalOfPages = totalOfRecords / pageSize + ((totalOfRecords % pageSize == 0) ? 0 : 1);
-//    }
-//
-//    Pagination<?> pagination = new DefaultPagination<>(true, pageNumber, pageSize, totalOfRecords == null ? 0 : totalOfRecords, totalOfPages, records);
-//    return new Result(200, pagination, null);
-//  }
 }

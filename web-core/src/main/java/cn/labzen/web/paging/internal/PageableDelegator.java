@@ -26,6 +26,19 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+/**
+ * Pageable 动态代理工厂
+ * <p>
+ * 使用 ByteBuddy 为实现了 {@link Pageable} 接口的类创建动态代理，
+ * 使得方法调用能够访问解析后的分页数据。
+ * <p>
+ * 核心功能：
+ * <ul>
+ *   <li>拦截 Pageable 接口定义的方法调用，返回解析后的分页数据</li>
+ *   <li>代理其他方法调用到原始 Bean 实例</li>
+ *   <li>支持调试模式：保留原始字段用于调试观察</li>
+ * </ul>
+ */
 public final class PageableDelegator {
 
   private static final String DEBUGGER_PAGING_FIELD_NAME = "_paging";
@@ -43,6 +56,14 @@ public final class PageableDelegator {
   private PageableDelegator() {
   }
 
+  /**
+   * 创建 Pageable 代理对象
+   *
+   * @param parameter 方法参数信息
+   * @param attribute 已绑定的 Bean 实例
+   * @param resolvedPaging 解析后的分页条件
+   * @return 代理后的对象
+   */
   public static Object delegate(MethodParameter parameter, Object attribute, Paging resolvedPaging) {
     Class<?> parameterType = parameter.getParameterType();
 
@@ -57,7 +78,10 @@ public final class PageableDelegator {
   }
 
   /**
-   * 直接代理，不需要进行特殊处理
+   * 直接代理模式
+   * <p>
+   * 使用 ByteBuddy 创建子类代理，拦截 Pageable 接口方法，
+   * 其他方法委托给原始 Bean 实例。
    */
   private static Object delegateDirectly(Class<?> parameterType, PageableValuesInterceptor pageableInterceptor, PageableBeanAttributesInterceptor beanAttributesInterceptor) {
     DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<?> buddyBuilder = new ByteBuddy()
@@ -78,7 +102,10 @@ public final class PageableDelegator {
   }
 
   /**
-   * 创建针对调试窗口友好的代理对象，用于在调试过程中，能够直接观察到被代理对象的属性值，适合在开发阶段使用
+   * 调试模式代理
+   * <p>
+   * 在代理对象中额外添加私有字段保存分页数据和原始 Bean，
+   * 便于在调试器中观察属性值。
    */
   private static Object delegateForDebugger(Class<?> parameterType, PageableValuesInterceptor pageableInterceptor, PageableBeanAttributesInterceptor beanAttributesInterceptor) {
     DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<?> buddyBuilder = new ByteBuddy()
@@ -104,6 +131,11 @@ public final class PageableDelegator {
     }
   }
 
+  /**
+   * 复制源对象的字段到目标对象
+   * <p>
+   * 递归遍历父类层次，复制所有声明的字段值。
+   */
   private static void copyFields(Object source, Object target) {
     Class<?> clazz = source.getClass();
     while (clazz != null && clazz != Object.class) {
@@ -112,18 +144,23 @@ public final class PageableDelegator {
           f.setAccessible(true);
           f.set(target, f.get(source));
         } catch (IllegalAccessException ignored) {
+          // ignored
         }
       }
       clazz = clazz.getSuperclass();
     }
   }
 
+  /**
+   * 注入分页数据到代理对象的私有字段
+   */
   private static void injectPaging(Class<?> proxyType, Object proxy, Paging paging) {
     try {
       Field p = proxyType.getDeclaredField(DEBUGGER_PAGING_FIELD_NAME);
       p.setAccessible(true);
       p.set(proxy, paging);
     } catch (Exception ignored) {
+      // ignored
     }
   }
 
