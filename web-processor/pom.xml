@@ -18,8 +18,7 @@
   <dependencies>
     <dependency>
       <groupId>cn.labzen</groupId>
-      <artifactId>web-api</artifactId>
-      <version>${project.parent.version}</version>
+      <artifactId>tool</artifactId>
     </dependency>
 
     <dependency>

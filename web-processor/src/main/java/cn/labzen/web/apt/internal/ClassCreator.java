@@ -29,7 +29,7 @@ import static cn.labzen.web.apt.definition.UnitConstants.JUNIT_OUTPUT_DIR;
 public final class ClassCreator {
 
   private static final String PROCESSOR_NAME = LabzenWebProcessor.class.getName();
-  private static final String PROCESSOR_COMMENTS = "labzen web version: 1.2.0, generating: com.squareup:javapoet, based Java 21";
+  private static final String PROCESSOR_COMMENTS = "labzen web version: " + readVersionFromPom() + ", generating: com.squareup:javapoet, based Java 21";
   private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
   private static final String METHOD_BODY_TEMPLATE_ERROR_INVALID_METHOD = "error-invalid-method";
   private static final String METHOD_BODY_TEMPLATE_GENERAL = "general";
@@ -38,6 +38,19 @@ public final class ClassCreator {
   private final ElementClass root;
   private final Filer filer;
   private final Map<String, String> methodBodyTemplates = Maps.newHashMap();
+
+  private static String readVersionFromPom() {
+    try (var is = ClassCreator.class.getResourceAsStream("/META-INF/maven/cn.labzen/web-processor/pom.properties")) {
+      if (is != null) {
+        var props = new java.util.Properties();
+        props.load(is);
+        return props.getProperty("version", "unknown");
+      }
+    } catch (Exception e) {
+      // ignore
+    }
+    return "unknown";
+  }
 
   public ClassCreator(ElementClass root, Filer filer) {
     this.root = root;
@@ -72,7 +85,7 @@ public final class ClassCreator {
         }
       }
     } catch (IOException e) {
-      throw new RuntimeException("加载方法体模板失败", e);
+      throw new RuntimeException("failed to load the method template", e);
     }
   }
 

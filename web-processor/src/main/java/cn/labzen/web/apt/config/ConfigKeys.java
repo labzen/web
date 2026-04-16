@@ -1,7 +1,5 @@
 package cn.labzen.web.apt.config;
 
-import cn.labzen.web.api.annotation.LabzenController;
-import cn.labzen.web.api.definition.APIVersionCarrier;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -10,14 +8,14 @@ import lombok.RequiredArgsConstructor;
 public enum ConfigKeys {
 
   /**
-   * 注解 @{@link LabzenController} 的 Controller 接口，生成的实现类名后缀，默认 Impl
+   * 注解 cn.labzen.web.api.annotation.LabzenController 的 Controller 接口，生成的实现类名后缀，默认 Impl
    */
   CLASS_NAME_SUFFIX("processor.class-name-suffix"),
 
   /**
    * API 版本控制，version 的位置，可选 DISABLE, HEADER（默认）, URI, PARAM
    * <p>
-   * 参考 {@link APIVersionCarrier} 枚举类
+   * 参考 cn.labzen.web.api.definition.APIVersionCarrier 枚举类
    * <li> DISABLE - 禁用版本控制！
    * <li> HEADER - 通过请求头部信息 Accept: 来传递请求 API 的版本信息，例如：'Accept: application/vnd.app.v1+json'
    * <li> URI - 通过 API 的请求地址前置版本信息，例如 'https://www.app.com/v1/login'

@@ -72,7 +72,7 @@ public class LabzenWebProcessor extends AbstractProcessor {
       outputFailedControllers();
     }
 
-    return false;
+    return true;
   }
 
   private void outputFailedControllers() {

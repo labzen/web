@@ -1,6 +1,5 @@
 package cn.labzen.web.apt.evaluate.annotation;
 
-import cn.labzen.web.api.definition.APIVersionCarrier;
 import cn.labzen.web.apt.config.Config;
 import cn.labzen.web.apt.internal.Utils;
 import cn.labzen.web.apt.internal.context.AnnotationProcessorContext;
@@ -15,6 +14,7 @@ import com.squareup.javapoet.TypeName;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static cn.labzen.web.apt.definition.TypeNames.*;
 
@@ -40,17 +40,17 @@ public final class MappingVersionEvaluator implements MethodAnnotationErasableEv
   public List<? extends Suggestion> evaluate(Config config, TypeName type, Map<String, Object> members) {
     List<Suggestion> suggestions = Lists.newArrayList(new RemoveSuggestion(Utils.getSimpleName(supportedAnnotationType), ElementMethod.class));
 
-    APIVersionCarrier carrier = config.apiVersionCarrier();
-    if (carrier == APIVersionCarrier.DISABLE) {
+    String carrier = config.apiVersionCarrier();
+    if (Objects.equals(carrier, "DISABLE")) {
       return suggestions;
     }
 
     String version = config.apiVersionPrefix() + members.values().stream().toList().getFirst();
 
     var annotation = switch (carrier) {
-      case URI -> versionByURI(version);
-      case HEADER -> versionByHeader(config, version);
-      case PARAMETER -> versionByParameter(config, version);
+      case "URI" -> versionByURI(version);
+      case "HEADER" -> versionByHeader(config, version);
+      case "PARAMETER" -> versionByParameter(config, version);
       default -> throw new IllegalStateException("never happen");
     };
     suggestions.add(annotation);

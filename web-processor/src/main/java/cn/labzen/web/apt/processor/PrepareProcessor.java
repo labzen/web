@@ -26,16 +26,24 @@ public final class PrepareProcessor implements InternalProcessor {
       context.getApc().messaging().warning("注解了 @LabzenController 的接口必须是顶级类");
     }
 
-    context.setGenericsEvaluators(getClassGenerators());
-    context.setAnnotationEvaluators(getAnnotationEvaluators());
+    context.setGenericsEvaluators(getClassGenerators(context));
+    context.setAnnotationEvaluators(getAnnotationEvaluators(context));
   }
 
-  private List<InterfaceGenericsEvaluator> getClassGenerators() {
-    return ServiceLoader.load(InterfaceGenericsEvaluator.class, this.getClass().getClassLoader()).stream().map(ServiceLoader.Provider::get).toList();
+  private List<InterfaceGenericsEvaluator> getClassGenerators(ControllerContext context) {
+    return ServiceLoader.load(InterfaceGenericsEvaluator.class, this.getClass().getClassLoader())
+      .stream()
+      .map(ServiceLoader.Provider::get)
+      .peek(evaluator -> evaluator.init(context.getApc()))
+      .toList();
   }
 
-  private List<MethodAnnotationErasableEvaluator> getAnnotationEvaluators() {
-    return ServiceLoader.load(MethodAnnotationErasableEvaluator.class, this.getClass().getClassLoader()).stream().map(ServiceLoader.Provider::get).toList();
+  private List<MethodAnnotationErasableEvaluator> getAnnotationEvaluators(ControllerContext context) {
+    return ServiceLoader.load(MethodAnnotationErasableEvaluator.class, this.getClass().getClassLoader())
+      .stream()
+      .map(ServiceLoader.Provider::get)
+      .peek(evaluator -> evaluator.init(context.getApc()))
+      .toList();
   }
 
   @Override

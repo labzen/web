@@ -55,7 +55,18 @@ public final class RequestPaths {
   }
 
   /**
-   * 构建 API 统一前缀，包含版本号通配符（如果版本使用路径控制的话，api-version.carrier=URI）
+   * 获取 API 统一前缀，包含版本号通配符（如果版本使用路径控制的话，api-version.carrier=URI）
+   * <p>
+   * 返回结果已缓存，避免重复计算。
+   *
+   * @return API 统一前缀，以 / 开头
+   */
+  public static String getPrefix() {
+    return CACHED_PREFIX;
+  }
+
+  /**
+   * 构建 API 前缀字符串
    *
    * @return 构建后的前缀
    */

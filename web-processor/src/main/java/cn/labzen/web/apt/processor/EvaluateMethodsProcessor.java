@@ -88,7 +88,11 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
     // 检查参数名是否为arg0、arg1等形式，如果是，给出警告
     boolean hasArgParameters = parameterNames.stream().anyMatch(name -> name.matches("arg\\d+"));
     if (hasArgParameters) {
-      context.getApc().messaging().warning("LabzenWebProcessor: 方法 " + methodName + " 的参数名显示为 arg0, arg1 等形式，这可能导致生成的代码中参数名不正确。请在项目的 pom.xml 中为 maven-compiler-plugin 添加 <parameters>true</parameters> 配置，以启用编译时保留方法参数名。");
+      context.getApc().messaging()
+        .warning("LabzenWebProcessor: The parameters name of Method [" + methodName + "] are defined of arg0 or arg1, " +
+          "this can lead to incorrect parameter names in the generated code. " +
+          "Please be sure the 'maven-compiler-plugin' plugin has config '<parameters>true</parameters>' in pom.xml file, " +
+          "used to preserve method parameter names when enabling compilation.");
     }
 
     String methodSignature = Utils.getSimpleName(returnType) + " " + methodName + "(" + parametersSignature + ")";
@@ -113,7 +117,7 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
         .filter(ep -> ep.equals(parameter)).findFirst();
       found.ifPresent(ep -> ep.getAnnotations().addAll(parameter.getAnnotations()));
     });
-    elementMethod.getParameters().addAll(methodParameters);
+//    elementMethod.getParameters().addAll(methodParameters);
 
     // 读取所有的方法注解
     List<ElementAnnotation> methodAnnotations = method.getAnnotationMirrors().stream().filter(annotationMirror -> {
@@ -167,7 +171,6 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
       .flatMap(annotation ->
         evaluators.stream().flatMap(evaluator -> {
           TypeName type = annotation.getType();
-          evaluator.init(context.getApc());
           if (evaluator.support(type)) {
             return evaluator.evaluate(context.getApc().config(), type, annotation.getMembers()).stream();
           } else {
@@ -230,7 +233,7 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
 
     method.getParameters().forEach(parameter -> {
       // 移除方法参数的注解，忽略Override, Nonnull等
-      removeNeedlessElements(method.getAnnotations(), annotation -> !RESERVED_ANNOTATIONS_WHEN_DISCARD_METHOD.contains(((ElementAnnotation) annotation).getType()));
+      removeNeedlessElements(parameter.getAnnotations(), annotation -> !RESERVED_ANNOTATIONS_WHEN_DISCARD_METHOD.contains(((ElementAnnotation) annotation).getType()));
     });
 
     method.setBody(new ElementMethodBody("", "", java.util.Collections.emptyList()));

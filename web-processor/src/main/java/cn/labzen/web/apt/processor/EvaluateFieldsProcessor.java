@@ -5,10 +5,7 @@ import cn.labzen.web.apt.internal.context.ControllerContext;
 import cn.labzen.web.apt.internal.element.ElementAnnotation;
 import cn.labzen.web.apt.internal.element.ElementClass;
 import cn.labzen.web.apt.internal.element.ElementField;
-import cn.labzen.web.apt.suggestion.AppendSuggestion;
-import cn.labzen.web.apt.suggestion.RemoveSuggestion;
-import cn.labzen.web.apt.suggestion.ReplaceSuggestion;
-import cn.labzen.web.apt.suggestion.Suggestion;
+import cn.labzen.web.apt.suggestion.*;
 import com.squareup.javapoet.TypeName;
 
 import javax.lang.model.type.DeclaredType;
@@ -31,7 +28,6 @@ public final class EvaluateFieldsProcessor implements InternalProcessor {
 
       // 遍历每一个评价器
       List<Suggestion> suggestions = context.getGenericsEvaluators().stream()
-        .peek(evaluator -> evaluator.init(context.getApc()))
         .filter(evaluator -> evaluator.support(interfaceClassName))
         .flatMap(evaluator -> evaluator.evaluate(typeArguments).stream())
         .collect(Collectors.toList());
@@ -41,6 +37,7 @@ public final class EvaluateFieldsProcessor implements InternalProcessor {
           case AppendSuggestion append -> parseAppendSuggestion(context.getRoot(), append);
           case RemoveSuggestion remove -> parseRemoveSuggestion(context.getRoot(), remove);
           case ReplaceSuggestion replace -> parseReplaceSuggestion(context.getRoot(), replace);
+          case DiscardSuggestion ignored -> {/*ignore that*/}
           default -> throw new IllegalStateException("Unexpected suggestion: " + suggestion);
         }
       });
@@ -62,7 +59,7 @@ public final class EvaluateFieldsProcessor implements InternalProcessor {
       return;
     }
 
-    List<ElementField> needlessFields = root.getFields().stream().filter(filed -> filed.keyword().equals(suggestion.keyword())).toList();
+    List<ElementField> needlessFields = root.getFields().stream().filter(field -> field.keyword().equals(suggestion.keyword())).toList();
     needlessFields.forEach(field -> root.getFields().remove(field));
     List<ElementAnnotation> needlessAnnotations = root.getAnnotations().stream().filter(ann -> ann.keyword().equals(suggestion.keyword())).toList();
     needlessAnnotations.forEach(field -> root.getAnnotations().remove(field));

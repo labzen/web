@@ -1,6 +1,5 @@
 package cn.labzen.web.apt.config;
 
-import cn.labzen.web.api.definition.APIVersionCarrier;
 import cn.labzen.web.apt.LabzenWebProcessor;
 import com.google.common.primitives.Ints;
 
@@ -23,16 +22,14 @@ public class Config {
     return original.isBlank() ? CLASS_NAME_SUFFIX_VALUE.getValue() : original;
   }
 
-  public APIVersionCarrier apiVersionCarrier() {
+  public String apiVersionCarrier() {
     var carrier = properties.getOrDefault(API_VERSION_CARRIER.getValue(), API_VERSION_CARRIER_VALUE.getValue()).toString();
-    try {
-      return APIVersionCarrier.valueOf(carrier);
-    } catch (IllegalArgumentException e) {
-      LabzenWebProcessor.getContext().messaging().warning("未配置有效的 processor.api-version.carrier ，将使用 DISABLE，生成的 Controller 实现类将禁用API版本控制能力");
-      return APIVersionCarrier.DISABLE;
-    }
+    return carrier.isBlank() ? API_VERSION_CARRIER_VALUE.getValue() : carrier;
   }
 
+  /**
+   * 有默认值，不可能为空字符串
+   */
   public String apiVersionPrefix() {
     var original = properties.getOrDefault(API_VERSION_PREFIX.getValue(), API_VERSION_PREFIX_VALUE.getValue()).toString();
     return original.isBlank() ? API_VERSION_PREFIX_VALUE.getValue() : original;
@@ -41,7 +38,7 @@ public class Config {
   public int apiVersionBased() {
     var based = properties.getOrDefault(API_VERSION_BASED.getValue(), API_VERSION_BASED_VALUE.getValue()).toString();
     return Optional.ofNullable(Ints.tryParse(based)).orElseGet(() -> {
-      LabzenWebProcessor.getContext().messaging().warning("未配置有效的 processor.api-version.based ，默认使用 1");
+      LabzenWebProcessor.getContext().messaging().warning("No valid processor.api-version.based is configured, 1 is used by default");
       return 1;
     });
   }

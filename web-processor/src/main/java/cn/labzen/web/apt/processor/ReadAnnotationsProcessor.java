@@ -40,7 +40,6 @@ public final class ReadAnnotationsProcessor implements InternalProcessor {
 
     Stream<? extends Suggestion> suggestions = context.getAnnotationEvaluators().stream()
       .flatMap(evaluator -> {
-        evaluator.init(context.getApc());
         if (evaluator.support(annotation.getType())) {
           return evaluator.evaluate(context.getApc().config(), annotation.getType(), annotation.getMembers()).stream();
         } else {
