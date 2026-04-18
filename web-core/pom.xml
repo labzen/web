@@ -6,7 +6,7 @@
   <parent>
     <artifactId>web-parent</artifactId>
     <groupId>cn.labzen</groupId>
-    <version>1.2.0-SNAPSHOT</version>
+    <version>1.2.0</version>
     <relativePath>../web-parent</relativePath>
   </parent>
 

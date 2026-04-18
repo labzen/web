@@ -6,13 +6,13 @@
   <parent>
     <artifactId>parent</artifactId>
     <groupId>cn.labzen</groupId>
-    <version>21.0-SNAPSHOT</version>
+    <version>21.1</version>
     <relativePath/>
   </parent>
 
   <artifactId>web-parent</artifactId>
   <packaging>pom</packaging>
-  <version>1.2.0-SNAPSHOT</version>
+  <version>1.2.0</version>
   <name>Labzen.Web</name>
   <description>Labzen Web - simple and clear web layer structure, avoid the business logic code mixed in</description>
   <url>https://github.com/labzen/logger</url>
@@ -69,9 +69,9 @@
   </repositories>
 
   <properties>
-    <labzen.logger.version>1.6.0-SNAPSHOT</labzen.logger.version>
-    <labzen.tool.version>1.4.0-SNAPSHOT</labzen.tool.version>
-    <labzen.spring.version>1.2.3-SNAPSHOT</labzen.spring.version>
+    <labzen.logger.version>1.6.0</labzen.logger.version>
+    <labzen.tool.version>1.4.0</labzen.tool.version>
+    <labzen.spring.version>1.2.3</labzen.spring.version>
   </properties>
 
   <dependencyManagement>
@@ -109,7 +109,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-gpg-plugin</artifactId>
-        <inherited>false</inherited>
       </plugin>
       <plugin>
         <groupId>org.sonatype.central</groupId>
