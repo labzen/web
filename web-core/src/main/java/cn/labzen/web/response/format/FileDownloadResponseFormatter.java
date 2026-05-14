@@ -1,11 +1,15 @@
 package cn.labzen.web.response.format;
 
+import cn.labzen.tool.util.Strings;
 import cn.labzen.web.api.response.result.FileResult;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.MediaType;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
@@ -39,7 +43,7 @@ public class FileDownloadResponseFormatter implements ResponseFormatter {
   @Override
   public Object format(Object result, HttpServletRequest request, HttpServletResponse response) {
     FileResult fileResult = (FileResult) result;
-    downloadByFile(response, fileResult.filename(), fileResult.value());
+    downloadByFile(response, fileResult);
     return null;
   }
 
@@ -48,11 +52,11 @@ public class FileDownloadResponseFormatter implements ResponseFormatter {
    * <p>
    * 使用 8KB 缓冲区进行流式传输，立即刷新实现边下载边传输。
    */
-  private void downloadByFile(HttpServletResponse response, String filename, File file) {
-    setDownloadHeaders(response, filename, file.length());
+  private void downloadByFile(HttpServletResponse response, FileResult fileResult) {
+    setDownloadHeaders(response, fileResult);
 
     // 流式传输文件内容
-    try (FileInputStream inputStream = new FileInputStream(file);
+    try (FileInputStream inputStream = new FileInputStream(fileResult.value());
          BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
          OutputStream outputStream = response.getOutputStream()) {
 
@@ -70,16 +74,18 @@ public class FileDownloadResponseFormatter implements ResponseFormatter {
   /**
    * 设置下载响应头
    */
-  private void setDownloadHeaders(HttpServletResponse response, String fileName, long contentLength) {
+  private void setDownloadHeaders(HttpServletResponse response, FileResult fileResult) {
+    String filename = Strings.value(fileResult.filename(), fileResult.value().getName());
+    // 处理中文文件名
+    String encodedFileName = URLEncoder.encode(filename, StandardCharsets.UTF_8)
+      .replaceAll("\\+", "%20");
+
     try {
-      // 处理中文文件名
-      String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8)
-        .replaceAll("\\+", "%20");
-
       response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
-      response.setHeader("Content-Disposition",
-        "attachment; filename=\"" + encodedFileName + "\"; filename*=UTF-8''" + encodedFileName);
+      response.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
+      response.setHeader("Content-Disposition", "attachment; filename*=UTF-8''" + encodedFileName);
 
+      long contentLength = fileResult.value().length();
       if (contentLength > 0) {
         response.setContentLengthLong(contentLength);
       }

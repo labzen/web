@@ -15,8 +15,6 @@ import java.io.File;
  */
 public record FileResult(String filename, @Nonnull File value) implements Result {
 
-  private static final String DEFAULT_FILE_NAME = "Unknown";
-
   public FileResult(File value) {
     this(null, value);
   }
@@ -32,6 +30,6 @@ public record FileResult(String filename, @Nonnull File value) implements Result
   }
 
   public String filename() {
-    return Strings.value(filename, Strings.value(value.getName(), DEFAULT_FILE_NAME));
+    return Strings.value(filename, value.getName());
   }
 }

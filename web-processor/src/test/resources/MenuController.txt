@@ -21,7 +21,7 @@ import javax.annotation.Nonnull;
 @RestController("abc")
 @RequestMapping(value = "system/demo/test", produces = {"application/vnd.app.v1+json"})
 @LabzenController
-public interface MenuController extends StandardController<MenuRealm, MenuDto, Long> {
+public interface MenuController extends StandardController<MenuRealm, MenuDto, Long>, FileController<MenuDto> {
 
   @Override
   @MappingVersion(4)

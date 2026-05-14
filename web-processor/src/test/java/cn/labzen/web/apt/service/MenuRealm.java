@@ -1,6 +1,5 @@
 package cn.labzen.web.apt.service;
 
-import cn.labzen.web.api.definition.FileFormat;
 import cn.labzen.web.api.definition.UploadedFile;
 import cn.labzen.web.api.response.result.Result;
 import cn.labzen.web.api.response.result.Results;
@@ -56,7 +55,7 @@ public class MenuRealm implements StandardResourceService<MenuDto, Long>, FileHa
   }
 
   @Override
-  public Result exports(MenuDto resource, FileFormat format) {
+  public Result exports(MenuDto resource, String format) {
     return null;
   }
 

@@ -1,6 +1,5 @@
 package cn.labzen.web.api.service;
 
-import cn.labzen.web.api.definition.FileFormat;
 import cn.labzen.web.api.definition.UploadedFile;
 import cn.labzen.web.api.response.result.Result;
 import cn.labzen.web.api.response.result.Results;
@@ -23,7 +22,7 @@ public interface FileHandleService<RB> {
    * @param format   导出文件格式（如 Excel、PDF 等）
    * @return 使用{@link Results#file(File)}导出结果文件，可包含文件流或文件路径
    */
-  Result exports(RB resource, FileFormat format);
+  Result exports(RB resource, String format);
 
   /**
    * 从上传的文件中导入数据到数据库等目标

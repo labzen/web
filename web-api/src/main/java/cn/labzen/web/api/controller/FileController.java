@@ -1,6 +1,5 @@
 package cn.labzen.web.api.controller;
 
-import cn.labzen.web.api.definition.FileFormat;
 import cn.labzen.web.api.response.result.Result;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,7 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 public interface FileController<RB> extends LabzenController {
 
   @PostMapping("export-{format}")
-  Result exports(@ModelAttribute RB resource, @PathVariable FileFormat format);
+  Result exports(@ModelAttribute RB resource, @PathVariable String format);
 
   @PostMapping("import")
   Result imports(@RequestParam("file") MultipartFile multipartFile);
