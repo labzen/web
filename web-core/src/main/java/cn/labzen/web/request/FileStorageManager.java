@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -33,8 +34,11 @@ public final class FileStorageManager implements SmartInitializingSingleton {
   public void afterSingletonsInstantiated() {
     Holder.INSTANCE = this;
 
-    ServiceLoader<FileStorage> loader = ServiceLoader.load(FileStorage.class);
+    WebCoreConfiguration configuration = Labzens.configurationWith(WebCoreConfiguration.class);
+    List<String> fileExtensions = configuration.acceptedUploadFileExtensions();
+    StandardUploadedFile.setAcceptedUploadFileExtensions(fileExtensions);
 
+    ServiceLoader<FileStorage> loader = ServiceLoader.load(FileStorage.class);
     for (FileStorage storage : loader) {
       String name = storage.getClass().getSimpleName();
       fileStorageMap.put(name, storage);
@@ -89,10 +93,18 @@ public final class FileStorageManager implements SmartInitializingSingleton {
   }
 
   static FileStorage get() {
-    return Holder.INSTANCE.defaultFileStorage;
+    FileStorage storage = Holder.INSTANCE.defaultFileStorage;
+    if (storage == null) {
+      throw new IllegalStateException("FileStorageManager 尚未初始化或无可用存储实例");
+    }
+    return storage;
   }
 
   static FileStorage get(String name) {
-    return Holder.INSTANCE.fileStorageMap.get(name);
+    FileStorage storage = Holder.INSTANCE.fileStorageMap.get(name);
+    if (storage == null) {
+      throw new IllegalArgumentException("未找到名为 '" + name + "' 的存储器实例");
+    }
+    return storage;
   }
 }

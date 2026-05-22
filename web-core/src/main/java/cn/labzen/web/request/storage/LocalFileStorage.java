@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
@@ -36,34 +37,8 @@ public class LocalFileStorage implements FileStorage {
   private static final DateTimeFormatter YMD_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
   private static final DateTimeFormatter YM_D_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM");
 
-  /**
-   * 目录组织粒度
-   */
-  enum Granularity {
-    /**
-     * 无子目录，所有文件平铺在根路径下
-     */
-    NONE,
-    /**
-     * 一级目录：年-月-日，目录名如： 2026-05-14
-     */
-    YMD,
-    /**
-     * 二级目录：年-月/日，目录名及结构如： 2026-05/14
-     */
-    YM_D,
-    /**
-     * 二级目录：年-月/日，目录名及结构如： 2026/05
-     */
-    Y_M,
-    /**
-     * 三级目录：年/月/日，如 2026/05/14
-     */
-    Y_M_D
-  }
-
   private Path rootPath;
-  private Granularity granularity;
+  private StorageGranularity granularity;
 
   @Override
   public boolean initialize(JsonNode config) {
@@ -80,14 +55,14 @@ public class LocalFileStorage implements FileStorage {
 
     String granularity = config.get("granularity").asText();
     if (Strings.isBlank(granularity)) {
-      logger.warn("本地文件存储器未配置存储颗粒度[granularity]，将使用默认值：{}", Granularity.NONE);
-      granularity = Granularity.NONE.toString();
+      logger.warn("本地文件存储器未配置存储颗粒度[granularity]，将使用默认值：{}", StorageGranularity.NONE);
+      granularity = StorageGranularity.NONE.toString();
     }
     try {
-      this.granularity = Granularity.valueOf(granularity);
+      this.granularity = StorageGranularity.valueOf(granularity);
     } catch (Exception e) {
-      logger.error("本地文件存储器配置了不存在的颗粒度 [{}]，将使用默认值：{}", granularity, Granularity.NONE);
-      this.granularity = Granularity.NONE;
+      logger.error("本地文件存储器配置了不存在的颗粒度 [{}]，将使用默认值：{}", granularity, StorageGranularity.NONE);
+      this.granularity = StorageGranularity.NONE;
     }
 
     return true;
@@ -95,7 +70,8 @@ public class LocalFileStorage implements FileStorage {
 
   @Override
   public Path store(InputStream inputStream, String filename) {
-    Path targetDir = resolveTargetDirectory();
+    String path = granularity.resolveKeyPrefix();
+    Path targetDir = Paths.get(path);
     Path targetFile = targetDir.resolve(filename).normalize();
 
     // 安全检查：确保目标文件在根路径下
@@ -115,27 +91,4 @@ public class LocalFileStorage implements FileStorage {
 
     return targetFile;
   }
-
-  private Path resolveTargetDirectory() {
-    if (granularity == Granularity.NONE) {
-      return rootPath;
-    }
-
-    LocalDate now = LocalDate.now();
-    return switch (granularity) {
-      case YMD -> rootPath.resolve(now.format(YMD_FORMATTER));
-      case YM_D -> rootPath
-        .resolve(now.format(YM_D_FORMATTER))
-        .resolve(String.format("%02d", now.getDayOfMonth()));
-      case Y_M -> rootPath
-        .resolve(String.valueOf(now.getYear()))
-        .resolve(String.format("%02d", now.getMonthValue()));
-      case Y_M_D -> rootPath
-        .resolve(String.valueOf(now.getYear()))
-        .resolve(String.format("%02d", now.getMonthValue()))
-        .resolve(String.format("%02d", now.getDayOfMonth()));
-      default -> rootPath;
-    };
-  }
-
 }

@@ -1,10 +1,8 @@
 package cn.labzen.web.request;
 
-import cn.labzen.meta.Labzens;
 import cn.labzen.tool.util.Strings;
 import cn.labzen.web.api.request.UploadedFile;
 import cn.labzen.web.exception.FileUploadException;
-import cn.labzen.web.meta.WebCoreConfiguration;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -15,12 +13,11 @@ public class StandardUploadedFile implements UploadedFile {
 
   private static final int NOT_ACCEPTABLE_CODE = HttpStatus.NOT_ACCEPTABLE.value();
   private static final int INTERNAL_SERVER_CODE = HttpStatus.INTERNAL_SERVER_ERROR.value();
-  private static final List<String> acceptedUploadFileExtensions;
-  private static volatile cn.labzen.web.api.request.FileStorage fileStorage;
 
-  static {
-    WebCoreConfiguration configuration = Labzens.configurationWith(WebCoreConfiguration.class);
-    acceptedUploadFileExtensions = configuration.acceptedUploadFileExtensions();
+  private static List<String> acceptedUploadFileExtensions = List.of();
+
+  static void setAcceptedUploadFileExtensions(List<String> acceptedUploadFileExtensions) {
+    StandardUploadedFile.acceptedUploadFileExtensions = List.copyOf(acceptedUploadFileExtensions);
   }
 
   private final MultipartFile multipartFile;
@@ -91,6 +88,7 @@ public class StandardUploadedFile implements UploadedFile {
     }
   }
 
+  @Override
   public String storeByStorage(String storageName) {
     try {
       Path path = FileStorageManager.get(storageName).store(multipartFile.getInputStream(), Strings.value(storageFileName, originalFilename()));

@@ -121,7 +121,7 @@ public class LabzenExceptionCatchingFilter extends OncePerRequestFilter {
       objectMapper.writeValue(response.getWriter(), message);
       response.getWriter().flush();
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      logger.error("Labzen WEB Exception Catcher: Failed to write error response to client", e);
     }
   }
 }

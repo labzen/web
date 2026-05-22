@@ -50,6 +50,14 @@ public interface UploadedFile {
    * @return 文件存储后的完整访问地址
    */
   String store();
+
+  /**
+   * 将文件存储到指定存储器中
+   *
+   * @param storageName 存储器名称
+   * @return 文件存储后的完整访问地址
+   */
+  String storeByStorage(String storageName);
 //
 //  /**
 //   * 将文件存储到指定路径

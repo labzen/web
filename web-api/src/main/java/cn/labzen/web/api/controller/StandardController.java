@@ -77,13 +77,13 @@ public interface StandardController<BS, RB, ID> extends LabzenController {
   /**
    * 示例：Restful API 修改资源 - PUT /resource/{id}
    */
-  @PutMapping("{id:\\d{1,19}}")
+  @PutMapping("{id:[A-Za-z0-9_-]+}")
   Result edit(@PathVariable ID id, @Validated @ModelAttribute RB resource);
 
   /**
    * 示例：Restful API 删除资源 - DELETE /resource/{id}
    */
-  @DeleteMapping("{id:\\d{1,19}}")
+  @DeleteMapping("{id:[A-Za-z0-9_-]+}")
   Result remove(@PathVariable ID id);
 
   /**
@@ -95,7 +95,7 @@ public interface StandardController<BS, RB, ID> extends LabzenController {
   /**
    * 示例：Restful API 获取单个资源详情 - GET /resource/{id}
    */
-  @GetMapping("{id:\\d{1,19}}")
+  @GetMapping("{id:[A-Za-z0-9_-]+}")
   Result info(@PathVariable ID id);
 
   /**

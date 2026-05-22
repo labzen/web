@@ -31,7 +31,11 @@ public record DefaultPagination<R>(
 
   @SuppressWarnings("unchecked")
   public static <T, B> DefaultPagination<B> from(T page) {
-    return (DefaultPagination<B>) ((PageConverter<T>) PageConverterHolder.getConverter()).from(page);
+    PageConverter<?> converter = PageConverterHolder.getConverter();
+    if (converter == null) {
+      throw new IllegalStateException("PageConverter not initialized. Please check labzen.yml configuration.");
+    }
+    return (DefaultPagination<B>) ((PageConverter<T>) converter).from(page);
   }
 
   public DefaultPagination<R> copyWithoutRecords() {

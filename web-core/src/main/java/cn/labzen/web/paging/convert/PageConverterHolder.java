@@ -1,14 +1,20 @@
 package cn.labzen.web.paging.convert;
 
 import cn.labzen.web.api.paging.PageConverter;
-import lombok.Getter;
-import lombok.Setter;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 public final class PageConverterHolder {
 
-  @Setter
-  @Getter
-  private static PageConverter<?> converter;
+  private static final AtomicReference<PageConverter<?>> CONVERTER_REFERENCE = new AtomicReference<>(null);
+
+  public static void setConverter(PageConverter<?> converter) {
+    CONVERTER_REFERENCE.set(converter);
+  }
+
+  public static PageConverter<?> getConverter() {
+    return CONVERTER_REFERENCE.get();
+  }
 
   private PageConverterHolder() {
   }

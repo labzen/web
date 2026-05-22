@@ -1,5 +1,6 @@
 package cn.labzen.web.response.format;
 
+import cn.labzen.tool.util.Strings;
 import cn.labzen.web.api.response.out.Meta;
 import cn.labzen.web.api.response.out.Response;
 import cn.labzen.web.api.response.result.Result;
@@ -33,8 +34,10 @@ public class UnexpectedResponseFormatter implements ResponseFormatter {
    */
   @Override
   public Object format(Object result, HttpServletRequest request, HttpServletResponse response) {
-    String requestTime = request.getAttribute(REST_REQUEST_TIME).toString();
-    String requestMillsStr = request.getAttribute(REST_REQUEST_TIME_MILLIS).toString();
+    Object timeAttr = request.getAttribute(REST_REQUEST_TIME);
+    String requestTime = Strings.value(timeAttr, "");
+    Object millsAttr = request.getAttribute(REST_REQUEST_TIME_MILLIS);
+    String requestMillsStr = Strings.value(millsAttr, "0");
     long requestMills = Optional.ofNullable(Longs.tryParse(requestMillsStr)).orElse(0L);
     long executionTime = System.currentTimeMillis() - requestMills;
 

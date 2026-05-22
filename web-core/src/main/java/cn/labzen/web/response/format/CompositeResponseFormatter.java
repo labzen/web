@@ -83,6 +83,6 @@ public class CompositeResponseFormatter implements ResponseFormatter {
       }
     }
 
-    return new Response(HttpStatus.INTERNAL_SERVER_ERROR.value(), "不阔能，绝对不阔能", null, null);
+    return new Response(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Unexpected response formatter state: no formatter matched, this is absolutely impossible to happen.", null, null);
   }
 }
