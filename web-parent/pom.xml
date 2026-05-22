@@ -6,7 +6,7 @@
   <parent>
     <artifactId>parent</artifactId>
     <groupId>cn.labzen</groupId>
-    <version>21.1</version>
+    <version>21.2</version>
     <relativePath/>
   </parent>
 
@@ -69,8 +69,8 @@
   </repositories>
 
   <properties>
-    <labzen.logger.version>1.6.0</labzen.logger.version>
-    <labzen.tool.version>1.4.0</labzen.tool.version>
+    <labzen.logger.version>1.6.1</labzen.logger.version>
+    <labzen.tool.version>1.4.1</labzen.tool.version>
     <labzen.spring.version>1.2.3</labzen.spring.version>
   </properties>
 

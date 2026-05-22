@@ -25,7 +25,7 @@ public interface StandardResourceService<RB, ID> {
    */
   default Result create(RB resource) {
     // will be implemented
-    return Results.success();
+    throw new UnsupportedOperationException();
   }
 
   /**
@@ -37,7 +37,7 @@ public interface StandardResourceService<RB, ID> {
    */
   default Result edit(ID id, RB resource) {
     // will be implemented
-    return Results.success();
+    throw new UnsupportedOperationException();
   }
 
   /**
@@ -48,7 +48,7 @@ public interface StandardResourceService<RB, ID> {
    */
   default Result remove(ID id) {
     // will be implemented
-    return Results.success();
+    throw new UnsupportedOperationException();
   }
 
   /**
@@ -59,7 +59,7 @@ public interface StandardResourceService<RB, ID> {
    */
   default Result removes(List<ID> ids) {
     // will be implemented
-    return Results.success();
+    throw new UnsupportedOperationException();
   }
 
   /**
@@ -70,7 +70,7 @@ public interface StandardResourceService<RB, ID> {
    */
   default Result info(ID id) {
     // will be implemented
-    return Results.success();
+    throw new UnsupportedOperationException();
   }
 
   /**
@@ -81,6 +81,6 @@ public interface StandardResourceService<RB, ID> {
    */
   default Result find(RB resource) {
     // will be implemented
-    return Results.success();
+    throw new UnsupportedOperationException();
   }
 }

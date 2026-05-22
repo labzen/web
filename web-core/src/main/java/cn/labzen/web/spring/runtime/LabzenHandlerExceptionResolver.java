@@ -1,7 +1,6 @@
 package cn.labzen.web.spring.runtime;
 
 import cn.labzen.logger.Loggers;
-import cn.labzen.tool.util.Strings;
 import cn.labzen.web.api.response.out.Response;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
@@ -231,16 +230,9 @@ public class LabzenHandlerExceptionResolver implements HandlerExceptionResolver 
    * 根据 Accept Header 选择合适的 HttpMessageConverter 进行序列化。
    * 默认使用 application/json。
    */
-  private void out(Object data,
-                   HttpServletRequest request,
-                   HttpServletResponse response) throws IOException {
-    String accept = request.getHeader("Accept");
-    MediaType mediaType;
-    if (Strings.isBlank(accept)) {
-      mediaType = MediaType.APPLICATION_JSON;
-    } else {
-      mediaType = MediaType.parseMediaType(accept);
-    }
+  private void out(Object data, HttpServletRequest request, HttpServletResponse response) throws IOException {
+    MediaType mediaType = MediaType.APPLICATION_JSON;
+
     for (HttpMessageConverter<Object> converter : converters) {
       if (converter instanceof GenericHttpMessageConverter<Object> genericConverter) {
         if (genericConverter.canWrite(RESPONSE_TYPE, RESPONSE_TYPE, mediaType)) {

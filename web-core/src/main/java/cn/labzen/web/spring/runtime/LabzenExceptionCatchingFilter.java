@@ -113,10 +113,7 @@ public class LabzenExceptionCatchingFilter extends OncePerRequestFilter {
    * 使用客户端请求的 Accept Header 作为 Content-Type，默认为 application/json。
    */
   private void sendMessage(Object message, HttpServletRequest request, HttpServletResponse response) {
-    String contentType = request.getHeader("Accept");
-    if (contentType == null) {
-      contentType = MediaType.APPLICATION_JSON_VALUE;
-    }
+    String contentType = MediaType.APPLICATION_JSON_VALUE;
     response.setContentType(contentType);
     response.setStatus(HttpStatus.OK.value());
     response.setCharacterEncoding(Constants.DEFAULT_CHARSET_NAME);

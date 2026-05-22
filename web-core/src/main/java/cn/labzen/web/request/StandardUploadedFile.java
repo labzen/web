@@ -2,22 +2,21 @@ package cn.labzen.web.request;
 
 import cn.labzen.meta.Labzens;
 import cn.labzen.tool.util.Strings;
-import cn.labzen.web.api.definition.UploadedFile;
-import cn.labzen.web.exception.WebFileException;
+import cn.labzen.web.api.request.UploadedFile;
+import cn.labzen.web.exception.FileUploadException;
 import cn.labzen.web.meta.WebCoreConfiguration;
-import org.springframework.util.FileCopyUtils;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 public class StandardUploadedFile implements UploadedFile {
 
+  private static final int NOT_ACCEPTABLE_CODE = HttpStatus.NOT_ACCEPTABLE.value();
+  private static final int INTERNAL_SERVER_CODE = HttpStatus.INTERNAL_SERVER_ERROR.value();
   private static final List<String> acceptedUploadFileExtensions;
+  private static volatile cn.labzen.web.api.request.FileStorage fileStorage;
 
   static {
     WebCoreConfiguration configuration = Labzens.configurationWith(WebCoreConfiguration.class);
@@ -26,6 +25,7 @@ public class StandardUploadedFile implements UploadedFile {
 
   private final MultipartFile multipartFile;
   private String extension;
+  private String storageFileName;
 
   public StandardUploadedFile(MultipartFile multipartFile) {
     this.multipartFile = multipartFile;
@@ -34,24 +34,24 @@ public class StandardUploadedFile implements UploadedFile {
 
   private void check() {
     if (multipartFile == null || multipartFile.isEmpty()) {
-      throw new WebFileException(500, "文件不能为空");
+      throw new FileUploadException(NOT_ACCEPTABLE_CODE, "文件不能为空");
     }
     String originalFilename = multipartFile.getOriginalFilename();
     if (originalFilename == null || originalFilename.trim().isEmpty()) {
-      throw new IllegalArgumentException("文件名不能为空");
+      throw new FileUploadException(NOT_ACCEPTABLE_CODE, "文件名不能为空");
     }
     if (Strings.containsAny(originalFilename, "..", "/", "\\")) {
-      throw new IllegalArgumentException("文件名包含非法字符");
+      throw new FileUploadException(NOT_ACCEPTABLE_CODE, "文件名包含非法字符");
     }
     String extension = Strings.lastUntil(originalFilename, ".", false);
     if (originalFilename.equals(extension)) {
       extension = "";
     }
     if (extension.isEmpty()) {
-      throw new IllegalArgumentException("文件缺少扩展名");
+      throw new FileUploadException(NOT_ACCEPTABLE_CODE, "文件缺少扩展名");
     }
     if (!acceptedUploadFileExtensions.contains(extension)) {
-      throw new IllegalArgumentException("不支持的文件类型: " + extension);
+      throw new FileUploadException(NOT_ACCEPTABLE_CODE, "不支持的文件类型: {}", extension);
     }
     this.extension = extension;
   }
@@ -77,16 +77,26 @@ public class StandardUploadedFile implements UploadedFile {
   }
 
   @Override
-  public void store(String path) {
-    store(Paths.get(path));
+  public void rename(String name) {
+    this.storageFileName = name;
   }
 
   @Override
-  public void store(Path path) {
-    try (InputStream is = multipartFile.getInputStream()) {
-      FileCopyUtils.copy(is, Files.newOutputStream(path));
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+  public String store() {
+    try {
+      Path path = FileStorageManager.get().store(multipartFile.getInputStream(), Strings.value(storageFileName, originalFilename()));
+      return path.toAbsolutePath().toString();
+    } catch (Exception e) {
+      throw new FileUploadException(INTERNAL_SERVER_CODE, e, "文件存储失败");
+    }
+  }
+
+  public String storeByStorage(String storageName) {
+    try {
+      Path path = FileStorageManager.get(storageName).store(multipartFile.getInputStream(), Strings.value(storageFileName, originalFilename()));
+      return path.toAbsolutePath().toString();
+    } catch (Exception e) {
+      throw new FileUploadException(INTERNAL_SERVER_CODE, e, "文件存储失败");
     }
   }
 }

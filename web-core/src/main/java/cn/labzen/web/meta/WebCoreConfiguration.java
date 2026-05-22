@@ -79,6 +79,9 @@ public interface WebCoreConfiguration {
 
   // ===================================================================================================================
 
+  @Item(path = "file.upload.default-storage", required = false, defaultValue = "LocalFileStorage")
+  String defaultFileStorage();
+
   /**
    * 允许上传的文件扩展名
    */

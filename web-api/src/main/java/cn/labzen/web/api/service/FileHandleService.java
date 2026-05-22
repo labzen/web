@@ -1,6 +1,6 @@
 package cn.labzen.web.api.service;
 
-import cn.labzen.web.api.definition.UploadedFile;
+import cn.labzen.web.api.request.UploadedFile;
 import cn.labzen.web.api.response.result.Result;
 import cn.labzen.web.api.response.result.Results;
 

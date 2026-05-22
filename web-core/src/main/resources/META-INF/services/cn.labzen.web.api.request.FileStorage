@@ -1,0 +1,4 @@
+cn.labzen.web.request.storage.LocalFileStorage
+cn.labzen.web.request.storage.QiniuFileStorage
+cn.labzen.web.request.storage.AliyunOssFileStorage
+cn.labzen.web.request.storage.HuaweiObsFileStorage
