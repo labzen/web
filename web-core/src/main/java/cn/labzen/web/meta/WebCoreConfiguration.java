@@ -77,6 +77,12 @@ public interface WebCoreConfiguration {
   @Item(path = "core.page-size", required = false, defaultValue = "20")
   int pageSize();
 
+  /**
+   * 最大分页大小，默认100。防止用户恶意传入极大的 pageSize（如 99999999），而导致 OOM 或数据库性能问题
+   */
+  @Item(path = "core.max-page-size", required = false, defaultValue = "100")
+  int maxPageSize();
+
   // ===================================================================================================================
 
   @Item(path = "file.upload.default-storage", required = false, defaultValue = "LocalFileStorage")

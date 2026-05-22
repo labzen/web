@@ -114,8 +114,10 @@ public class LabzenWebProcessor extends AbstractProcessor {
    * @return 延迟控制器的上下文列表
    */
   private List<ControllerContext> getAndResetDeferredControllers() {
-    return deferredControllers.stream()
+    List<ControllerContext> result = deferredControllers.stream()
       .map(controller -> new ControllerContext(controller.element())).toList();
+    deferredControllers.clear();
+    return result;
   }
 
   /**

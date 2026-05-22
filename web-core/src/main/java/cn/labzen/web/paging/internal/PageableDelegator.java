@@ -7,6 +7,7 @@ import cn.labzen.web.paging.convert.PageConverterHolder;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.modifier.Visibility;
@@ -25,6 +26,7 @@ import org.springframework.core.MethodParameter;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Pageable 动态代理工厂
@@ -39,13 +41,15 @@ import java.lang.reflect.Method;
  *   <li>支持调试模式：保留原始字段用于调试观察</li>
  * </ul>
  */
+@Slf4j
 public final class PageableDelegator {
 
   private static final String DEBUGGER_PAGING_FIELD_NAME = "_paging";
   private static final Objenesis OBJENESIS = new ObjenesisStd();
   // Pageable接口定义的几个方法
   private static final ElementMatcher.Junction<MethodDescription> PAGEABLE_METHOD_NAMES = ElementMatchers.namedOneOf("unpaged", "pageNumber", "pageSize", "orders", "convertTo");
-
+  // 缓存已生成的代理类，避免每次请求都重新生成导致 Metaspace OOM
+  private static final ConcurrentHashMap<Class<?>, Class<?>> PROXY_CLASS_CACHE = new ConcurrentHashMap<>();
   private static final boolean FRIENDLY_FOR_DEBUGGER_VIEW;
 
   static {
@@ -59,8 +63,8 @@ public final class PageableDelegator {
   /**
    * 创建 Pageable 代理对象
    *
-   * @param parameter 方法参数信息
-   * @param attribute 已绑定的 Bean 实例
+   * @param parameter      方法参数信息
+   * @param attribute      已绑定的 Bean 实例
    * @param resolvedPaging 解析后的分页条件
    * @return 代理后的对象
    */
@@ -84,18 +88,21 @@ public final class PageableDelegator {
    * 其他方法委托给原始 Bean 实例。
    */
   private static Object delegateDirectly(Class<?> parameterType, PageableValuesInterceptor pageableInterceptor, PageableBeanAttributesInterceptor beanAttributesInterceptor) {
-    DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<?> buddyBuilder = new ByteBuddy()
-      .subclass(parameterType)
-      .method(PAGEABLE_METHOD_NAMES)
-      .intercept(MethodDelegation.to(pageableInterceptor))
-      .method(ElementMatchers.not(PAGEABLE_METHOD_NAMES))
-      .intercept(MethodDelegation.to(beanAttributesInterceptor));
+    Class<?> proxyClass = PROXY_CLASS_CACHE.computeIfAbsent(parameterType, pt -> {
+      DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<?> buddyBuilder = new ByteBuddy()
+        .subclass(pt)
+        .method(PAGEABLE_METHOD_NAMES)
+        .intercept(MethodDelegation.to(pageableInterceptor))
+        .method(ElementMatchers.not(PAGEABLE_METHOD_NAMES))
+        .intercept(MethodDelegation.to(beanAttributesInterceptor));
 
-    try (DynamicType.Unloaded<?> made = buddyBuilder.make()) {
-      return made.load(parameterType.getClassLoader())
-        .getLoaded()
-        .getDeclaredConstructor()
-        .newInstance();
+      try (DynamicType.Unloaded<?> made = buddyBuilder.make()) {
+        return made.load(pt.getClassLoader()).getLoaded();
+      }
+    });
+
+    try {
+      return proxyClass.getDeclaredConstructor().newInstance();
     } catch (ReflectiveOperationException e) {
       throw new RuntimeException(e);
     }
@@ -143,8 +150,8 @@ public final class PageableDelegator {
         try {
           f.setAccessible(true);
           f.set(target, f.get(source));
-        } catch (IllegalAccessException ignored) {
-          // ignored
+        } catch (IllegalAccessException e) {
+          logger.warn("无法复制字段 {} 的值: {}", f.getName(), e.getMessage());
         }
       }
       clazz = clazz.getSuperclass();
@@ -159,8 +166,8 @@ public final class PageableDelegator {
       Field p = proxyType.getDeclaredField(DEBUGGER_PAGING_FIELD_NAME);
       p.setAccessible(true);
       p.set(proxy, paging);
-    } catch (Exception ignored) {
-      // ignored
+    } catch (Exception e) {
+      logger.warn("无法注入分页数据到代理对象: {}", e.getMessage());
     }
   }
 

@@ -1,5 +1,7 @@
 package cn.labzen.web.apt.config;
 
+import cn.labzen.web.apt.LabzenWebProcessor;
+
 import javax.annotation.processing.Filer;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
@@ -44,7 +46,7 @@ public final class ConfigLoader {
       try (InputStream is = moduleConfig.toURI().toURL().openStream()) {
         merged.load(is);
       } catch (IOException e) {
-        throw new RuntimeException("Failed to load module config: " + moduleConfig.getAbsolutePath(), e);
+        LabzenWebProcessor.getContext().messaging().error("Failed to load module config: " + moduleConfig.getAbsolutePath());
       }
     }
 

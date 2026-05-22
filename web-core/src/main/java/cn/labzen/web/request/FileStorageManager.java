@@ -9,6 +9,7 @@ import com.google.common.collect.Maps;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.stereotype.Component;
 
@@ -19,7 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @Component
 @Slf4j
-public final class FileStorageManager implements SmartInitializingSingleton {
+public final class FileStorageManager implements SmartInitializingSingleton, DisposableBean {
 
   private static final String DEFAULT_FILE_STORAGE_NAME = "LocalFileStorage";
 
@@ -45,8 +46,13 @@ public final class FileStorageManager implements SmartInitializingSingleton {
     }
   }
 
+  @Override
+  public void destroy() {
+    fileStorageMap.values().forEach(FileStorage::destroy);
+  }
+
   private static class Holder {
-    private static FileStorageManager INSTANCE = new FileStorageManager();
+    private static volatile FileStorageManager INSTANCE;
   }
 
   public void initialize(@Nonnull Map<String, String> configurations) {

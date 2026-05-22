@@ -102,15 +102,14 @@ public interface Pageable extends Serializable {
    * @param clazz 特定 Bean 类型
    */
   default <T> T to(Class<T> clazz) {
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   default <T> T to(Type type) {
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   default <T> T convertTo() {
-    // todo 看情况，尽量保留这个方法，而不是 to(clazz)
-    return null;
+    throw new UnsupportedOperationException();
   }
 }

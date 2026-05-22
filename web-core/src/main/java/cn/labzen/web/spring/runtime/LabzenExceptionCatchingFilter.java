@@ -36,6 +36,8 @@ import static cn.labzen.web.api.definition.Constants.EXCEPTION_WAS_LOGGED_DURING
  */
 public class LabzenExceptionCatchingFilter extends OncePerRequestFilter {
 
+  private static final int ERROR_CODE = HttpStatus.INTERNAL_SERVER_ERROR.value();
+  private static final String ERROR_REASON_PHRASE = HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase();
   private final ObjectMapper objectMapper = Springs.bean(ObjectMapper.class).orElseGet(ObjectMapper::new);
 
   /**
@@ -85,15 +87,21 @@ public class LabzenExceptionCatchingFilter extends OncePerRequestFilter {
     if (e instanceof RequestException re) {
       var data = new Response(re.getCode(), re.getMessage() != null ? re.getMessage() : HttpStatus.BAD_REQUEST.getReasonPhrase(), null, null);
       sendMessage(data, request, response);
-    } else if (e instanceof LabzenRuntimeException || e instanceof LabzenException) {
-      var resp = new Response(HttpStatus.INTERNAL_SERVER_ERROR.value(),
-        e.getMessage() != null ? e.getMessage() : HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(), null, null);
-      sendMessage(resp, request, response);
     } else {
-      Throwable throwable = findRootCause(e);
-      var resp = new Response(HttpStatus.INTERNAL_SERVER_ERROR.value(),
-        throwable.getMessage() != null ? throwable.getMessage() : HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(), null, null);
-      sendMessage(resp, request, response);
+      if (e instanceof LabzenRuntimeException || e instanceof LabzenException) {
+        if (e.getMessage() != null) {
+          logger.error("Labzen WEB Exception Catcher: ", e);
+        }
+        var resp = new Response(ERROR_CODE, ERROR_REASON_PHRASE, null, null);
+        sendMessage(resp, request, response);
+      } else {
+        Throwable throwable = findRootCause(e);
+        if (throwable.getMessage() != null) {
+          logger.error("Labzen WEB Exception Catcher: ", e);
+        }
+        var resp = new Response(ERROR_CODE, ERROR_REASON_PHRASE, null, null);
+        sendMessage(resp, request, response);
+      }
     }
   }
 
@@ -101,10 +109,14 @@ public class LabzenExceptionCatchingFilter extends OncePerRequestFilter {
    * 递归查找异常的根因
    */
   private Throwable findRootCause(Throwable exception) {
-    if (exception.getCause() == null || exception == exception.getCause()) {
-      return exception;
+    Throwable current = exception;
+    int depth = 0;
+    int maxDepth = 20;
+    while (current.getCause() != null && current != current.getCause() && depth < maxDepth) {
+      current = current.getCause();
+      depth++;
     }
-    return findRootCause(exception.getCause());
+    return current;
   }
 
   /**
@@ -115,7 +127,8 @@ public class LabzenExceptionCatchingFilter extends OncePerRequestFilter {
   private void sendMessage(Object message, HttpServletRequest request, HttpServletResponse response) {
     String contentType = MediaType.APPLICATION_JSON_VALUE;
     response.setContentType(contentType);
-    response.setStatus(HttpStatus.OK.value());
+    int status = (message instanceof Response resp) ? resp.code() : HttpStatus.INTERNAL_SERVER_ERROR.value();
+    response.setStatus(status);
     response.setCharacterEncoding(Constants.DEFAULT_CHARSET_NAME);
     try {
       objectMapper.writeValue(response.getWriter(), message);

@@ -33,7 +33,7 @@ public class QiniuFileStorage implements FileStorage {
   private String accessKey;
   private String secretKey;
   private String bucket;
-  private String domain;
+//  private String domain;
   private StorageGranularity granularity;
   private UploadManager uploadManager;
 
@@ -42,7 +42,7 @@ public class QiniuFileStorage implements FileStorage {
     this.accessKey = config.get("accessKey").asText();
     this.secretKey = config.get("secretKey").asText();
     this.bucket = config.get("bucket").asText();
-    this.domain = config.get("domain").asText();
+//    this.domain = config.get("domain").asText();
 
     String gran = config.has("granularity") ? config.get("granularity").asText() : "NONE";
     try {
@@ -52,8 +52,13 @@ public class QiniuFileStorage implements FileStorage {
       this.granularity = StorageGranularity.NONE;
     }
 
-    this.uploadManager = new UploadManager(new Configuration());
+    this.uploadManager = new UploadManager(Configuration.create());
     return true;
+  }
+
+  @Override
+  public void destroy() {
+    // do nothing
   }
 
   @Override

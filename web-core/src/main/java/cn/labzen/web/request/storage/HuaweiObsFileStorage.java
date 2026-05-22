@@ -1,5 +1,6 @@
 package cn.labzen.web.request.storage;
 
+import cn.labzen.tool.util.IOs;
 import cn.labzen.web.api.request.FileStorage;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.obs.services.ObsClient;
@@ -47,10 +48,18 @@ public class HuaweiObsFileStorage implements FileStorage {
     } catch (IllegalArgumentException e) {
       logger.warn("华为云OBS存储器配置了不支持的颗粒度 [{}]，使用默认值 NONE", gran);
       this.granularity = StorageGranularity.NONE;
+      return false;
     }
 
     this.obsClient = new ObsClient(ak, sk, endPoint);
     return true;
+  }
+
+  @Override
+  public void destroy() {
+    if (obsClient != null) {
+      IOs.closeQuietly(obsClient);
+    }
   }
 
   @Override

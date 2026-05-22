@@ -1,7 +1,9 @@
 package cn.labzen.web.paging.internal;
 
+import cn.labzen.meta.Labzens;
 import cn.labzen.web.api.paging.Order;
 import cn.labzen.web.api.paging.Pageable;
+import cn.labzen.web.meta.WebCoreConfiguration;
 import org.springframework.web.context.request.NativeWebRequest;
 
 import java.util.*;
@@ -20,6 +22,13 @@ import static cn.labzen.web.paging.internal.Paging.DEFAULT_PAGE_SIZE;
  * </ul>
  */
 public final class PageableResolver {
+
+  private static final int MAX_PAGE_SIZE;
+
+  static {
+    WebCoreConfiguration configuration = Labzens.configurationWith(WebCoreConfiguration.class);
+    MAX_PAGE_SIZE = configuration.maxPageSize();
+  }
 
   private PageableResolver() {
   }
@@ -54,7 +63,10 @@ public final class PageableResolver {
     int pageNumber = Optional.ofNullable(parts.length > 0 ? parts[0] : null).flatMap(PageableResolver::parseInt).orElse(DEFAULT_PAGE_NUMBER);
 
     Optional<String> pageSizeOptional = Optional.ofNullable(parts.length > 1 ? parts[1] : null);
-    Integer pageSize = pageSizeOptional.flatMap(PageableResolver::parseInt).orElse(DEFAULT_PAGE_SIZE);
+    int pageSize = pageSizeOptional.flatMap(PageableResolver::parseInt).orElse(DEFAULT_PAGE_SIZE);
+    if (pageSize > MAX_PAGE_SIZE) {
+      pageSize = MAX_PAGE_SIZE;
+    }
 
     // 如果第二部分解析不到数据，则认为没有pageSize，orders从第二部分开始解析
     int ordersIndex = pageSizeOptional.isPresent() ? 2 : 1;
@@ -90,6 +102,9 @@ public final class PageableResolver {
       .or(() -> Optional.ofNullable(webRequest.getParameter("ps")))
       .flatMap(PageableResolver::parseInt)
       .orElse(DEFAULT_PAGE_SIZE);
+    if (pageSize > MAX_PAGE_SIZE) {
+      pageSize = MAX_PAGE_SIZE;
+    }
 
     String ordersRaw = Optional.ofNullable(webRequest.getParameter("orders"))
       .orElse(webRequest.getParameter("od"));

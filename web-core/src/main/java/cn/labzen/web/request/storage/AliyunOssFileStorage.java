@@ -48,10 +48,18 @@ public class AliyunOssFileStorage implements FileStorage {
     } catch (IllegalArgumentException e) {
       logger.warn("阿里云OSS存储器配置了不支持的颗粒度 [{}]，使用默认值 NONE", gran);
       this.granularity = StorageGranularity.NONE;
+      return false;
     }
 
     this.ossClient = new OSSClientBuilder().build(endpoint, accessKeyId, accessKeySecret);
     return true;
+  }
+
+  @Override
+  public void destroy() {
+    if (ossClient != null) {
+      ossClient.shutdown();
+    }
   }
 
   @Override

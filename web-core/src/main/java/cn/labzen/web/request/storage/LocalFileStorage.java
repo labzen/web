@@ -10,8 +10,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 /**
@@ -69,9 +67,14 @@ public class LocalFileStorage implements FileStorage {
   }
 
   @Override
+  public void destroy() {
+    // do nothing
+  }
+
+  @Override
   public Path store(InputStream inputStream, String filename) {
     String path = granularity.resolveKeyPrefix();
-    Path targetDir = Paths.get(path);
+    Path targetDir = rootPath.resolve(path);
     Path targetFile = targetDir.resolve(filename).normalize();
 
     // 安全检查：确保目标文件在根路径下
@@ -81,9 +84,8 @@ public class LocalFileStorage implements FileStorage {
 
     try {
       Files.createDirectories(targetDir);
-      try (InputStream is = inputStream;
-           var os = Files.newOutputStream(targetFile)) {
-        FileCopyUtils.copy(is, os);
+      try (var os = Files.newOutputStream(targetFile)) {
+        FileCopyUtils.copy(inputStream, os);
       }
     } catch (IOException e) {
       throw new RuntimeException("文件存储失败: " + targetFile, e);

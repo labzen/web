@@ -20,6 +20,11 @@ public interface FileStorage {
   boolean initialize(JsonNode config);
 
   /**
+   * 销毁文件存储器实例
+   */
+  void destroy();
+
+  /**
    * 将输入流存储到以原始文件名命名的目标位置，并返回实际存储路径
    *
    * @param inputStream 文件输入流
