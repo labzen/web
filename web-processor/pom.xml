@@ -6,7 +6,7 @@
   <parent>
     <artifactId>web-parent</artifactId>
     <groupId>cn.labzen</groupId>
-    <version>1.2.1-SNAPSHOT</version>
+    <version>1.2.2</version>
     <relativePath>../web-parent</relativePath>
   </parent>
 
@@ -20,7 +20,7 @@
       <dependency>
         <groupId>cn.labzen</groupId>
         <artifactId>web-core</artifactId>
-        <version>1.2.1-SNAPSHOT</version>
+        <version>1.2.2</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
