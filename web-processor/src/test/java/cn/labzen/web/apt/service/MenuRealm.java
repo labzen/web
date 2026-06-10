@@ -63,4 +63,9 @@ public class MenuRealm implements StandardResourceService<MenuDto, Long>, FileHa
   public Result imports(UploadedFile uploadedFile) {
     return null;
   }
+
+  @Override
+  public Result importTemplate() {
+    return null;
+  }
 }

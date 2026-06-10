@@ -31,4 +31,11 @@ public interface FileHandleService<RB> {
    * @return 导入结果，通常包含导入状态和消息
    */
   Result imports(UploadedFile uploadedFile);
+
+  /**
+   * 获取导入模板文件
+   *
+   * @return 模板文件
+   */
+  Result importTemplate();
 }

@@ -4,6 +4,7 @@ import cn.labzen.web.api.annotation.Abandoned;
 import cn.labzen.web.api.annotation.Call;
 import cn.labzen.web.api.annotation.LabzenController;
 import cn.labzen.web.api.annotation.MappingVersion;
+import cn.labzen.web.api.controller.FileController;
 import cn.labzen.web.api.controller.StandardController;
 import cn.labzen.web.api.response.result.Result;
 import cn.labzen.web.apt.service.MenuDto;

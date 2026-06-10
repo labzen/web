@@ -1,10 +1,7 @@
 package cn.labzen.web.api.controller;
 
 import cn.labzen.web.api.response.result.Result;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -23,4 +20,7 @@ public interface FileController<RB> extends LabzenController {
 
   @PostMapping("import")
   Result imports(@RequestParam("file") MultipartFile multipartFile);
+
+  @GetMapping("import-template")
+  Result importTemplate();
 }
