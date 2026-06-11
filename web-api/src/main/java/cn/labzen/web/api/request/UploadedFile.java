@@ -1,9 +1,13 @@
 package cn.labzen.web.api.request;
 
+import java.io.IOException;
+import java.io.InputStream;
+
 /**
  * 上传文件接口。
  * <p>
- * 定义了已上传文件的基本信息及存储操作。
+ * 定义了已上传文件的基本信息及内容读取能力。
+ * 文件的存储操作由 {@link FileStorage} 负责，而非由上传文件自身发起。
  */
 public interface UploadedFile {
 
@@ -37,41 +41,18 @@ public interface UploadedFile {
 
   /**
    * 对需要存储的文件名重命名
-   * <p/>
-   * 可以不重命名，存储时，使用原文件名
+   * <p>
+   * 可以不重命名，存储时使用原文件名
    *
    * @param name 新文件名
    */
   void rename(String name);
 
   /**
-   * 将文件存储到配置好的{@link FileStorage}中
+   * 获取文件内容的输入流
    *
-   * @return 文件存储后的完整访问地址
+   * @return 文件输入流
+   * @throws IOException 读取失败时抛出
    */
-  String store();
-
-  /**
-   * 将文件存储到指定存储器中
-   *
-   * @param storageName 存储器名称
-   * @return 文件存储后的完整访问地址
-   */
-  String storeByStorage(String storageName);
-//
-//  /**
-//   * 将文件存储到指定路径
-//   *
-//   * @param path 目标路径（字符串形式）
-//   */
-//  @Deprecated
-//  void store(String path);
-//
-//  /**
-//   * 将文件存储到指定路径
-//   *
-//   * @param path 目标路径
-//   */
-//  @Deprecated
-//  void store(Path path);
+  InputStream getInputStream() throws IOException;
 }

@@ -1,23 +1,33 @@
 package cn.labzen.web.request;
 
+import cn.labzen.meta.Labzens;
 import cn.labzen.tool.util.Strings;
 import cn.labzen.web.api.request.UploadedFile;
 import cn.labzen.web.exception.FileUploadException;
+import cn.labzen.web.meta.WebCoreConfiguration;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.nio.file.Path;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
+/**
+ * 标准上传文件实现
+ * <p>
+ * 封装 Spring 的 {@link MultipartFile}，提供文件校验和基本信息访问。
+ * 文件存储操作由 {@link FileStorageManager} 负责，不再由本类发起。
+ */
 public class StandardUploadedFile implements UploadedFile {
 
   private static final int NOT_ACCEPTABLE_CODE = HttpStatus.NOT_ACCEPTABLE.value();
-  private static final int INTERNAL_SERVER_CODE = HttpStatus.INTERNAL_SERVER_ERROR.value();
 
-  private static List<String> acceptedUploadFileExtensions = List.of();
+  private static final List<String> ACCEPTED_UPLOAD_FILE_EXTENSIONS;
 
-  static void setAcceptedUploadFileExtensions(List<String> acceptedUploadFileExtensions) {
-    StandardUploadedFile.acceptedUploadFileExtensions = List.copyOf(acceptedUploadFileExtensions);
+  static {
+    WebCoreConfiguration configuration = Labzens.configurationWith(WebCoreConfiguration.class);
+    List<String> fileExtensions = configuration.acceptedUploadFileExtensions();
+    ACCEPTED_UPLOAD_FILE_EXTENSIONS = List.copyOf(fileExtensions);
   }
 
   private final MultipartFile multipartFile;
@@ -47,7 +57,7 @@ public class StandardUploadedFile implements UploadedFile {
     if (extension.isEmpty()) {
       throw new FileUploadException(NOT_ACCEPTABLE_CODE, "文件缺少扩展名");
     }
-    if (!acceptedUploadFileExtensions.contains(extension)) {
+    if (!ACCEPTED_UPLOAD_FILE_EXTENSIONS.contains(extension)) {
       throw new FileUploadException(NOT_ACCEPTABLE_CODE, "不支持的文件类型: {}", extension);
     }
     this.extension = extension;
@@ -79,22 +89,7 @@ public class StandardUploadedFile implements UploadedFile {
   }
 
   @Override
-  public String store() {
-    try {
-      Path path = FileStorageManager.get().store(multipartFile.getInputStream(), Strings.value(storageFileName, originalFilename()));
-      return path.toAbsolutePath().toString();
-    } catch (Exception e) {
-      throw new FileUploadException(INTERNAL_SERVER_CODE, e, "文件存储失败");
-    }
-  }
-
-  @Override
-  public String storeByStorage(String storageName) {
-    try {
-      Path path = FileStorageManager.get(storageName).store(multipartFile.getInputStream(), Strings.value(storageFileName, originalFilename()));
-      return path.toAbsolutePath().toString();
-    } catch (Exception e) {
-      throw new FileUploadException(INTERNAL_SERVER_CODE, e, "文件存储失败");
-    }
+  public InputStream getInputStream() throws IOException {
+    return multipartFile.getInputStream();
   }
 }
