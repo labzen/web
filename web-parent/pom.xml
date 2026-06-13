@@ -12,7 +12,7 @@
 
   <artifactId>web-parent</artifactId>
   <packaging>pom</packaging>
-  <version>1.2.3</version>
+  <version>1.2.4</version>
   <name>Labzen.Web.Parent</name>
   <description>Labzen Web - simple and clear web layer structure, avoid the business logic code mixed in</description>
   <url>https://github.com/labzen/logger</url>

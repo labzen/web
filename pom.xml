@@ -7,7 +7,7 @@
   <groupId>cn.labzen</groupId>
   <artifactId>web-project</artifactId>
   <packaging>pom</packaging>
-  <version>1.2.3</version>
+  <version>1.2.4</version>
   <name>Labzen.Web</name>
   <description>Labzen Web - project root pom (ignore me)</description>
 
