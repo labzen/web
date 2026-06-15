@@ -36,7 +36,7 @@ public class RequestException extends LabzenRuntimeException {
   public RequestException(int code, String message) {
     super(message);
     this.code = code;
-    this.logging = true;
+    this.logging = false;
   }
 
   // ========== 带日志控制的构造方法 ==========
@@ -66,7 +66,7 @@ public class RequestException extends LabzenRuntimeException {
   public RequestException(int code, String message, Object... args) {
     super(message, args);
     this.code = code;
-    this.logging = true;
+    this.logging = false;
   }
 
   /**
@@ -86,7 +86,7 @@ public class RequestException extends LabzenRuntimeException {
   public RequestException(int code, Throwable cause) {
     super(cause);
     this.code = code;
-    this.logging = true;
+    this.logging = false;
   }
 
   /**
@@ -106,7 +106,7 @@ public class RequestException extends LabzenRuntimeException {
   public RequestException(int code, Throwable cause, String message) {
     super(cause, message);
     this.code = code;
-    this.logging = true;
+    this.logging = false;
   }
 
   /**
@@ -126,7 +126,7 @@ public class RequestException extends LabzenRuntimeException {
   public RequestException(int code, Throwable cause, String message, Object... args) {
     super(cause, message, args);
     this.code = code;
-    this.logging = true;
+    this.logging = false;
   }
 
   /**
