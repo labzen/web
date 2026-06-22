@@ -53,6 +53,7 @@ public class LabzenWebProcessor extends AbstractProcessor {
 
   private final Set<TypeElement> processedControllers = Sets.newConcurrentHashSet();
   private final Set<DeferredController> deferredControllers = Sets.newConcurrentHashSet();
+  private volatile List<InternalProcessor> cachedProcessors;
 
   @Override
   public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -89,8 +90,14 @@ public class LabzenWebProcessor extends AbstractProcessor {
 
       List<ControllerContext> controllerContexts = getControllers(annotations, roundEnv);
       controllerContexts.forEach(this::processEachController);
-    } else if (!deferredControllers.isEmpty()) {
-      outputFailedControllers();
+    } else {
+      if (!deferredControllers.isEmpty()) {
+        outputFailedControllers();
+      }
+      // 清理本轮编译的累积状态，为下一次增量编译做准备
+      // Eclipse JDT APT 会复用处理器实例，不清理会导致增量编译时跳过已修改的 Controller
+      processedControllers.clear();
+      deferredControllers.clear();
     }
 
     return true;
@@ -182,14 +189,24 @@ public class LabzenWebProcessor extends AbstractProcessor {
 
   /**
    * 通过 SPI 加载所有内部处理器，并按优先级排序
+   * <p>
+   * 结果缓存在实例字段中，避免每次处理 Controller 时重复调用 ServiceLoader。
    *
    * @return 已排序的处理器列表
    */
   private List<InternalProcessor> getProcessors() {
-    // 使用当前线程的上下文类加载器，提高兼容性
-    ClassLoader classLoader = this.getClass().getClassLoader();
-    return ServiceLoader.load(InternalProcessor.class, classLoader).stream().map(ServiceLoader.Provider::get)
-      .sorted(PROCESSOR_COMPARATOR).toList();
+    if (cachedProcessors == null) {
+      synchronized (this) {
+        if (cachedProcessors == null) {
+          ClassLoader classLoader = this.getClass().getClassLoader();
+          cachedProcessors = ServiceLoader.load(InternalProcessor.class, classLoader).stream()
+            .map(ServiceLoader.Provider::get)
+            .sorted(PROCESSOR_COMPARATOR)
+            .toList();
+        }
+      }
+    }
+    return cachedProcessors;
   }
 
   /**
