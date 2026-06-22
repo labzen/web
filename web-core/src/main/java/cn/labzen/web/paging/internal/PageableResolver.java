@@ -18,7 +18,7 @@ import static cn.labzen.web.paging.internal.Paging.DEFAULT_PAGE_SIZE;
  * 支持两种参数格式：
  * <ul>
  *   <li>紧凑格式：paging=1,20,field1,-field2（页码,每页数量,排序字段）</li>
- *   <li>普通格式：pageNumber=1&pageSize=20&orders=field1,!field2</li>
+ *   <li>普通格式：pageNumber=1&#38;pageSize=20&#38;orders=field1,!field2</li>
  * </ul>
  */
 public final class PageableResolver {

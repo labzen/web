@@ -32,14 +32,14 @@ import static cn.labzen.web.api.definition.Constants.DEFAULT_PAGE_NUMBER;
  * <code>
  * <pre>
  * // 参数名严格映射到方法名
- * const url = '/resources?page_number=8&page_size=100';
+ * const url = '/resources?page_number=8&#38;page_size=100';
  * /*
  *  * 参数名使用约定的缩写传递（需注意不要与业务参数名冲突）
  *  * page_number --> pn
  *  * page_size   --> ps
  *  * orders      --> od
  *  &#42;/
- * const url = '/resources?pn=8&ps=100';
+ * const url = '/resources?pn=8&#38;ps=100';
  * </pre>
  * </code>
  * <p>

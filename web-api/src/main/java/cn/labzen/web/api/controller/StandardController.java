@@ -42,7 +42,7 @@ import java.util.List;
  *  * 这是一个标准的Controller定义，包含了增改查等常用入口定义。
  *  * 这里使用 @Abandoned 注解剔除了删除资源的入口
  *  &#42;/
- * public interface ResourceController extends StandardController<resourceervice, ResourceBean, Long> {
+ * public interface ResourceController extends StandardController&#60;resourceervice, ResourceBean, Long> {
  *   &#64;Abandoned
  *   Result remove(Long id);  // 删除接口将被排除
  * }
@@ -53,7 +53,7 @@ import java.util.List;
  * /**
  *  * 这是一个标准的Controller定义
  *  &#42;/
- * public interface ResourceController extends StandardController<resourceervice, ResourceBean, Long> {
+ * public interface ResourceController extends StandardController&#60;resourceervice, ResourceBean, Long> {
  *   /**
  *    * 这里定义了一个快速入口
  *    &#42;/
