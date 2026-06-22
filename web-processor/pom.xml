@@ -6,7 +6,7 @@
   <parent>
     <artifactId>web-parent</artifactId>
     <groupId>cn.labzen</groupId>
-    <version>1.2.4</version>
+    <version>${revision}</version>
     <relativePath>../web-parent</relativePath>
   </parent>
 
@@ -20,7 +20,7 @@
       <dependency>
         <groupId>cn.labzen</groupId>
         <artifactId>web-core</artifactId>
-        <version>1.2.4</version>
+        <version>${project.parent.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
