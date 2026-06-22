@@ -56,6 +56,8 @@ public final class ClassCreator {
 
   private final ElementClass root;
   private final Filer filer;
+  /** 生成的实现类所实现的原始接口元素，作为 createSourceFile 的 originating element */
+  private final TypeElement originatingElement;
   /** 模板 key → 方法体内容（不含 #import 指令行） */
   private final Map<String, String> methodBodyTemplates = Maps.newHashMap();
   /** 模板 key → 该模板声明的 import 全路径类名列表 */
@@ -81,9 +83,10 @@ public final class ClassCreator {
     return "unknown";
   }
 
-  public ClassCreator(ElementClass root, Filer filer) {
+  public ClassCreator(ElementClass root, Filer filer, TypeElement originatingElement) {
     this.root = root;
     this.filer = filer;
+    this.originatingElement = originatingElement;
 
     loadMethodBodyTemplates();
   }
@@ -303,7 +306,7 @@ public final class ClassCreator {
     } else {
       try {
         String qualifiedName = root.getPkg() + "." + root.getName();
-        JavaFileObject filerSourceFile = filer.createSourceFile(qualifiedName);
+        JavaFileObject filerSourceFile = filer.createSourceFile(qualifiedName, originatingElement);
         try (Writer writer = filerSourceFile.openWriter()) {
           writer.write(source);
         }
