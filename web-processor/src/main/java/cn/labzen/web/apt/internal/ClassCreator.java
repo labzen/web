@@ -9,23 +9,23 @@ import com.squareup.javapoet.*;
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.Generated;
 import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.FileObject;
+import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -52,10 +52,16 @@ public final class ClassCreator {
   private static final String METHOD_BODY_TEMPLATE_ERROR_INVALID_METHOD = "error-invalid-method";
   private static final String METHOD_BODY_TEMPLATE_GENERAL = "general";
   private static final Pattern METHOD_PARAMETER_PATTERN = Pattern.compile("\\{#parameter[0-9]+}");
+  private static final Pattern IMPORT_DIRECTIVE_PATTERN = Pattern.compile("^#import:\\s*(\\S+).*$");
 
   private final ElementClass root;
   private final Filer filer;
+  /** 模板 key → 方法体内容（不含 #import 指令行） */
   private final Map<String, String> methodBodyTemplates = Maps.newHashMap();
+  /** 模板 key → 该模板声明的 import 全路径类名列表 */
+  private final Map<String, List<String>> templateImports = Maps.newHashMap();
+  /** 本次生成过程中实际消费的模板 key 集合 */
+  private final Set<String> consumedTemplates = new LinkedHashSet<>();
 
   /**
    * 从 Maven 属性文件中读取版本号
@@ -108,9 +114,13 @@ public final class ClassCreator {
           // 逐个读取 txt 文件
           FileObject txtFile = filer.getResource(StandardLocation.CLASS_PATH, "templates", fileName);
 
-          String content = readContent(txtFile);
+          String rawContent = readContent(txtFile);
           String key = Strings.frontUntil(fileName, ".", false);
-          methodBodyTemplates.put(key, content);
+          var parsed = parseTemplateImports(rawContent);
+          methodBodyTemplates.put(key, parsed.body());
+          if (!parsed.imports().isEmpty()) {
+            templateImports.put(key, parsed.imports());
+          }
         }
       }
     } catch (IOException e) {
@@ -124,10 +134,57 @@ public final class ClassCreator {
       new InputStreamReader(fileObject.openInputStream(), StandardCharsets.UTF_8))) {
       String line;
       while ((line = reader.readLine()) != null) {
-        sb.append(line);
+        sb.append(line).append('\n');
       }
     }
     return sb.toString();
+  }
+
+  /**
+   * 解析模板中的 {@code #import:} 指令。
+   * <p>
+   * 模板头部可以声明 import，格式为：
+   * <pre>{@code
+   *   #import: com.example.MyClass
+   *   #import: com.example.AnotherClass
+   *   ---
+   *   方法体内容...
+   * }</pre>
+   * {@code ---} 分隔符可选，如果方法体第一行不是 {@code #import:} 则整个内容均为方法体。
+   *
+   * @param raw 原始模板内容（整段）
+   * @return 解析结果：已声明的 imports 列表 + 纯净方法体
+   */
+  private static TemplateParseResult parseTemplateImports(String raw) {
+    List<String> imports = new ArrayList<>();
+    String[] lines = raw.split("\n", -1);
+
+    int bodyStart = 0;
+    for (int i = 0; i < lines.length; i++) {
+      String line = lines[i].trim();
+      Matcher matcher = IMPORT_DIRECTIVE_PATTERN.matcher(line);
+      if (matcher.matches()) {
+        imports.add(matcher.group(1));
+        bodyStart = i + 1;
+      } else if (line.equals("---") && i > 0) {
+        // --- 分隔符：如果前面有 import 指令，跳过这行；如果没有 import，视作方法体起始
+        bodyStart = imports.isEmpty() ? 0 : i + 1;
+        break;
+      } else if (!imports.isEmpty()) {
+        // 已有 import 指令的前提下，遇到非 import 非 --- 的行 → 方法体开始
+        bodyStart = i;
+        break;
+      } else {
+        // 第一行就不是 import → 整个是方法体
+        break;
+      }
+    }
+
+    String body = String.join("\n", Arrays.copyOfRange(lines, bodyStart, lines.length));
+    return new TemplateParseResult(imports, body);
+  }
+
+  private record TemplateParseResult(List<String> imports, String body) {
   }
 
   /**
@@ -189,11 +246,39 @@ public final class ClassCreator {
 
     var typeSpec = typeSpecBuilder.build();
     var javaFile = JavaFile.builder(root.getPkg(), typeSpec).build();
-    output(javaFile);
+    String source = injectTemplateImports(javaFile.toString());
+    output(source);
   }
 
   /**
-   * 输出 Java 文件
+   * 将本次生成过程中实际消费的模板所声明的 import 注入到源码中，
+   * 插入在 package 声明行之后、类定义之前。
+   */
+  private String injectTemplateImports(String source) {
+    Set<String> all = new LinkedHashSet<>();
+    for (String key : consumedTemplates) {
+      List<String> imports = templateImports.get(key);
+      if (imports != null) {
+        all.addAll(imports);
+      }
+    }
+    if (all.isEmpty()) {
+      return source;
+    }
+
+    int firstNewline = source.indexOf('\n');
+    String packageLine = source.substring(0, firstNewline + 1);
+    String rest = source.substring(firstNewline + 1);
+
+    StringBuilder block = new StringBuilder();
+    for (String imp : all) {
+      block.append("import ").append(imp).append(";\n");
+    }
+    return packageLine + "\n" + block + "\n" + rest;
+  }
+
+  /**
+   * 输出 Java 源文件
    * <p>
    * 根据系统属性 JUNIT_OUTPUT_DIR 判断运行环境：
    * <ul>
@@ -201,20 +286,27 @@ public final class ClassCreator {
    *   <li>否则使用 Filer 输出到编译目标目录</li>
    * </ul>
    *
-   * @param javaFile 要输出的 Java 文件对象
+   * @param source 完整的 Java 源代码字符串
    */
-  private void output(JavaFile javaFile) {
+  private void output(String source) {
     var outputTarget = System.getProperty(JUNIT_OUTPUT_DIR, "");
     if (!outputTarget.isBlank()) {
-      var outputPath = Paths.get("target/" + outputTarget);
+      // 构造完整路径：target/{outputTarget}/{package/ClassName}.java
+      String relativePath = root.getPkg().replace('.', '/') + "/" + root.getName() + ".java";
+      var outputPath = Paths.get("target", outputTarget, relativePath);
       try {
-        javaFile.writeTo(outputPath);
+        Files.createDirectories(outputPath.getParent());
+        Files.writeString(outputPath, source);
       } catch (Exception e) {
         throw new RuntimeException("Failed to write Java file to: " + outputPath, e);
       }
     } else {
       try {
-        javaFile.writeTo(filer);
+        String qualifiedName = root.getPkg() + "." + root.getName();
+        JavaFileObject filerSourceFile = filer.createSourceFile(qualifiedName);
+        try (Writer writer = filerSourceFile.openWriter()) {
+          writer.write(source);
+        }
       } catch (Exception e) {
         throw new RuntimeException("Failed to write Java file using Filer", e);
       }
@@ -252,8 +344,13 @@ public final class ClassCreator {
     var parameterNames = String.join(", ", parameters);
 
     String body = methodBodyTemplates.get(method.getName());
-    if (Strings.isBlank(body)) {
+    if (!Strings.isBlank(body)) {
+      consumedTemplates.add(method.getName());
+    } else {
       body = methodBodyTemplates.get(METHOD_BODY_TEMPLATE_GENERAL);
+      if (!Strings.isBlank(body)) {
+        consumedTemplates.add(METHOD_BODY_TEMPLATE_GENERAL);
+      }
     }
     if (Strings.isBlank(body)) {
       healthyBody = false;

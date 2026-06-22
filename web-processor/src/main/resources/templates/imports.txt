@@ -1,2 +1,5 @@
-cn.labzen.web.api.request.UploadedFile uploadedFile = new cn.labzen.web.request.StandardUploadedFile({#parameter0});
+#import: cn.labzen.web.api.request.UploadedFile
+#import: cn.labzen.web.request.StandardUploadedFile
+---
+UploadedFile uploadedFile = new StandardUploadedFile({#parameter0});
 return {#field}.{#method}(uploadedFile);

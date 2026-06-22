@@ -1,8 +1,9 @@
-- [ ] 自动生成API文档
 - [x] 一部分关于controller导出方法生成的代码，在mac本上
 - [x] 关于import和export两个方法，是否需要自动生成？还是通过另一种形式来生成
 - [x] 将 APT 的部分，单独出来一个 processor 的jar
-- [ ] 添加基于Controller API入口方法的日志打印
 - [x] 将web-file独立出来为一个项目 labzen-file，而不是放在web中
-- [ ] APT时的类方法模板 [imports.txt](web-processor/src/main/resources/templates/imports.txt) 中涉及到有引入类的，解决一下。生成的类中带有包路径比较丑
+- [x] APT时的类方法模板 [imports.txt](web-processor/src/main/resources/templates/imports.txt) 中涉及到有引入类的，解决一下。生成的类中带有包路径比较丑
+- [x] 修复 APT ，拷贝controller的注解，布尔类型被复制为字符串，例如 @RequestParam(value = "sl", required = false) 被复制为 @RequestParam(value = "sl", required = "false")
+- [ ] 自动生成API文档
+- [ ] 添加基于Controller API入口方法的日志打印
 - [ ] 接口级的加、解密机制（实现动态秘钥交换，周期性更换秘钥，交换周期内可同时存在两套可用秘钥，要具备一个协商机制）
