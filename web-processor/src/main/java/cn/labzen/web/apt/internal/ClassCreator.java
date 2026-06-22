@@ -8,7 +8,12 @@ import com.squareup.javapoet.*;
 
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.Generated;
+import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.TypeMirror;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
 import java.io.BufferedReader;
@@ -298,7 +303,26 @@ public final class ClassCreator {
         case null -> {
           /* ignore null values */
         }
-        default -> annotationSpecBuilder.addMember(key, "$S", value.toString());
+        /* 字面量——不带引号直接输出 */
+        case Boolean bool -> annotationSpecBuilder.addMember(key, "$L", bool);
+        case Number number -> annotationSpecBuilder.addMember(key, "$L", number);
+        case Character ch -> annotationSpecBuilder.addMember(key, "'$L'", ch);
+        /* 字符串 */
+        case String s -> annotationSpecBuilder.addMember(key, "$S", s);
+        /* 枚举常量 → e.g. RequestMethod.GET */
+        case VariableElement ve -> annotationSpecBuilder.addMember(key, "$T.$L",
+            ClassName.get((TypeElement) ve.getEnclosingElement()), ve.getSimpleName());
+        /* Class 字面量 → e.g. IOException.class */
+        case TypeMirror tm -> annotationSpecBuilder.addMember(key, "$T.class", tm);
+        /* 嵌套注解 */
+        case AnnotationMirror nested -> {
+          var nestedSpec = buildAnnotationSpec(new ElementAnnotation(
+              ClassName.get((TypeElement) nested.getAnnotationType().asElement()),
+              Utils.readAnnotationMembers(nested)));
+          annotationSpecBuilder.addMember(key, "$L", nestedSpec);
+        }
+        default -> throw new IllegalArgumentException(
+            "unsupported annotation member type: " + value.getClass().getName() + " for key '" + key + "'");
       }
     });
     return annotationSpecBuilder.build();

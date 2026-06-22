@@ -68,4 +68,8 @@ public class MenuRealm implements StandardResourceService<MenuDto, Long>, FileHa
   public Result importTemplate() {
     return null;
   }
+
+  public Result demo(String id) {
+    return null;
+  }
 }

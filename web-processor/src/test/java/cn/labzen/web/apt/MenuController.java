@@ -11,10 +11,7 @@ import cn.labzen.web.apt.service.MenuDto;
 import cn.labzen.web.apt.service.MenuRealm;
 import cn.labzen.web.apt.service.RoleRealm;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Nonnull;
 
@@ -40,4 +37,7 @@ public interface MenuController extends StandardController<MenuRealm, MenuDto, L
    */
   @PostMapping("/recache/{id}")
   Result recache(@PathVariable Long id);
+
+  @GetMapping("/demo")
+  Result demo(@RequestParam(value = "id", required = false) String sourceId);
 }
