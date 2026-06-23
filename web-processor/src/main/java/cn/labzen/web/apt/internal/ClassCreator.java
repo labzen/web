@@ -310,9 +310,29 @@ public final class ClassCreator {
         try (Writer writer = filerSourceFile.openWriter()) {
           writer.write(source);
         }
+        // 诊断模式：通过 -Alabzen.web.processor.dump=true 将生成的源码输出到 target/labzen-dump/
+        dumpSourceIfEnabled(source);
       } catch (Exception e) {
         throw new RuntimeException("Failed to write Java file using Filer", e);
       }
+    }
+  }
+
+  /**
+   * 诊断模式：将生成的源码副本写入磁盘，方便排查编译问题。
+   * 通过编译参数 {@code -Alabzen.web.processor.dump=true} 启用。
+   */
+  private void dumpSourceIfEnabled(String source) {
+    if (!"true".equals(System.getProperty("labzen.web.processor.dump", ""))) {
+      return;
+    }
+    try {
+      String relativePath = root.getPkg().replace('.', '/') + "/" + root.getName() + ".java";
+      var dumpPath = Paths.get("target", "labzen-dump", relativePath);
+      Files.createDirectories(dumpPath.getParent());
+      Files.writeString(dumpPath, source);
+    } catch (Exception e) {
+      // 诊断写入失败不应影响编译流程
     }
   }
 
