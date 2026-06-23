@@ -98,32 +98,40 @@ public class LabzenWebProcessor extends AbstractProcessor {
       // Eclipse JDT APT 会复用处理器实例，不清理会导致增量编译时跳过已修改的 Controller
       processedControllers.clear();
       deferredControllers.clear();
+      // 清理缓存的处理器列表，确保下一次编译（尤其是 ECJ 增量编译复用处理器实例时）
+      // 使用全新的 InternalProcessor 实例，避免跨编译轮次的残留状态
+      cachedProcessors = null;
     }
 
     return true;
   }
 
   /**
-   * 输出编译结束时仍未成功处理的控制器警告
+   * 输出编译结束时仍未成功处理的控制器错误
+   * <p>
+   * 此时控制器已耗尽所有重试机会，属于真正的编译错误，使用 ERROR 级别
    */
   private void outputFailedControllers() {
     deferredControllers.forEach(deferred -> {
       TypeElement deferredElement = getContext().elements()
         .getTypeElement(deferred.element().getQualifiedName());
-      getContext().messaging()
-        .warning("LabzenWebProcessor: 无法实现 Controller " + deferredElement.getQualifiedName());
+      getContext().messaging().error("LabzenWebProcessor: 无法实现 Controller " + deferredElement.getQualifiedName());
     });
   }
 
   /**
    * 获取并重置上一轮延迟的控制器上下文列表
+   * <p>
+   * 只重试尚未耗尽重试次数的控制器
    *
    * @return 延迟控制器的上下文列表
    */
   private List<ControllerContext> getAndResetDeferredControllers() {
     List<ControllerContext> result = deferredControllers.stream()
+      .filter(DeferredController::canRetry)
       .map(controller -> new ControllerContext(controller.element())).toList();
-    deferredControllers.clear();
+    // 仅移除可重试的控制器，不可重试的保留到 processingOver 阶段报告错误
+    deferredControllers.removeIf(DeferredController::canRetry);
     return result;
   }
 
@@ -165,26 +173,52 @@ public class LabzenWebProcessor extends AbstractProcessor {
       processedControllers.add(context.getSource());
       getContext().messaging().info("Labzen web processor -     process success controller: " + context.getSource().getQualifiedName());
     } catch (Throwable e) {
-      deferredControllers.add(new DeferredController(context.getSource()));
-      handleUncaughtError(context.getSource(), e);
+      // 延迟处理：将控制器加入重试队列，使用 WARNING 而非 ERROR
+      // 关键：如果在此处报告 ERROR，ECJ（Eclipse 编译器）会进入"proceed on error"模式，
+      // 导致同一编译批次中其他无关类（如使用跨模块 static import 的类）也无法解析依赖，
+      // 最终生成 throw new Error("Unresolved compilation problem: ...") 的占位字节码。
+      // 改为 WARNING 后，控制器仍会被延迟重试，只有重试耗尽后才在 outputFailedControllers 中报告 ERROR。
+      DeferredController existing = findDeferredController(context.getSource());
+      DeferredController deferred = existing != null ? existing.incrementRetry() : new DeferredController(context.getSource());
+      deferredControllers.remove(existing);
+      deferredControllers.add(deferred);
+      handleUncaughtError(context.getSource(), e, deferred.canRetry());
       getContext().messaging().info("Labzen web processor -     process failed controller: " + context.getSource().getQualifiedName());
     }
   }
 
   /**
-   * 处理未捕获的异常，将其转换为编译错误信息输出
-   *
-   * @param element 出错的元素
-   * @param e       异常对象
+   * 在延迟队列中查找指定的控制器
    */
-  private void handleUncaughtError(Element element, Throwable e) {
+  private DeferredController findDeferredController(TypeElement source) {
+    return deferredControllers.stream()
+      .filter(dc -> dc.element().equals(source))
+      .findFirst()
+      .orElse(null);
+  }
+
+  /**
+   * 处理未捕获的异常，将其转换为编译信息输出
+   * <p>
+   * 当 canRetry=true 时使用 WARNING 级别（控制器将被延迟重试，非致命错误）；
+   * 当 canRetry=false 时使用 ERROR 级别（重试已耗尽，属于真正的编译错误）。
+   *
+   * @param element  出错的元素
+   * @param e        异常对象
+   * @param canRetry 是否还可以重试
+   */
+  private void handleUncaughtError(Element element, Throwable e, boolean canRetry) {
     StringWriter sw = new StringWriter();
     e.printStackTrace(new PrintWriter(sw));
 
     String reportableStacktrace = sw.toString().replace(System.lineSeparator(), "  ");
+    String message = "Labzen web processor - Internal error in the mapping processor: " + reportableStacktrace;
 
-    getContext().messaging().delegate().printMessage(Diagnostic.Kind.ERROR,
-      "Labzen web processor - Internal error in the mapping processor: " + reportableStacktrace, element);
+    if (canRetry) {
+      getContext().messaging().delegate().printMessage(Diagnostic.Kind.WARNING, message, element);
+    } else {
+      getContext().messaging().delegate().printMessage(Diagnostic.Kind.ERROR, message, element);
+    }
   }
 
   /**

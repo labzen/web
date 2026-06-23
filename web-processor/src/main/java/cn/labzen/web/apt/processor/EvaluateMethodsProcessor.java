@@ -65,6 +65,9 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
     this.elementClass = context.getRoot();
     this.evaluators = context.getAnnotationEvaluators();
 
+    // 清理上一个 Controller 遗留的方法缓存，防止跨 Controller 方法串扰
+    parsedMethods.clear();
+
     collectMethods(context.getSource());
 
     parsedMethods.forEach((key, method) -> {

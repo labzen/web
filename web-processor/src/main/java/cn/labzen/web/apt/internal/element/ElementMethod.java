@@ -7,6 +7,7 @@ import lombok.Setter;
 
 import java.util.Comparator;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Getter
@@ -34,5 +35,17 @@ public final class ElementMethod implements Element {
   @Override
   public String toString() {
     return keyword();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (o == null || getClass() != o.getClass()) return false;
+    ElementMethod that = (ElementMethod) o;
+    return Objects.equals(keyword(), that.keyword());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(keyword());
   }
 }

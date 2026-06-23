@@ -7,6 +7,7 @@ import com.squareup.javapoet.TypeName;
 import lombok.Getter;
 
 import java.util.Map;
+import java.util.Objects;
 
 import static cn.labzen.web.apt.definition.TypeNames.ANNOTATION_SPRING_REQUEST_MAPPING;
 
@@ -37,5 +38,17 @@ public final class ElementAnnotation implements Element {
   @Override
   public String toString() {
     return keyword();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (o == null || getClass() != o.getClass()) return false;
+    ElementAnnotation that = (ElementAnnotation) o;
+    return Objects.equals(type, that.type);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(type);
   }
 }

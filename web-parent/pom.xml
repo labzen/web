@@ -6,7 +6,7 @@
   <parent>
     <artifactId>parent</artifactId>
     <groupId>cn.labzen</groupId>
-    <version>21.2</version>
+    <version>21.4</version>
     <relativePath/>
   </parent>
 
@@ -69,7 +69,8 @@
   </repositories>
 
   <properties>
-    <revision>1.2.5</revision>
+    <revision>1.2.8</revision>
+
     <labzen.logger.version>1.6.1</labzen.logger.version>
     <labzen.tool.version>1.4.1</labzen.tool.version>
     <labzen.spring.version>1.2.3</labzen.spring.version>
@@ -110,27 +111,6 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>flatten-maven-plugin</artifactId>
-        <version>1.6.0</version>
-        <configuration>
-          <updatePomFile>true</updatePomFile>
-          <flattenMode>resolveCiFriendliesOnly</flattenMode>
-        </configuration>
-        <executions>
-          <execution>
-            <id>flatten</id>
-            <phase>process-resources</phase>
-            <goals>
-              <goal>flatten</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>flatten-clean</id>
-            <phase>clean</phase>
-            <goals>
-              <goal>clean</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
