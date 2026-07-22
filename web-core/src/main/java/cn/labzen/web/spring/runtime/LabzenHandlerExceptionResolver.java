@@ -77,7 +77,13 @@ public class LabzenHandlerExceptionResolver implements HandlerExceptionResolver 
       request.setAttribute(EXCEPTION_WAS_LOGGED_DURING_REQUEST, true);
     }
 
-    return switch (ex) {
+    // 解包被 RuntimeException 包裹的 BindException（如 PageableCompatibleArgumentResolver 中的包装）
+    Exception unwrapped = ex;
+    if (ex instanceof RuntimeException re && re.getCause() instanceof BindException be) {
+      unwrapped = be;
+    }
+
+    return switch (unwrapped) {
       case BindException be -> handleBindException(request, response, be);
       case NoHandlerFoundException ignored -> handleNoHandlerFoundException(request, response);
       case HttpRequestMethodNotSupportedException he -> handleRequestMethodNotSupportedException(request, response, he);
