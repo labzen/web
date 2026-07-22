@@ -1,6 +1,7 @@
 package cn.labzen.web.spring.runtime;
 
 import cn.labzen.logger.Loggers;
+import cn.labzen.web.api.resolve.ValidatedBindErrorMessageResolver;
 import cn.labzen.web.api.response.out.Response;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,6 +17,7 @@ import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.server.ServletServerHttpResponse;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingPathVariableException;
@@ -27,10 +29,7 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static cn.labzen.web.api.definition.Constants.EXCEPTION_WAS_LOGGED_DURING_REQUEST;
 
@@ -59,6 +58,14 @@ public class LabzenHandlerExceptionResolver implements HandlerExceptionResolver 
   private static final Class<Response> RESPONSE_TYPE = Response.class;
   @Resource
   private List<HttpMessageConverter<Object>> converters;
+
+  private final ValidatedBindErrorMessageResolver validatedBindErrorMessageResolver;
+
+  public LabzenHandlerExceptionResolver() {
+    this.validatedBindErrorMessageResolver = ServiceLoader.load(ValidatedBindErrorMessageResolver.class)
+      .findFirst()
+      .orElse(null);
+  }
 
   /**
    * 解析异常并生成响应
@@ -105,21 +112,39 @@ public class LabzenHandlerExceptionResolver implements HandlerExceptionResolver 
    * 处理参数绑定异常
    * <p>
    * 将验证错误信息提取为 Map，格式为 {字段名: 错误消息}。
+   * <p>
+   * 若通过 SPI 加载到 {@link ValidatedBindErrorMessageResolver} 实现，则通过该接口解析错误消息；
+   * 若解析结果为 {@code null} 或未提供实现，则回退到 {@link ObjectError#getDefaultMessage()}。
    */
   private ModelAndView handleBindException(HttpServletRequest request,
                                            HttpServletResponse response,
                                            BindException exception) {
     Map<String, String> allErrors = new LinkedHashMap<>();
     exception.getBindingResult().getAllErrors().forEach(err -> {
-      if (err instanceof FieldError fe) {
-        allErrors.put(fe.getField(), fe.getDefaultMessage());
-      } else {
-        allErrors.put(err.getObjectName(), err.getDefaultMessage());
-      }
+      String key = (err instanceof FieldError fe) ? fe.getField() : err.getObjectName();
+      String message = resolveMessage(err, exception);
+      allErrors.put(key, message);
     });
     Map<String, Object> data = Map.of("validator", allErrors);
     responseWithData(HttpStatus.BAD_REQUEST, data, request, response);
     return new ModelAndView();
+  }
+
+  /**
+   * 解析校验错误消息。
+   * <p>
+   * 优先使用通过 SPI 加载的 {@link ValidatedBindErrorMessageResolver}，
+   * 若未加载或解析返回 {@code null}，则兜底使用 {@link ObjectError#getDefaultMessage()}。
+   */
+  private String resolveMessage(ObjectError error, BindException exception) {
+    if (validatedBindErrorMessageResolver != null) {
+      Class<?> targetType = exception.getTarget() != null ? exception.getTarget().getClass() : null;
+      String resolved = validatedBindErrorMessageResolver.resolve(error, targetType);
+      if (resolved != null) {
+        return resolved;
+      }
+    }
+    return error.getDefaultMessage();
   }
 
   /**
