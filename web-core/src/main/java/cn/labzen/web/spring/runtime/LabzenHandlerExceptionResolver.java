@@ -70,17 +70,20 @@ public class LabzenHandlerExceptionResolver implements HandlerExceptionResolver 
                                        @Nonnull HttpServletResponse response,
                                        Object handler,
                                        @Nonnull Exception ex) {
-    Object attribute = request.getAttribute(EXCEPTION_WAS_LOGGED_DURING_REQUEST);
-    if (attribute == null) {
-      var logger = Loggers.getLogger(ex.getStackTrace()[0].getClassName());
-      logger.error("Exception caught by resolver", ex);
-      request.setAttribute(EXCEPTION_WAS_LOGGED_DURING_REQUEST, true);
-    }
-
     // 解包被 RuntimeException 包裹的 BindException（如 PageableCompatibleArgumentResolver 中的包装）
     Exception unwrapped = ex;
     if (ex instanceof RuntimeException re && re.getCause() instanceof BindException be) {
       unwrapped = be;
+    }
+
+    // BindException 是用户输入校验失败，属于正常业务反馈，不输出 ERROR 日志
+    if (!(unwrapped instanceof BindException)) {
+      Object attribute = request.getAttribute(EXCEPTION_WAS_LOGGED_DURING_REQUEST);
+      if (attribute == null) {
+        var logger = Loggers.getLogger(ex.getStackTrace()[0].getClassName());
+        logger.error("Exception caught by resolver", ex);
+        request.setAttribute(EXCEPTION_WAS_LOGGED_DURING_REQUEST, true);
+      }
     }
 
     return switch (unwrapped) {
