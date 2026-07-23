@@ -51,18 +51,27 @@ public final class ClassCreator {
   private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
   private static final String METHOD_BODY_TEMPLATE_ERROR_INVALID_METHOD = "error-invalid-method";
   private static final String METHOD_BODY_TEMPLATE_GENERAL = "general";
+  private static final String METHOD_BODY_TEMPLATE_VOID_RETURN = "void-return";
   private static final Pattern METHOD_PARAMETER_PATTERN = Pattern.compile("\\{#parameter[0-9]+}");
   private static final Pattern IMPORT_DIRECTIVE_PATTERN = Pattern.compile("^#import:\\s*(\\S+).*$");
 
   private final ElementClass root;
   private final Filer filer;
-  /** 生成的实现类所实现的原始接口元素，作为 createSourceFile 的 originating element */
+  /**
+   * 生成的实现类所实现的原始接口元素，作为 createSourceFile 的 originating element
+   */
   private final TypeElement originatingElement;
-  /** 模板 key → 方法体内容（不含 #import 指令行） */
+  /**
+   * 模板 key → 方法体内容（不含 #import 指令行）
+   */
   private final Map<String, String> methodBodyTemplates = Maps.newHashMap();
-  /** 模板 key → 该模板声明的 import 全路径类名列表 */
+  /**
+   * 模板 key → 该模板声明的 import 全路径类名列表
+   */
   private final Map<String, List<String>> templateImports = Maps.newHashMap();
-  /** 本次生成过程中实际消费的模板 key 集合 */
+  /**
+   * 本次生成过程中实际消费的模板 key 集合
+   */
   private final Set<String> consumedTemplates = new LinkedHashSet<>();
 
   /**
@@ -243,7 +252,7 @@ public final class ClassCreator {
       });
 
       var body = buildMethodBody(method, defaultFieldElement);
-      methodSpecBuilder.addCode(body + "\n");
+      methodSpecBuilder.addCode(body);
       typeSpecBuilder.addMethod(methodSpecBuilder.build());
     });
 
@@ -348,7 +357,7 @@ public final class ClassCreator {
    *   <li>5. 处理参数索引占位符（{#parameter0}、{#parameter1} 等）</li>
    * </ul>
    *
-   * @param method 方法元素
+   * @param method              方法元素
    * @param defaultFieldElement 默认字段元素
    * @return 方法体代码字符串
    */
@@ -370,9 +379,13 @@ public final class ClassCreator {
     if (!Strings.isBlank(body)) {
       consumedTemplates.add(method.getName());
     } else {
-      body = methodBodyTemplates.get(METHOD_BODY_TEMPLATE_GENERAL);
+      // void 返回类型使用 void 模板（不含 return 语句），否则使用通用模板
+      String defaultTemplate = TypeName.VOID.equals(method.getReturnType())
+        ? METHOD_BODY_TEMPLATE_VOID_RETURN
+        : METHOD_BODY_TEMPLATE_GENERAL;
+      body = methodBodyTemplates.get(defaultTemplate);
       if (!Strings.isBlank(body)) {
-        consumedTemplates.add(METHOD_BODY_TEMPLATE_GENERAL);
+        consumedTemplates.add(defaultTemplate);
       }
     }
     if (Strings.isBlank(body)) {
@@ -431,18 +444,18 @@ public final class ClassCreator {
         case String s -> annotationSpecBuilder.addMember(key, "$S", s);
         /* 枚举常量 → e.g. RequestMethod.GET */
         case VariableElement ve -> annotationSpecBuilder.addMember(key, "$T.$L",
-            ClassName.get((TypeElement) ve.getEnclosingElement()), ve.getSimpleName());
+          ClassName.get((TypeElement) ve.getEnclosingElement()), ve.getSimpleName());
         /* Class 字面量 → e.g. IOException.class */
         case TypeMirror tm -> annotationSpecBuilder.addMember(key, "$T.class", tm);
         /* 嵌套注解 */
         case AnnotationMirror nested -> {
           var nestedSpec = buildAnnotationSpec(new ElementAnnotation(
-              ClassName.get((TypeElement) nested.getAnnotationType().asElement()),
-              Utils.readAnnotationMembers(nested)));
+            ClassName.get((TypeElement) nested.getAnnotationType().asElement()),
+            Utils.readAnnotationMembers(nested)));
           annotationSpecBuilder.addMember(key, "$L", nestedSpec);
         }
         default -> throw new IllegalArgumentException(
-            "unsupported annotation member type: " + value.getClass().getName() + " for key '" + key + "'");
+          "unsupported annotation member type: " + value.getClass().getName() + " for key '" + key + "'");
       }
     });
     return annotationSpecBuilder.build();

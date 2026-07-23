@@ -38,6 +38,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *   // 使用指定存储器
  *   Path path = fileStorageManager.store("QiniuFileStorage", uploadedFile);
  * </pre>
+ * </p>
+ * TODO 改为使用 StorableUploadedFile 实现 UploadedFile 接口，作为上传文件的标准实现，提供 StandardUploadedFile#toStorable 方法，用于转换为 StorableUploadedFile 实例
  */
 @Component
 @Slf4j
