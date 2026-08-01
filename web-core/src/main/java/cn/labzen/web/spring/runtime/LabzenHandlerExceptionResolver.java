@@ -1,8 +1,12 @@
 package cn.labzen.web.spring.runtime;
 
 import cn.labzen.logger.Loggers;
+import cn.labzen.spring.Springs;
+import cn.labzen.web.api.log.ApiLogConfig;
 import cn.labzen.web.api.resolve.ValidatedBindErrorMessageResolver;
 import cn.labzen.web.api.response.out.Response;
+import cn.labzen.web.api.log.registry.LoggableControllerMetaRegistry;
+import cn.labzen.web.log.ApiLogMessageBuilder;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -31,7 +35,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.*;
 
-import static cn.labzen.web.api.definition.Constants.EXCEPTION_WAS_LOGGED_DURING_REQUEST;
+import static cn.labzen.web.api.definition.Constants.*;
 
 /**
  * Spring MVC 异常解析器
@@ -91,6 +95,9 @@ public class LabzenHandlerExceptionResolver implements HandlerExceptionResolver 
         logger.error("Exception caught by resolver", ex);
         request.setAttribute(EXCEPTION_WAS_LOGGED_DURING_REQUEST, true);
       }
+
+      // API 日志记录：在异常解析器中统一打印异常日志
+      logApiException(request, unwrapped);
     }
 
     return switch (unwrapped) {
@@ -255,6 +262,51 @@ public class LabzenHandlerExceptionResolver implements HandlerExceptionResolver 
       out(respData, request, response);
     } catch (IOException e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * 通过 API 日志系统记录异常。
+   * <p>
+   * 从请求属性中获取拦截器阶段缓存的 Controller 元数据和配置，
+   * 调用 {@link ApiLogMessageBuilder#logException} 打印结构化异常日志。
+   * 若 API 日志未启用（messageBuilder Bean 不存在），则跳过。
+   *
+   * @param request   HTTP 请求
+   * @param exception 异常对象
+   */
+  private void logApiException(HttpServletRequest request, Exception exception) {
+    ApiLogMessageBuilder messageBuilder = Springs.bean(ApiLogMessageBuilder.class).orElse(null);
+    if (messageBuilder == null) {
+      return;
+    }
+
+    try {
+      // 从请求属性获取拦截器缓存的元数据
+      ControllerMeta controllerMeta =
+          (ControllerMeta) request.getAttribute(API_LOG_CONTROLLER_META_ATTRIBUTE);
+
+      // 获取配置（优先条件日志配置）
+      ApiLogConfig config = (ApiLogConfig) request.getAttribute(API_LOG_CONFIG_ATTRIBUTE);
+      if (config == null) {
+        // 尝试从匹配条件获取（record 类型直接存为 attribute）
+        Object condAttr = request.getAttribute(API_LOG_MATCHED_CONDITION_ATTRIBUTE);
+        if (condAttr instanceof ApiLogConfig c) {
+          config = c;
+        }
+      }
+
+      if (config == null) {
+        return;
+      }
+
+      // 获取 Controller 类（从 handler 属性）
+      Object handler = request.getAttribute("org.springframework.web.servlet.HandlerMapping.bestMatchingHandler");
+      Class<?> controllerClass = handler != null ? handler.getClass() : Object.class;
+
+      messageBuilder.logException(controllerClass, controllerMeta, config, exception);
+    } catch (Exception ignored) {
+      // API 日志记录异常不应影响异常处理流程
     }
   }
 

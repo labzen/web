@@ -4,3 +4,4 @@ cn.labzen.web.apt.processor.ReadAnnotationsProcessor
 cn.labzen.web.apt.processor.EvaluateFieldsProcessor
 cn.labzen.web.apt.processor.EvaluateMethodsProcessor
 cn.labzen.web.apt.processor.CreativeProcessor
+cn.labzen.web.apt.processor.MetadataGenerateProcessor

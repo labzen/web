@@ -5,8 +5,11 @@ import cn.labzen.meta.exception.LabzenException;
 import cn.labzen.meta.exception.LabzenRuntimeException;
 import cn.labzen.spring.Springs;
 import cn.labzen.tool.definition.Constants;
+import cn.labzen.web.api.log.ApiLogConfig;
 import cn.labzen.web.api.response.out.Response;
 import cn.labzen.web.exception.RequestException;
+import cn.labzen.web.api.log.registry.LoggableControllerMetaRegistry;
+import cn.labzen.web.log.ApiLogMessageBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,7 +22,7 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 
-import static cn.labzen.web.api.definition.Constants.EXCEPTION_WAS_LOGGED_DURING_REQUEST;
+import static cn.labzen.web.api.definition.Constants.*;
 
 /**
  * 异常捕捉过滤器
@@ -41,6 +44,12 @@ public class LabzenExceptionCatchingFilter extends OncePerRequestFilter {
   private final ObjectMapper objectMapper = Springs.bean(ObjectMapper.class).orElseGet(ObjectMapper::new);
 
   /**
+   * API 日志消息构建器（通过 Springs 获取，避免构造注入影响 Filter 注册）。
+   * 若未找到 Bean（如业务项目未启用 API 日志），则跳过 API 日志记录。
+   */
+  private ApiLogMessageBuilder apiLogMessageBuilder;
+
+  /**
    * 过滤器的核心逻辑
    * <p>
    * 执行 FilterChain，如果发生异常则进入异常处理分支。
@@ -53,6 +62,7 @@ public class LabzenExceptionCatchingFilter extends OncePerRequestFilter {
       filterChain.doFilter(request, response);
     } catch (Exception e) {
       logging(request, e);
+      logApiException(request, e);
       output(request, response, e);
     }
   }
@@ -102,6 +112,42 @@ public class LabzenExceptionCatchingFilter extends OncePerRequestFilter {
         var resp = new Response(ERROR_CODE, ERROR_REASON_PHRASE, null, null);
         sendMessage(resp, request, response);
       }
+    }
+  }
+
+  /**
+   * 通过 API 日志系统记录异常（过滤器层面）。
+   * <p>
+   * 作为最后一道防线，捕获经 HandlerExceptionResolver 处理后的异常。
+   * 从请求属性中获取拦截器阶段缓存的元数据。
+   *
+   * @param request   HTTP 请求
+   * @param exception 异常对象
+   */
+  private void logApiException(HttpServletRequest request, Exception exception) {
+    if (apiLogMessageBuilder == null) {
+      apiLogMessageBuilder = Springs.bean(ApiLogMessageBuilder.class).orElse(null);
+    }
+    if (apiLogMessageBuilder == null) {
+      return;
+    }
+
+    try {
+      ControllerMeta controllerMeta =
+          (ControllerMeta) request.getAttribute(API_LOG_CONTROLLER_META_ATTRIBUTE);
+
+      ApiLogConfig config = (ApiLogConfig) request.getAttribute(API_LOG_CONFIG_ATTRIBUTE);
+      if (config == null) {
+        // 过滤器层面可能没有拦截器缓存的配置，使用默认
+        config = ApiLogConfig.frameDefaults();
+      }
+
+      Object handler = request.getAttribute("org.springframework.web.servlet.HandlerMapping.bestMatchingHandler");
+      Class<?> controllerClass = handler != null ? handler.getClass() : Object.class;
+
+      apiLogMessageBuilder.logException(controllerClass, controllerMeta, config, exception);
+    } catch (Exception ignored) {
+      // API 日志记录异常不应影响异常处理流程
     }
   }
 

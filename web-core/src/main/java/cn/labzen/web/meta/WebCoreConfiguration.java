@@ -4,6 +4,7 @@ import cn.labzen.meta.configuration.annotation.Configured;
 import cn.labzen.meta.configuration.annotation.Item;
 import cn.labzen.web.api.definition.APIVersionCarrier;
 import cn.labzen.web.api.paging.Pageable;
+import cn.labzen.web.request.StandardUploadedFile;
 
 import java.util.List;
 
@@ -90,6 +91,7 @@ public interface WebCoreConfiguration {
 
   /**
    * 允许上传的文件扩展名
+   * TODO 既然是通过 {@link StandardUploadedFile} 来使用这个配置限制文件上传，比如给这个类开一个配置方法，而不是全局的配置文件中来设置
    */
   @Item(path = "file.upload.accept-extension", required = false, defaultValue = "xlsx,png,jpg,jpeg,bmp")
   List<String> acceptedUploadFileExtensions();
@@ -99,4 +101,43 @@ public interface WebCoreConfiguration {
    */
   @Item(path = "file.upload.temp-cleanup-interval", required = false, defaultValue = "3600")
   long tempFileCleanupInterval();
+
+  // ===================================================================================================================
+  // API 日志配置
+  // ===================================================================================================================
+
+  /**
+   * API 日志全局开关，默认关闭。
+   * <p>
+   * 开启后，所有 Controller 方法的请求和响应日志将按照各接口的配置进行打印。
+   * 建议在开发环境开启，生产环境按需临时开启排查问题。
+   */
+  @Item(path = "api-log.enabled", required = false, defaultValue = "false")
+  boolean apiLogEnabled();
+
+  /**
+   * API 日志全局默认级别，默认 DEBUG。
+   * <p>
+   * 可选值：TRACE、DEBUG、INFO、WARN、ERROR。
+   * 可通过 YAML 或程序化 API 按 Controller/方法级别覆盖。
+   */
+  @Item(path = "api-log.level", required = false, defaultValue = "DEBUG")
+  String apiLogLevel();
+
+  /**
+   * API 日志全局默认采样率，范围 [0.0, 1.0]，默认 1.0（全量）。
+   * <p>
+   * 用于防止高 QPS 接口的日志风暴。设置为 0.1 表示仅 10% 的请求打印日志。
+   */
+  @Item(path = "api-log.sampling-rate", required = false, defaultValue = "1.0")
+  double apiLogSamplingRate();
+
+  @Item(path = "api-log.out-request", required = false, defaultValue = "true")
+  boolean logRequestParams();
+
+  @Item(path = "api-log.out-response", required = false, defaultValue = "false")
+  boolean logResponseBody();
+
+  @Item(path = "api-log.out-exception", required = false, defaultValue = "true")
+  boolean logException();
 }

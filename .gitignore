@@ -966,5 +966,8 @@ project/plugins/project/
 .history
 .lib/
 
+.codebuddy/
 !/labzen.web.config
 !/web-api/src/main/java/cn/labzen/web/api/response/out
+!/web-api/src/main/java/cn/labzen/web/api/log
+!/web-core/src/main/java/cn/labzen/web/log

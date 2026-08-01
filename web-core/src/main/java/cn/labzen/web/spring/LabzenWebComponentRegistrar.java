@@ -1,6 +1,8 @@
 package cn.labzen.web.spring;
 
 import cn.labzen.meta.Labzens;
+import cn.labzen.web.log.ApiLogMessageBuilder;
+import cn.labzen.web.log.ApiLogResponseAdvice;
 import cn.labzen.web.meta.WebCoreConfiguration;
 import cn.labzen.web.spring.runtime.LabzenRestResponseBodyAdvice;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
@@ -21,5 +23,11 @@ public class LabzenWebComponentRegistrar implements ImportBeanDefinitionRegistra
       // 注册 ResponseBodyAdvice [labzenRestResponseBodyAdvice]
       registry.registerBeanDefinition("labzenRestResponseBodyAdvice", new RootBeanDefinition(LabzenRestResponseBodyAdvice.class));
     }
+
+    // 注册 API 日志消息构建器（Singleton，供拦截器和 Advice 共用）
+    registry.registerBeanDefinition("apiLogMessageBuilder", new RootBeanDefinition(ApiLogMessageBuilder.class));
+
+    // 注册 API 日志响应增强处理器
+    registry.registerBeanDefinition("apiLogResponseAdvice", new RootBeanDefinition(ApiLogResponseAdvice.class));
   }
 }
