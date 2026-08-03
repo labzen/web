@@ -10,7 +10,7 @@ import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.type.AnnotationMetadata;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 public class LabzenWebComponentRegistrar implements ImportBeanDefinitionRegistrar {
 

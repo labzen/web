@@ -2,11 +2,11 @@ package cn.labzen.web.spring.runtime;
 
 import cn.labzen.logger.Loggers;
 import cn.labzen.spring.Springs;
-import cn.labzen.web.api.log.ApiLogConfig;
+import cn.labzen.web.api.log.config.ApiEndpointLogConfig;
 import cn.labzen.web.api.resolve.ValidatedBindErrorMessageResolver;
 import cn.labzen.web.api.response.out.Response;
-import cn.labzen.web.api.log.registry.LoggableControllerMetaRegistry;
 import cn.labzen.web.log.ApiLogMessageBuilder;
+import jakarta.annotation.Nonnull;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -31,7 +31,6 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.*;
 
@@ -282,16 +281,12 @@ public class LabzenHandlerExceptionResolver implements HandlerExceptionResolver 
     }
 
     try {
-      // 从请求属性获取拦截器缓存的元数据
-      ControllerMeta controllerMeta =
-          (ControllerMeta) request.getAttribute(API_LOG_CONTROLLER_META_ATTRIBUTE);
-
       // 获取配置（优先条件日志配置）
-      ApiLogConfig config = (ApiLogConfig) request.getAttribute(API_LOG_CONFIG_ATTRIBUTE);
+      ApiEndpointLogConfig config = (ApiEndpointLogConfig) request.getAttribute(API_LOG_CONFIG_ATTRIBUTE);
       if (config == null) {
         // 尝试从匹配条件获取（record 类型直接存为 attribute）
         Object condAttr = request.getAttribute(API_LOG_MATCHED_CONDITION_ATTRIBUTE);
-        if (condAttr instanceof ApiLogConfig c) {
+        if (condAttr instanceof ApiEndpointLogConfig c) {
           config = c;
         }
       }
@@ -304,7 +299,7 @@ public class LabzenHandlerExceptionResolver implements HandlerExceptionResolver 
       Object handler = request.getAttribute("org.springframework.web.servlet.HandlerMapping.bestMatchingHandler");
       Class<?> controllerClass = handler != null ? handler.getClass() : Object.class;
 
-      messageBuilder.logException(controllerClass, controllerMeta, config, exception);
+      messageBuilder.logException(controllerClass, config, exception);
     } catch (Exception ignored) {
       // API 日志记录异常不应影响异常处理流程
     }

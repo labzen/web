@@ -43,12 +43,12 @@ public final class Constants {
   /**
    * API 日志配置缓存属性键，用于在请求处理链（Interceptor → Controller → ResponseAdvice）中传递日志配置
    */
-  public static final String API_LOG_CONFIG_ATTRIBUTE = "labzen.api.log.config";
+  public static final String API_LOG_CONFIG_ATTRIBUTE = "labzen.runtime.web.api.log-config";
 
   /**
    * API 日志控制器元数据属性键，用于在请求处理链中传递 ControllerMeta
    */
-  public static final String API_LOG_CONTROLLER_META_ATTRIBUTE = "labzen.api.log.controller.meta";
+  public static final String API_LOG_CONTROLLER_META_ATTRIBUTE = "labzen.runtime.web.api.meta";
 
   /**
    * API 日志匹配条件属性键，用于标记当前请求是否匹配了某条条件日志规则
@@ -56,15 +56,19 @@ public final class Constants {
   public static final String API_LOG_MATCHED_CONDITION_ATTRIBUTE = "labzen.api.log.matched.condition";
 
   /**
-   * 默认敏感参数列表（不区分大小写），日志打印时自动过滤
-   */
-  public static final java.util.Set<String> DEFAULT_SENSITIVE_PARAMS =
-    java.util.Set.of("password", "secret", "token", "authorization");
-
-  /**
    * classpath 下 API 日志 YAML 配置文件的存放目录
    */
   public static final String API_LOG_CONFIG_DIR = "labzen-web";
+
+  /**
+   * 全局配置 key，用于 programmaticConfigs 中表示全局默认配置
+   */
+  public static final String API_LOG_KEY_GLOBAL = "__global__";
+
+  /**
+   * 通用配置 key，用于 Controller 级配置 Map 中表示 general 通用配置
+   */
+  public static final String API_LOG_KEY_GENERAL = "__general__";
 
   /**
    * 默认分页页码

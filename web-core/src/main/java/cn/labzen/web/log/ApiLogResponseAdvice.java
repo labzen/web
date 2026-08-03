@@ -1,7 +1,7 @@
 package cn.labzen.web.log;
 
-import cn.labzen.web.api.log.ApiLogConfig;
-import cn.labzen.web.api.log.registry.LoggableControllerMetaRegistry;
+import cn.labzen.web.api.log.config.ApiEndpointLogConfig;
+import cn.labzen.web.api.log.registry.ControllerMeta;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
@@ -13,7 +13,7 @@ import org.springframework.http.server.ServletServerHttpResponse;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static cn.labzen.web.api.definition.Constants.*;
 
@@ -44,20 +44,20 @@ public class ApiLogResponseAdvice implements ResponseBodyAdvice<Object> {
 
   @Override
   public boolean supports(
-      @Nonnull MethodParameter returnType,
-      @Nonnull Class<? extends HttpMessageConverter<?>> converterType
+    @Nonnull MethodParameter returnType,
+    @Nonnull Class<? extends HttpMessageConverter<?>> converterType
   ) {
     return true;
   }
 
   @Override
   public Object beforeBodyWrite(
-      Object body,
-      @Nonnull MethodParameter returnType,
-      @Nonnull MediaType selectedContentType,
-      @Nonnull Class<? extends HttpMessageConverter<?>> selectedConverterType,
-      @Nonnull ServerHttpRequest request,
-      @Nonnull ServerHttpResponse response
+    Object body,
+    @Nonnull MethodParameter returnType,
+    @Nonnull MediaType selectedContentType,
+    @Nonnull Class<? extends HttpMessageConverter<?>> selectedConverterType,
+    @Nonnull ServerHttpRequest request,
+    @Nonnull ServerHttpResponse response
   ) {
     HttpServletRequest httpRequest = null;
     HttpServletResponseWrapper responseWrapper = null;
@@ -76,20 +76,20 @@ public class ApiLogResponseAdvice implements ResponseBodyAdvice<Object> {
     try {
       // 从请求属性中获取拦截器阶段缓存的配置和元数据
       ControllerMeta controllerMeta =
-          (ControllerMeta) httpRequest.getAttribute(API_LOG_CONTROLLER_META_ATTRIBUTE);
+        (ControllerMeta) httpRequest.getAttribute(API_LOG_CONTROLLER_META_ATTRIBUTE);
 
       if (controllerMeta == null) {
         return body;
       }
 
-      ApiLogConfig effectiveConfig = (ApiLogConfig) httpRequest.getAttribute(API_LOG_CONFIG_ATTRIBUTE);
+      ApiEndpointLogConfig effectiveConfig = (ApiEndpointLogConfig) httpRequest.getAttribute(API_LOG_CONFIG_ATTRIBUTE);
       if (effectiveConfig == null) {
         return body; // 拦截器阶段跳过了日志打印，此处也跳过
       }
 
       // 确定 Controller 实现类
       Object handler = httpRequest.getAttribute(
-          "org.springframework.web.servlet.HandlerMapping.bestMatchingHandler");
+        "org.springframework.web.servlet.HandlerMapping.bestMatchingHandler");
       Class<?> controllerClass = handler != null ? handler.getClass() : null;
 
       if (controllerClass == null) {
@@ -104,7 +104,7 @@ public class ApiLogResponseAdvice implements ResponseBodyAdvice<Object> {
       int statusCode = responseWrapper != null ? responseWrapper.getStatus() : 200;
 
       // 打印响应日志
-      messageBuilder.logResponse(controllerClass, controllerMeta, effectiveConfig, statusCode, body, costMs);
+      messageBuilder.logResponse(controllerClass, effectiveConfig, statusCode, body, costMs);
 
     } catch (Exception e) {
       // 响应日志打印异常不影响正常业务流程

@@ -1,4 +1,4 @@
-package cn.labzen.web.api.log;
+package cn.labzen.web.api.log.config;
 
 /**
  * 单条条件匹配规则（不可变 record）。
@@ -12,7 +12,7 @@ package cn.labzen.web.api.log;
  * @param paramName  要检查的请求参数名
  * @param matchValue 匹配值
  * @see MatchType
- * @see ApiLogConfig
+ * @see ApiEndpointLogConfig
  */
 public record ConditionRule(MatchType matchType, String paramName, String matchValue) {
 }

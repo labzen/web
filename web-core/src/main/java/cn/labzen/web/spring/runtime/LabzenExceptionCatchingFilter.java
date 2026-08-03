@@ -5,10 +5,9 @@ import cn.labzen.meta.exception.LabzenException;
 import cn.labzen.meta.exception.LabzenRuntimeException;
 import cn.labzen.spring.Springs;
 import cn.labzen.tool.definition.Constants;
-import cn.labzen.web.api.log.ApiLogConfig;
+import cn.labzen.web.api.log.config.ApiEndpointLogConfig;
 import cn.labzen.web.api.response.out.Response;
 import cn.labzen.web.exception.RequestException;
-import cn.labzen.web.api.log.registry.LoggableControllerMetaRegistry;
 import cn.labzen.web.log.ApiLogMessageBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
@@ -19,7 +18,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import java.io.IOException;
 
 import static cn.labzen.web.api.definition.Constants.*;
@@ -133,19 +132,16 @@ public class LabzenExceptionCatchingFilter extends OncePerRequestFilter {
     }
 
     try {
-      ControllerMeta controllerMeta =
-          (ControllerMeta) request.getAttribute(API_LOG_CONTROLLER_META_ATTRIBUTE);
-
-      ApiLogConfig config = (ApiLogConfig) request.getAttribute(API_LOG_CONFIG_ATTRIBUTE);
+      ApiEndpointLogConfig config = (ApiEndpointLogConfig) request.getAttribute(API_LOG_CONFIG_ATTRIBUTE);
       if (config == null) {
         // 过滤器层面可能没有拦截器缓存的配置，使用默认
-        config = ApiLogConfig.frameDefaults();
+        config = new ApiEndpointLogConfig();
       }
 
       Object handler = request.getAttribute("org.springframework.web.servlet.HandlerMapping.bestMatchingHandler");
       Class<?> controllerClass = handler != null ? handler.getClass() : Object.class;
 
-      apiLogMessageBuilder.logException(controllerClass, controllerMeta, config, exception);
+      apiLogMessageBuilder.logException(controllerClass, config, exception);
     } catch (Exception ignored) {
       // API 日志记录异常不应影响异常处理流程
     }

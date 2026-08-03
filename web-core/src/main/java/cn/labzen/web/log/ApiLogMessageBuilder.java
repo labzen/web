@@ -3,8 +3,7 @@ package cn.labzen.web.log;
 import cn.labzen.logger.Loggers;
 import cn.labzen.logger.kernel.LabzenLogger;
 import cn.labzen.logger.kernel.enums.Status;
-import cn.labzen.web.api.log.ApiLogConfig;
-import cn.labzen.web.api.log.registry.ControllerMeta;
+import cn.labzen.web.api.log.config.ApiEndpointLogConfig;
 import cn.labzen.web.api.response.result.FileResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.util.*;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static cn.labzen.web.api.definition.Constants.LOGGER_SCENE_API_LOG;
@@ -30,14 +30,14 @@ import static cn.labzen.web.api.definition.Constants.LOGGER_SCENE_API_LOG;
  *   <li><b>文件处理</b>：识别上传文件类型（{@link MultipartFile}/{@link Part}）打印元信息而非二进制内容</li>
  *   <li><b>响应体脱敏</b>：按配置的 {@code responseMaskPatterns} 对 JSON 响应体执行正则脱敏</li>
  *   <li><b>响应体截断</b>：限制最大 4096 字符防止日志膨胀</li>
- *   <li><b>调用栈定位</b>：通过 {@link Thread#getStackTrace()} 计算 Logger 调用者的类名、方法名和行号</li>
+ *   <li><b>类名定位</b>：通过 Controller 实现类获取 Logger 名称</li>
  * </ul>
  * <p>
  * <b>日志格式示例：</b>
  * <pre>{@code
- * [API-LOG] UserControllerImpl#create | REQUEST  | POST /api/user | params: {"name":"张三","email":"test@example.com"}
- * [API-LOG] UserControllerImpl#create | RESPONSE | status=200 | body: {"code":200,"message":"success"} | cost=15ms
- * [API-LOG] UserControllerImpl#create | EXCEPTION | NullPointerException: Cannot invoke "String.length()"
+ * [API-LOG] UserControllerImpl | REQUEST  | POST /api/user | params: {"name":"张三","email":"test@example.com"}
+ * [API-LOG] UserControllerImpl | RESPONSE | status=200 | body: {"code":200,"message":"success"} | cost=15ms
+ * [API-LOG] UserControllerImpl | EXCEPTION | NullPointerException: Cannot invoke "String.length()"
  * }</pre>
  * <p>
  * <b>预置脱敏规则：</b>
@@ -47,7 +47,7 @@ import static cn.labzen.web.api.definition.Constants.LOGGER_SCENE_API_LOG;
  * </ul>
  *
  * @see LabzenLogger
- * @see ApiLogConfig
+ * @see ApiEndpointLogConfig
  */
 public class ApiLogMessageBuilder {
 
@@ -88,15 +88,13 @@ public class ApiLogMessageBuilder {
    * 参数经过过滤和文件类型处理后以 JSON 格式输出。
    *
    * @param controllerImplClass 生成的 Controller 实现类（用作 Logger 名称）
-   * @param controllerMeta      元数据（接口名、方法信息）
    * @param config              生效的日志配置
    * @param request             HTTP 请求
    * @param params              请求参数 Map（key=参数名, value=参数值）
    */
   public void logRequest(
     Class<?> controllerImplClass,
-    ControllerMeta controllerMeta,
-    ApiLogConfig config,
+    ApiEndpointLogConfig config,
     HttpServletRequest request,
     Map<String, Object> params
   ) {
@@ -122,7 +120,7 @@ public class ApiLogMessageBuilder {
       message.append(" | params: ").append(paramsJson);
     }
 
-    logAtLevel(logger, level, message.toString(), Status.NORMAL);
+    logAtLevel(logger, level, message.toString(), Status.SUCCESS);
   }
 
   /**
@@ -132,7 +130,6 @@ public class ApiLogMessageBuilder {
    * 响应体经过脱敏和截断处理。
    *
    * @param controllerImplClass Controller 实现类
-   * @param controllerMeta      元数据
    * @param config              生效的日志配置
    * @param statusCode          HTTP 状态码
    * @param body                响应体对象
@@ -140,14 +137,13 @@ public class ApiLogMessageBuilder {
    */
   public void logResponse(
     Class<?> controllerImplClass,
-    ControllerMeta controllerMeta,
-    ApiLogConfig config,
+    ApiEndpointLogConfig config,
     int statusCode,
     Object body,
     long costMs
   ) {
     LabzenLogger logger = getLogger(controllerImplClass);
-    String level = config.getLevel();
+    Level level = config.getLevel();
 
     if (shouldNotLogging(logger, level)) {
       return;
@@ -167,7 +163,7 @@ public class ApiLogMessageBuilder {
 
     message.append(" | cost=").append(costMs).append("ms");
 
-    Status status = statusCode >= 400 ? Status.WARNING : Status.NORMAL;
+    Status status = statusCode >= 400 ? Status.WRONG : Status.SUCCESS;
     logAtLevel(logger, level, message.toString(), status);
   }
 
@@ -178,14 +174,12 @@ public class ApiLogMessageBuilder {
    * 打印异常类型和消息。
    *
    * @param controllerImplClass Controller 实现类
-   * @param controllerMeta      元数据（可能为 null，过滤器阶段可能获取不到）
    * @param config              生效的日志配置
    * @param exception           异常对象
    */
   public void logException(
     Class<?> controllerImplClass,
-    ControllerMeta controllerMeta,
-    ApiLogConfig config,
+    ApiEndpointLogConfig config,
     Exception exception
   ) {
     if (config == null || !config.isLogException()) {
@@ -193,7 +187,7 @@ public class ApiLogMessageBuilder {
     }
 
     LabzenLogger logger = getLogger(controllerImplClass);
-    String level = config.getLevel();
+    Level level = config.getLevel();
 
     if (shouldNotLogging(logger, level)) {
       return;
@@ -208,7 +202,7 @@ public class ApiLogMessageBuilder {
 
     String message = implClassName + " | EXCEPTION | " + exceptionType + ": " + exceptionMessage;
 
-    logAtLevel(logger, level, message, Status.ERROR);
+    logAtLevel(logger, level, message, Status.WRONG);
   }
 
   /**
@@ -225,7 +219,7 @@ public class ApiLogMessageBuilder {
       return labzenLogger;
     }
     // 降级：如果 Logger 不是 LabzenLogger 实例，使用普通 SLF4J
-    return new LabzenLoggerAdapter(slf4jLogger);
+    throw new IllegalStateException("SLF4J Logger is not a LabzenLogger instance");
   }
 
   /**
@@ -249,14 +243,13 @@ public class ApiLogMessageBuilder {
    * @param message 日志消息
    * @param status  状态标记
    */
-  private void logAtLevel(LabzenLogger logger, String level, String message, Status status) {
-    switch (level.toUpperCase()) {
-      case "TRACE" -> logger.atTrace().scene(LOGGER_SCENE_API_LOG).status(status).log(message);
-      case "DEBUG" -> logger.atDebug().scene(LOGGER_SCENE_API_LOG).status(status).log(message);
-      case "INFO" -> logger.atInfo().scene(LOGGER_SCENE_API_LOG).status(status).log(message);
-      case "WARN" -> logger.atWarn().scene(LOGGER_SCENE_API_LOG).status(status).log(message);
-      case "ERROR" -> logger.atError().scene(LOGGER_SCENE_API_LOG).status(status).log(message);
-      default -> logger.atDebug().scene(LOGGER_SCENE_API_LOG).status(status).log(message);
+  private void logAtLevel(LabzenLogger logger, Level level, String message, Status status) {
+    switch (level) {
+      case TRACE -> logger.atTrace().scene(LOGGER_SCENE_API_LOG).status(status).log(message);
+      case DEBUG -> logger.atDebug().scene(LOGGER_SCENE_API_LOG).status(status).log(message);
+      case INFO -> logger.atInfo().scene(LOGGER_SCENE_API_LOG).status(status).log(message);
+      case WARN -> logger.atWarn().scene(LOGGER_SCENE_API_LOG).status(status).log(message);
+      case ERROR -> logger.atError().scene(LOGGER_SCENE_API_LOG).status(status).log(message);
     }
   }
 
@@ -274,7 +267,7 @@ public class ApiLogMessageBuilder {
    * @param config 日志配置
    * @return 过滤后的参数 Map
    */
-  public Map<String, Object> filterParams(Map<String, Object> params, ApiLogConfig config) {
+  public Map<String, Object> filterParams(Map<String, Object> params, ApiEndpointLogConfig config) {
     if (params == null || params.isEmpty()) {
       return Collections.emptyMap();
     }
@@ -314,18 +307,22 @@ public class ApiLogMessageBuilder {
    * 文件类型返回元信息 Map，普通类型直接返回。
    */
   private Object serializeParamValue(Object value) {
-    if (value == null) {
-      return null;
-    }
+    switch (value) {
+      case null -> {
+        return null;
+      }
 
-    // 处理 MultipartFile
-    if (value instanceof MultipartFile file) {
-      return buildFileMeta(file.getOriginalFilename(), file.getSize(), file.getContentType());
-    }
+      // 处理 MultipartFile
+      case MultipartFile file -> {
+        return buildFileMeta(file.getOriginalFilename(), file.getSize(), file.getContentType());
+      }
 
-    // 处理 Jakarta Servlet Part
-    if (value instanceof Part part) {
-      return buildFileMeta(part.getSubmittedFileName(), part.getSize(), part.getContentType());
+      // 处理 Jakarta Servlet Part
+      case Part part -> {
+        return buildFileMeta(part.getSubmittedFileName(), part.getSize(), part.getContentType());
+      }
+      default -> {
+      }
     }
 
     // 处理 Spring MockMultipartFile 等（反射检查）
@@ -374,7 +371,7 @@ public class ApiLogMessageBuilder {
    * @param config 日志配置
    * @return 序列化后的字符串
    */
-  private String serializeResponseBody(Object body, ApiLogConfig config) {
+  private String serializeResponseBody(Object body, ApiEndpointLogConfig config) {
     if (body == null) {
       return "null";
     }
@@ -515,146 +512,5 @@ public class ApiLogMessageBuilder {
       return false;
     }
     return set.stream().anyMatch(s -> s.equalsIgnoreCase(value));
-  }
-
-  /**
-   * LabzenLogger 适配器。
-   * <p>
-   * 当 SLF4J Logger 不是 LabzenLogger 实例时（降级场景），
-   * 将结构化 API 调用转换为普通的 SLF4J 日志调用。
-   */
-  private static class LabzenLoggerAdapter implements LabzenLogger {
-
-    private final Logger delegate;
-
-    LabzenLoggerAdapter(Logger delegate) {
-      this.delegate = delegate;
-    }
-
-    @Override
-    public String getName() {
-      return delegate.getName();
-    }
-
-    @Override
-    public boolean isTraceEnabled() {
-      return delegate.isTraceEnabled();
-    }
-
-    @Override
-    public void trace(String msg) {
-      delegate.trace(msg);
-    }
-
-    @Override
-    public void trace(String format, Object... arguments) {
-      delegate.trace(format, arguments);
-    }
-
-    @Override
-    public boolean isDebugEnabled() {
-      return delegate.isDebugEnabled();
-    }
-
-    @Override
-    public void debug(String msg) {
-      delegate.debug(msg);
-    }
-
-    @Override
-    public void debug(String format, Object... arguments) {
-      delegate.debug(format, arguments);
-    }
-
-    @Override
-    public boolean isInfoEnabled() {
-      return delegate.isInfoEnabled();
-    }
-
-    @Override
-    public void info(String msg) {
-      delegate.info(msg);
-    }
-
-    @Override
-    public void info(String format, Object... arguments) {
-      delegate.info(format, arguments);
-    }
-
-    @Override
-    public boolean isWarnEnabled() {
-      return delegate.isWarnEnabled();
-    }
-
-    @Override
-    public void warn(String msg) {
-      delegate.warn(msg);
-    }
-
-    @Override
-    public void warn(String format, Object... arguments) {
-      delegate.warn(format, arguments);
-    }
-
-    @Override
-    public boolean isErrorEnabled() {
-      return delegate.isErrorEnabled();
-    }
-
-    @Override
-    public void error(String msg) {
-      delegate.error(msg);
-    }
-
-    @Override
-    public void error(String format, Object... arguments) {
-      delegate.error(format, arguments);
-    }
-
-    // 降级场景下不支持结构化 API，仅使用普通 SLF4J
-    @Override
-    public LabzenLogger atTrace() {
-      return this;
-    }
-
-    @Override
-    public LabzenLogger atDebug() {
-      return this;
-    }
-
-    @Override
-    public LabzenLogger atInfo() {
-      return this;
-    }
-
-    @Override
-    public LabzenLogger atWarn() {
-      return this;
-    }
-
-    @Override
-    public LabzenLogger atError() {
-      return this;
-    }
-
-    @Override
-    public LabzenLogger scene(String scene) {
-      return this;
-    }
-
-    @Override
-    public LabzenLogger status(Status status) {
-      return this;
-    }
-
-    @Override
-    public void log(String msg) {
-      delegate.info(msg);
-    }
-
-    @Override
-    public void log(String format, Object... arguments) {
-      delegate.info(format, arguments);
-    }
   }
 }

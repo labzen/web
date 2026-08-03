@@ -1,4 +1,4 @@
-package cn.labzen.web.api.log;
+package cn.labzen.web.api.log.config;
 
 /**
  * 条件组逻辑运算符。

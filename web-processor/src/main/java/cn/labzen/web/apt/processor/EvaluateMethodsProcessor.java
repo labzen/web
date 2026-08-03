@@ -10,7 +10,8 @@ import cn.labzen.web.apt.suggestion.*;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.TypeName;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
+
 import javax.annotation.Nullable;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.ExecutableElement;
@@ -44,7 +45,9 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
   private static final Set<TypeName> RESERVED_ANNOTATIONS_WHEN_DISCARD_METHOD = Set.of(
     TypeName.get(Override.class),
     TypeName.get(Nonnull.class),
-    TypeName.get(Nullable.class));
+    TypeName.get(javax.annotation.Nonnull.class),
+    TypeName.get(Nullable.class),
+    TypeName.get(javax.annotation.Nullable.class));
 
   private final Map<String, ElementMethod> parsedMethods = new ConcurrentHashMap<>();
 
@@ -179,7 +182,7 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
   /**
    * 读取方法参数及其注解信息
    *
-   * @param parameterElements 参数元素列表
+   * @param parameterElements    参数元素列表
    * @param actualParameterTypes 实际参数类型列表
    * @return 参数元素列表
    */
@@ -250,7 +253,7 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
   /**
    * 解析追加建议，添加字段或注解
    *
-   * @param method 方法元素
+   * @param method     方法元素
    * @param suggestion 追加建议
    */
   private void parseAppendSuggestion(ElementMethod method, AppendSuggestion suggestion) {
@@ -268,7 +271,7 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
   /**
    * 解析移除建议，删除字段或注解
    *
-   * @param method 方法元素
+   * @param method     方法元素
    * @param suggestion 移除建议
    */
   private void parseRemoveSuggestion(ElementMethod method, RemoveSuggestion suggestion) {
@@ -284,7 +287,7 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
   /**
    * 解析替换建议，修改方法体或注解属性
    *
-   * @param method 方法元素
+   * @param method     方法元素
    * @param suggestion 替换建议
    */
   private void parseReplaceSuggestion(ElementMethod method, ReplaceSuggestion suggestion) {
@@ -324,7 +327,7 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
   /**
    * 从集合中移除符合条件的元素
    *
-   * @param elements 元素集合
+   * @param elements  元素集合
    * @param condition 移除条件
    */
   private void removeNeedlessElements(LinkedHashSet<? extends Element> elements, Function<Element, Boolean> condition) {

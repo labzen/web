@@ -1,4 +1,4 @@
-package cn.labzen.web.api.log;
+package cn.labzen.web.api.log.config;
 
 /**
  * API 日志条件匹配类型枚举。
@@ -24,7 +24,7 @@ package cn.labzen.web.api.log;
  * 数值匹配时，参数值和条件值都会被解析为 {@link java.math.BigDecimal} 进行比较。
  * 日期匹配时，参数值和条件值都会被解析为 ISO-8601 格式进行比较。
  *
- * @see ApiLogConfig
+ * @see ApiEndpointLogConfig
  * @see ConditionRule
  */
 public enum MatchType {

@@ -1,9 +1,10 @@
 package cn.labzen.web.log;
 
-import cn.labzen.web.api.log.*;
+import cn.labzen.web.api.log.config.ApiEndpointLogConfig;
+import cn.labzen.web.api.log.config.ConditionGroup;
+import cn.labzen.web.api.log.config.ConditionRule;
 import jakarta.servlet.http.HttpServletRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -21,20 +22,20 @@ import java.util.Enumeration;
  *   <li><b>OR 节点</b>：任一子节点满足即返回 true（短路求值）</li>
  * </ul>
  *
- * @see ApiLogConfig
+ * @see ApiEndpointLogConfig
  * @see ConditionGroup
  * @see ConditionRule
  */
+@Slf4j
 public class ApiLogConditionEvaluator {
 
-  private static final Logger log = LoggerFactory.getLogger(ApiLogConditionEvaluator.class);
-
   private static final DateTimeFormatter[] DATE_FORMATTERS = {
-      DateTimeFormatter.ISO_INSTANT, DateTimeFormatter.ISO_DATE_TIME,
-      DateTimeFormatter.ISO_LOCAL_DATE_TIME,
-      DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"),
-      DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
-      DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
+    DateTimeFormatter.ofPattern("yyyy-MM-dd"),
+    DateTimeFormatter.ISO_INSTANT,
+    DateTimeFormatter.ISO_DATE_TIME,
+    DateTimeFormatter.ISO_LOCAL_DATE_TIME,
+    DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
   };
 
   /**
@@ -42,7 +43,7 @@ public class ApiLogConditionEvaluator {
    * <p>
    * 若 {@code config.isConditional() == false}，直接返回 {@code true}（无条件模式）。
    */
-  public boolean evaluate(ApiLogConfig config, HttpServletRequest request) {
+  public boolean evaluate(ApiEndpointLogConfig config, HttpServletRequest request) {
     if (!config.isConditional()) {
       return true;
     }
@@ -121,8 +122,7 @@ public class ApiLogConditionEvaluator {
         case AFTER -> compareDate(paramValue, rule.matchValue()) > 0;
       };
     } catch (Exception e) {
-      log.debug("条件匹配评估失败 [paramName={}, matchType={}]: {}",
-          rule.paramName(), rule.matchType(), e.getMessage());
+      logger.debug("条件匹配评估失败 [paramName={}, matchType={}]: {}", rule.paramName(), rule.matchType(), e.getMessage());
       return false;
     }
   }
@@ -154,7 +154,10 @@ public class ApiLogConditionEvaluator {
 
   private Instant parseToInstant(String s) {
     for (DateTimeFormatter f : DATE_FORMATTERS) {
-      try { return Instant.from(f.parse(s)); } catch (Exception ignored) {}
+      try {
+        return Instant.from(f.parse(s));
+      } catch (Exception ignored) {
+      }
     }
     throw new DateTimeParseException("无法解析: " + s, s, 0);
   }

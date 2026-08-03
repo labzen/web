@@ -10,81 +10,67 @@ import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.TypeName;
 
 import javax.annotation.processing.Filer;
-import javax.tools.JavaFileObject;
+import javax.tools.FileObject;
+import javax.tools.StandardLocation;
 import java.io.Writer;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 /**
  * API 日志元数据生成处理器（优先级 7，在 CreativeProcessor 之后执行）。
  * <p>
- * 在编译期为每个标注了 {@code @LabzenController} 的接口生成元数据，
- * 包括 Controller 接口名、方法名、HTTP 方法、URL Pattern 等信息。
- * 生成的元数据将被注册到 {@code LoggableControllerMetaRegistryImplImpl} 类中，
- * 运行时通过 O(1) 的静态 Map 查表获取元数据，完全消除运行时反射开销。
+ * 在编译期为每个标注了 {@code @LabzenController} 的接口生成一个 JSON 元数据文件，
+ * 包含 Controller 接口名、方法名、HTTP 方法、URL Pattern 等信息。
  * <p>
- * <b>生成的元数据结构：</b>
+ * 每个 Controller 生成一个独立的 JSON 文件，输出到
+ * {@code META-INF/labzen/{ControllerName}.meta.json}，运行时由
+ * {@code LoggableControllerMetaRegistry} 统一加载。
+ * <p>
+ * <b>JSON 文件格式：</b>
  * <pre>{@code
- * // 每个 Controller 接口对应一个 ControllerMeta
- * public record ControllerMeta(
- *     String interfaceName,          // 接口全限定名，如 "com.example.controller.UserController"
- *     String simpleName,             // 接口简单名，如 "UserController"
- *     Map<String, MethodMeta> methods  // 方法标识 → 方法元数据
- * ) {}
- *
- * // 每个方法对应一个 ControllerMethodMeta
- * public record ControllerMethodMeta(
- *     String methodName,             // 方法名，如 "create"
- *     String httpMethod,             // HTTP 方法，如 "POST"
- *     String urlPattern,             // URL 模式，如 "/api/user"
- *     String fullUrlPattern,         // 完整 URL 模式（含类级别路径），如 "/api/user"
- *     List<String> parameterTypes    // 参数类型的简单名称列表
- * ) {}
+ * {
+ *   "interfaceName": "com.example.controller.UserController",
+ *   "simpleName": "UserController",
+ *   "methods": {
+ *     "a1b2c3d4": {
+ *       "methodName": "create",
+ *       "httpMethod": "POST",
+ *       "urlPattern": "",
+ *       "fullUrlPattern": "/api/user",
+ *       "parameterTypes": ["UserBean"]
+ *     }
+ *   }
+ * }
  * }</pre>
  * <p>
- * <b>执行时机：</b>在 {@link CreativeProcessor}（优先级 6）之后执行，
- * 此时 Controller 实现类已经生成完毕，ElementClass 包含完整的方法和注解信息。
- *
- * @see cn.labzen.web.api.log.registry.LoggableControllerMetaRegistry
+ * methods 的 key 是方法签名（方法名+返回类型+参数类型列表）的 MD5 前 5 位（hex）。
+ * 运行时注册表会自动组装 httpUrlKey（httpMethod + " " + fullUrlPattern）并注册三个 key。
  */
 public final class MetadataGenerateProcessor implements InternalProcessor {
 
   /**
-   * 元数据注册表实现类的包名
+   * JSON 元数据文件输出目录（相对于 classpath 根）
    */
-  private static final String REGISTRY_PACKAGE = "cn.labzen.web.log.generated";
+  private static final String META_OUTPUT_DIR = "META-INF/labzen";
 
   /**
-   * 元数据注册表接口
-   */
-  private static final String REGISTRY_INTERFACE_NAME = "LoggableControllerMetaRegistry";
-
-  /**
-   * 元数据注册表实现类的简单名
-   */
-  private static final String REGISTRY_CLASS_NAME = "LoggableControllerMetaRegistryImpl";
-
-  /**
-   * 已处理的 Controller 接口名集合（避免重复生成）
+   * 已处理的 Controller 接口名集合（避免重复生成）。
+   * <p>
+   * 注意：APT 处理器实例会在多轮编译中复用，此集合用于防止同一 Controller
+   * 被多次处理产生重复的 JSON 文件。
    */
   private final Set<String> processedControllers = new HashSet<>();
 
   /**
-   * 生成当前 Controller 的元数据并写入注册表。
-   * <p>
-   * 由于 APT 处理器是每个 Controller 独立调用的，无法在一次 process 中聚合所有 Controller。
-   * 因此采用"追加写入"策略：每次 process 时读取现有注册表内容，追加新的 Controller 元数据，
-   * 再整体写回。
-   *
-   * @param context 控制器上下文
+   * 为当前 Controller 生成 JSON 元数据文件。
    */
   @Override
   public void process(ControllerContext context) {
     ElementClass root = context.getRoot();
-    // 从源 TypeElement 获取接口名（root.getName() 是生成的实现类名，如 UserControllerImpl）
     String controllerSimpleName = context.getSource().getSimpleName().toString();
     String interfaceName = root.getPkg() + "." + controllerSimpleName;
 
-    // 跳过已处理的 Controller（避免重复）
     if (!processedControllers.add(interfaceName)) {
       return;
     }
@@ -95,52 +81,53 @@ public final class MetadataGenerateProcessor implements InternalProcessor {
     // 解析类级别的 @RequestMapping（获取 URL 前缀）
     String classLevelPath = extractClassLevelPath(root);
 
-    // 构建方法元数据 Map
-    Map<String, ControllerMethodMeta> methodsMeta = new LinkedHashMap<>();
+    // 构建方法元数据 Map（key = 方法签名 MD5 前 5 位 hex）
+    Map<String, Map<String, Object>> methodsMeta = new LinkedHashMap<>();
     for (ElementMethod method : root.getMethods()) {
       String methodName = method.getName();
       String httpMethod = extractHttpMethod(method);
       String urlPattern = extractUrlPattern(method);
       String fullUrlPattern = buildFullUrl(classLevelPath, urlPattern);
 
+      String returnType = Utils.getSimpleName(method.getReturnType());
       List<String> parameterTypes = method.getParameters().stream()
         .map(p -> Utils.getSimpleName(p.getType()))
         .toList();
+      String hash = hashControllerMethod(methodName, returnType, parameterTypes);
 
-      // 构建两个 key：方法名 和 HTTP方法+URL
-      String methodNameKey = methodName;
-      String httpUrlKey = httpMethod + " " + fullUrlPattern;
+      Map<String, Object> meta = new LinkedHashMap<>();
+      meta.put("methodName", methodName);
+      meta.put("httpMethod", httpMethod);
+      meta.put("urlPattern", urlPattern);
+      meta.put("fullUrlPattern", fullUrlPattern);
+      meta.put("parameterTypes", parameterTypes);
 
-      ControllerMethodMeta meta = new ControllerMethodMeta(methodName, httpMethod, urlPattern, fullUrlPattern, parameterTypes);
-
-      methodsMeta.put(methodName, meta);
-      // 避免重复（如 find 方法的 GET / 可能与 info 的 GET /{id} 冲突时不覆盖）
-      if (!methodsMeta.containsKey(httpUrlKey)) {
-        methodsMeta.put(httpUrlKey, meta);
-      }
+      methodsMeta.putIfAbsent(hash, meta);
     }
 
-    // 生成注册表 Java 源代码
-    String sourceCode = generateRegistrySource(controllerSimpleName, interfaceName, methodsMeta);
+    // 构建顶层 JSON
+    Map<String, Object> controllerMeta = new LinkedHashMap<>();
+    controllerMeta.put("interfaceName", interfaceName);
+    controllerMeta.put("simpleName", controllerSimpleName);
+    controllerMeta.put("methods", methodsMeta);
 
-    // 输出源文件
+    // 输出 JSON 文件
     try {
-      String qualifiedName = REGISTRY_PACKAGE + "." + REGISTRY_CLASS_NAME;
-      JavaFileObject sourceFile = filer.createSourceFile(qualifiedName, context.getSource());
-      try (Writer writer = sourceFile.openWriter()) {
-        writer.write(sourceCode);
+      String resourcePath = META_OUTPUT_DIR + "/" + controllerSimpleName + ".meta.json";
+      FileObject fileObject = filer.createResource(
+        StandardLocation.CLASS_OUTPUT, "", resourcePath, context.getSource());
+      try (Writer writer = fileObject.openWriter()) {
+        writer.write(toJson(controllerMeta));
       }
     } catch (Exception e) {
-      apc.messaging().warning("MetadataGenerateProcessor: 无法生成元数据注册表: " + e.getMessage());
+      apc.messaging().warning("MetadataGenerateProcessor: 无法生成元数据 JSON 文件: " + e.getMessage());
     }
   }
 
-  /**
-   * 提取类级别的 @RequestMapping 路径前缀。
-   *
-   * @param root 元素类
-   * @return 路径前缀（如 "/api/user"），无则返回 ""
-   */
+  // ============================================================
+  // 注解解析
+  // ============================================================
+
   private String extractClassLevelPath(ElementClass root) {
     for (ElementAnnotation annotation : root.getAnnotations()) {
       if (isRequestMappingAnnotation(annotation)) {
@@ -156,43 +143,26 @@ public final class MetadataGenerateProcessor implements InternalProcessor {
     return "";
   }
 
-  /**
-   * 判断是否为 Spring RequestMapping 相关注解。
-   */
   private boolean isRequestMappingAnnotation(ElementAnnotation annotation) {
     TypeName type = annotation.getType();
     return type instanceof ClassName cn && Utils.isRequestMappingAnnotation(cn);
-//    String simpleName = Utils.getSimpleName(type);
-//    return simpleName.endsWith("Mapping");
   }
 
-  /**
-   * 从方法注解中提取 HTTP 方法。
-   * <p>
-   * 支持的注解：{@code @GetMapping → "GET"}、{@code @PostMapping → "POST"}、
-   * {@code @PutMapping → "PUT"}、{@code @DeleteMapping → "DELETE"}、
-   * {@code @PatchMapping → "PATCH"}、{@code @RequestMapping → 从 method 属性提取}
-   *
-   * @param method 方法元素
-   * @return HTTP 方法字符串，默认为 "GET"
-   */
   private String extractHttpMethod(ElementMethod method) {
     for (ElementAnnotation annotation : method.getAnnotations()) {
       String simpleName = Utils.getSimpleName(annotation.getType());
       if (simpleName.endsWith("Mapping")) {
-        // 直接映射注解名到 HTTP 方法
         return switch (simpleName) {
           case "PostMapping" -> "POST";
           case "PutMapping" -> "PUT";
           case "DeleteMapping" -> "DELETE";
           case "PatchMapping" -> "PATCH";
           case "RequestMapping" -> {
-            // @RequestMapping 需从 method 属性提取
             Object methodValue = annotation.getMembers().get("method");
             if (methodValue instanceof List<?> list && !list.isEmpty()) {
               yield list.getFirst().toString();
             }
-            yield "GET"; // 默认
+            yield "GET";
           }
           default -> "GET";
         };
@@ -201,12 +171,6 @@ public final class MetadataGenerateProcessor implements InternalProcessor {
     return "GET";
   }
 
-  /**
-   * 从方法注解中提取 URL Pattern。
-   *
-   * @param method 方法元素
-   * @return URL 模式字符串
-   */
   private String extractUrlPattern(ElementMethod method) {
     for (ElementAnnotation annotation : method.getAnnotations()) {
       TypeName type = annotation.getType();
@@ -223,13 +187,6 @@ public final class MetadataGenerateProcessor implements InternalProcessor {
     return "";
   }
 
-  /**
-   * 构建完整的 URL 路径。
-   *
-   * @param classPath  类级别路径（如 "/api/user"）
-   * @param methodPath 方法级别路径（如 "/{id}"）
-   * @return 完整路径（如 "/api/user/{id}"）
-   */
   private String buildFullUrl(String classPath, String methodPath) {
     StringBuilder sb = new StringBuilder();
     if (classPath != null && !classPath.isEmpty()) {
@@ -247,110 +204,44 @@ public final class MetadataGenerateProcessor implements InternalProcessor {
     return sb.toString();
   }
 
+  // ============================================================
+  // 简易 JSON 序列化（不引入第三方依赖）
+  // ============================================================
+
   /**
-   * 生成完整的注册表实现类源代码。
+   * 将 Map 结构序列化为 JSON 字符串。
    * <p>
-   * 生成的类实现 {@code cn.labzen.web.api.log.ApiLogControllerRegistry} 接口，
-   * 使用静态 Map 存储所有 Controller 元数据。
-   *
-   * @param controllerSimpleName Controller 简单名
-   * @param interfaceName        接口全限定名
-   * @param methodsMeta          方法元数据
-   * @return Java 源代码字符串
+   * 使用手动拼接方式，避免在 APT 处理器中引入 Jackson/Gson 等依赖。
    */
-  private String generateRegistrySource(String controllerSimpleName, String interfaceName, Map<String, ControllerMethodMeta> methodsMeta) {
-    StringBuilder sb = new StringBuilder();
-    sb.append("package ").append(REGISTRY_PACKAGE).append(";\n\n");
-
-    // imports
-    sb.append("import cn.labzen.web.api.log.ApiLogControllerRegistry;\n");
-    sb.append("import cn.labzen.web.api.log.registry.ControllerMeta;\n");
-    sb.append("import cn.labzen.web.api.log.registry.ControllerMethodMeta;\n");
-    sb.append("import java.util.*;\n\n");
-
-    // 类定义
-    sb.append("/**\n");
-    sb.append(" * API 日志 Controller 元数据注册表（编译期自动生成）。\n");
-    sb.append(" * <p>\n");
-    sb.append(" * 由 MetadataGenerateProcessor 在编译期生成，提供 O(1) 静态 Map 查表。\n");
-    sb.append(" * 禁止手动编辑此文件。\n");
-    sb.append(" */\n");
-    sb.append("@SuppressWarnings(\"all\")\n");
-    sb.append("public final class ").append(REGISTRY_CLASS_NAME).append(" implements ").append(REGISTRY_INTERFACE_NAME).append(" {\n\n");
-
-    // 静态注册表 Map
-    sb.append("  private static final Map<String, ControllerMeta> REGISTRY = new LinkedHashMap<>();\n\n");
-
-    // 静态初始化块
-    sb.append("  static {\n");
-    sb.append("    // ").append(controllerSimpleName).append("\n");
-    sb.append("    {\n");
-    sb.append("      Map<String, MethodMeta> methods = new LinkedHashMap<>();\n");
-
-    for (Map.Entry<String, ControllerMethodMeta> entry : methodsMeta.entrySet()) {
-      ControllerMethodMeta meta = entry.getValue();
-      sb.append("      methods.put(\"").append(escapeJava(entry.getKey())).append("\",\n");
-      sb.append("        new MethodMeta(\n");
-      sb.append("          \"").append(escapeJava(meta.methodName)).append("\",\n");
-      sb.append("          \"").append(escapeJava(meta.httpMethod)).append("\",\n");
-      sb.append("          \"").append(escapeJava(meta.urlPattern)).append("\",\n");
-      sb.append("          \"").append(escapeJava(meta.fullUrlPattern)).append("\",\n");
-      sb.append("          ").append(generateListLiteral(meta.parameterTypes)).append("\n");
-      sb.append("        ));\n");
-    }
-
-    sb.append("      REGISTRY.put(\"").append(escapeJava(controllerSimpleName)).append("\", new ControllerMeta(\"");
-    sb.append(escapeJava(interfaceName)).append("\", \"");
-    sb.append(escapeJava(controllerSimpleName)).append("\", Collections.unmodifiableMap(methods)));\n");
-    sb.append("    }\n");
-    sb.append("  }\n\n");
-
-    // 实现接口方法
-    sb.append("  @Override\n");
-    sb.append("  public Map<String, ControllerMeta> getAllMetas() {\n");
-    sb.append("    return Collections.unmodifiableMap(REGISTRY);\n");
-    sb.append("  }\n\n");
-
-    sb.append("  @Override\n");
-    sb.append("  public Optional<ControllerMeta> lookup(String controllerSimpleName) {\n");
-    sb.append("    return Optional.ofNullable(REGISTRY.get(controllerSimpleName));\n");
-    sb.append("  }\n\n");
-
-    sb.append("  @Override\n");
-    sb.append("  public Optional<MethodMeta> lookupMethod(String controllerSimpleName, String methodKey) {\n");
-    sb.append("    return lookup(controllerSimpleName)\n");
-    sb.append("      .flatMap(meta -> Optional.ofNullable(meta.methods().get(methodKey)));\n");
-    sb.append("  }\n");
-    sb.append("}\n");
-
-    return sb.toString();
-  }
-
-  /**
-   * 生成 List 字面量（如 {@code Arrays.asList("param1", "param2")}）。
-   */
-  private String generateListLiteral(List<String> items) {
-    if (items.isEmpty()) {
-      return "List.of()";
-    }
-    StringBuilder sb = new StringBuilder("Arrays.asList(");
-    for (int i = 0; i < items.size(); i++) {
-      if (i > 0) {
-        sb.append(", ");
+  private static String toJson(Object obj) {
+    if (obj == null) return "null";
+    if (obj instanceof String s) return "\"" + escapeJson(s) + "\"";
+    if (obj instanceof Number || obj instanceof Boolean) return obj.toString();
+    if (obj instanceof Map<?, ?> map) {
+      StringBuilder sb = new StringBuilder("{\n");
+      int i = 0;
+      for (Map.Entry<?, ?> entry : map.entrySet()) {
+        if (i > 0) sb.append(",\n");
+        sb.append("  \"").append(entry.getKey()).append("\": ");
+        sb.append(toJson(entry.getValue()));
+        i++;
       }
-      sb.append("\"").append(escapeJava(items.get(i))).append("\"");
+      sb.append("\n}");
+      return sb.toString();
     }
-    sb.append(")");
-    return sb.toString();
+    if (obj instanceof List<?> list) {
+      StringBuilder sb = new StringBuilder("[");
+      for (int i = 0; i < list.size(); i++) {
+        if (i > 0) sb.append(", ");
+        sb.append(toJson(list.get(i)));
+      }
+      sb.append("]");
+      return sb.toString();
+    }
+    return "\"" + escapeJson(obj.toString()) + "\"";
   }
 
-  /**
-   * 转义 Java 字符串中的特殊字符。
-   */
-  private String escapeJava(String s) {
-    if (s == null) {
-      return "";
-    }
+  private static String escapeJson(String s) {
     return s.replace("\\", "\\\\")
       .replace("\"", "\\\"")
       .replace("\n", "\\n")
@@ -359,15 +250,21 @@ public final class MetadataGenerateProcessor implements InternalProcessor {
   }
 
   /**
-   * 方法元数据内部记录。
+   * 计算输入字符串的 MD5 哈希并返回前 5 位十六进制字符串。
    */
-  private record ControllerMethodMeta(
-    String methodName,
-    String httpMethod,
-    String urlPattern,
-    String fullUrlPattern,
-    List<String> parameterTypes
-  ) {
+  private String hashControllerMethod(String methodName, String returnType, List<String> parameterTypes) {
+    String parameters = String.join(", ", parameterTypes);
+    String signature = String.format("%s %s(%s)", returnType, methodName, parameters);
+    try {
+      MessageDigest md5 = MessageDigest.getInstance("MD5");
+      byte[] bytes = signature.getBytes();
+      byte[] digest = md5.digest(bytes);
+      String hex = HexFormat.of().formatHex(digest);
+      return hex.substring(0, 5);
+    } catch (NoSuchAlgorithmException e) {
+      // MD5 是 Java 标准算法，不会发生此异常
+      return Integer.toHexString(signature.hashCode());
+    }
   }
 
   @Override

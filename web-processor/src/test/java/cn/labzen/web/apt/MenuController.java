@@ -13,7 +13,7 @@ import cn.labzen.web.apt.service.RoleRealm;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 @Validated
 @RestController("abc")

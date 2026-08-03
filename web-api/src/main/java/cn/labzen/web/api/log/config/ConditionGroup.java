@@ -1,4 +1,4 @@
-package cn.labzen.web.api.log;
+package cn.labzen.web.api.log.config;
 
 import lombok.Data;
 
