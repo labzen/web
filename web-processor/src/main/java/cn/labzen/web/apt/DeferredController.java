@@ -5,8 +5,8 @@ import javax.lang.model.element.TypeElement;
 /**
  * 延迟处理的控制器，记录重试次数以避免无限延迟
  *
- * @param element  控制器类型元素
- * @param retries  已重试次数
+ * @param element 控制器类型元素
+ * @param retries 已重试次数
  */
 public record DeferredController(TypeElement element, int retries) {
 

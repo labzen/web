@@ -46,10 +46,10 @@ public final class PrepareProcessor implements InternalProcessor {
    */
   private List<InterfaceGenericsEvaluator> getClassGenerators(ControllerContext context) {
     return ServiceLoader.load(InterfaceGenericsEvaluator.class, this.getClass().getClassLoader())
-      .stream()
-      .map(ServiceLoader.Provider::get)
-      .peek(evaluator -> evaluator.init(context.getApc()))
-      .toList();
+                        .stream()
+                        .map(ServiceLoader.Provider::get)
+                        .peek(evaluator -> evaluator.init(context.getApc()))
+                        .toList();
   }
 
   /**
@@ -60,10 +60,10 @@ public final class PrepareProcessor implements InternalProcessor {
    */
   private List<MethodAnnotationErasableEvaluator> getAnnotationEvaluators(ControllerContext context) {
     return ServiceLoader.load(MethodAnnotationErasableEvaluator.class, this.getClass().getClassLoader())
-      .stream()
-      .map(ServiceLoader.Provider::get)
-      .peek(evaluator -> evaluator.init(context.getApc()))
-      .toList();
+                        .stream()
+                        .map(ServiceLoader.Provider::get)
+                        .peek(evaluator -> evaluator.init(context.getApc()))
+                        .toList();
   }
 
   @Override

@@ -47,7 +47,9 @@ import static cn.labzen.web.apt.definition.JUnitConstants.JUNIT_OUTPUT_DIR;
 public final class ClassCreator {
 
   private static final String PROCESSOR_NAME = LabzenWebProcessor.class.getName();
-  private static final String PROCESSOR_COMMENTS = "labzen web version: " + readVersionFromPom() + ", generating: com.squareup:javapoet, based Java 21";
+  private static final String PROCESSOR_COMMENTS = "labzen web version: " +
+                                                   readVersionFromPom() +
+                                                   ", generating: com.squareup:javapoet, based Java 21";
   private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
   private static final String METHOD_BODY_TEMPLATE_ERROR_INVALID_METHOD = "error-invalid-method";
   private static final String METHOD_BODY_TEMPLATE_GENERAL = "general";
@@ -74,6 +76,14 @@ public final class ClassCreator {
    */
   private final Set<String> consumedTemplates = new LinkedHashSet<>();
 
+  public ClassCreator(ElementClass root, Filer filer, TypeElement originatingElement) {
+    this.root = root;
+    this.filer = filer;
+    this.originatingElement = originatingElement;
+
+    loadMethodBodyTemplates();
+  }
+
   /**
    * 从 Maven 属性文件中读取版本号
    *
@@ -90,66 +100,6 @@ public final class ClassCreator {
       // ignore
     }
     return "unknown";
-  }
-
-  public ClassCreator(ElementClass root, Filer filer, TypeElement originatingElement) {
-    this.root = root;
-    this.filer = filer;
-    this.originatingElement = originatingElement;
-
-    loadMethodBodyTemplates();
-  }
-
-  /**
-   * 加载方法体模板文件
-   * <p>
-   * 从 classpath 的 templates 目录读取 index.txt 获取模板文件列表，
-   * 然后逐个读取模板内容存入缓存。
-   */
-  private void loadMethodBodyTemplates() {
-    if (!methodBodyTemplates.isEmpty()) {
-      return;
-    }
-
-    try {
-      FileObject indexFile = filer.getResource(StandardLocation.CLASS_PATH, "templates", "index.txt");
-
-      try (BufferedReader reader = new BufferedReader(
-        new InputStreamReader(indexFile.openInputStream(), StandardCharsets.UTF_8))) {
-        String fileName;
-        while ((fileName = reader.readLine()) != null) {
-          fileName = fileName.trim();
-          if (fileName.isEmpty()) {
-            continue;
-          }
-
-          // 逐个读取 txt 文件
-          FileObject txtFile = filer.getResource(StandardLocation.CLASS_PATH, "templates", fileName);
-
-          String rawContent = readContent(txtFile);
-          String key = Strings.frontUntil(fileName, ".", false);
-          var parsed = parseTemplateImports(rawContent);
-          methodBodyTemplates.put(key, parsed.body());
-          if (!parsed.imports().isEmpty()) {
-            templateImports.put(key, parsed.imports());
-          }
-        }
-      }
-    } catch (IOException e) {
-      throw new RuntimeException("failed to load the method template", e);
-    }
-  }
-
-  private String readContent(FileObject fileObject) throws IOException {
-    StringBuilder sb = new StringBuilder();
-    try (BufferedReader reader = new BufferedReader(
-      new InputStreamReader(fileObject.openInputStream(), StandardCharsets.UTF_8))) {
-      String line;
-      while ((line = reader.readLine()) != null) {
-        sb.append(line).append('\n');
-      }
-    }
-    return sb.toString();
   }
 
   /**
@@ -196,7 +146,56 @@ public final class ClassCreator {
     return new TemplateParseResult(imports, body);
   }
 
-  private record TemplateParseResult(List<String> imports, String body) {
+  /**
+   * 加载方法体模板文件
+   * <p>
+   * 从 classpath 的 templates 目录读取 index.txt 获取模板文件列表，
+   * 然后逐个读取模板内容存入缓存。
+   */
+  private void loadMethodBodyTemplates() {
+    if (!methodBodyTemplates.isEmpty()) {
+      return;
+    }
+
+    try {
+      FileObject indexFile = filer.getResource(StandardLocation.CLASS_PATH, "templates", "index.txt");
+
+      try (BufferedReader reader = new BufferedReader(new InputStreamReader(indexFile.openInputStream(),
+          StandardCharsets.UTF_8))) {
+        String fileName;
+        while ((fileName = reader.readLine()) != null) {
+          fileName = fileName.trim();
+          if (fileName.isEmpty()) {
+            continue;
+          }
+
+          // 逐个读取 txt 文件
+          FileObject txtFile = filer.getResource(StandardLocation.CLASS_PATH, "templates", fileName);
+
+          String rawContent = readContent(txtFile);
+          String key = Strings.frontUntil(fileName, ".", false);
+          var parsed = parseTemplateImports(rawContent);
+          methodBodyTemplates.put(key, parsed.body());
+          if (!parsed.imports().isEmpty()) {
+            templateImports.put(key, parsed.imports());
+          }
+        }
+      }
+    } catch (IOException e) {
+      throw new RuntimeException("failed to load the method template", e);
+    }
+  }
+
+  private String readContent(FileObject fileObject) throws IOException {
+    StringBuilder sb = new StringBuilder();
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(fileObject.openInputStream(),
+        StandardCharsets.UTF_8))) {
+      String line;
+      while ((line = reader.readLine()) != null) {
+        sb.append(line).append('\n');
+      }
+    }
+    return sb.toString();
   }
 
   /**
@@ -213,19 +212,21 @@ public final class ClassCreator {
    */
   public void create() {
     var typeSpecBuilder = TypeSpec.classBuilder(root.getName())
-      .addSuperinterface(root.getImplementTypes())
-      .addModifiers(Modifier.PUBLIC);
+                                  .addSuperinterface(root.getImplementTypes())
+                                  .addModifiers(Modifier.PUBLIC);
 
-    root.getAnnotations().stream()
-      .sorted(Comparator.comparing(ann -> Utils.getSimpleName(ann.getType())))
-      .forEach(ann -> typeSpecBuilder.addAnnotation(buildAnnotationSpec(ann)));
+    root.getAnnotations()
+        .stream()
+        .sorted(Comparator.comparing(ann -> Utils.getSimpleName(ann.getType())))
+        .forEach(ann -> typeSpecBuilder.addAnnotation(buildAnnotationSpec(ann)));
 
-    typeSpecBuilder.addAnnotation(
-      AnnotationSpec.builder(Generated.class)
-        .addMember("value", "$S", PROCESSOR_NAME)
-        .addMember("date", "$S", OffsetDateTime.now().format(DATETIME_FORMATTER))
-        .addMember("comments", "$S", PROCESSOR_COMMENTS)
-        .build());
+    typeSpecBuilder.addAnnotation(AnnotationSpec.builder(Generated.class)
+                                                .addMember("value", "$S", PROCESSOR_NAME)
+                                                .addMember("date",
+                                                    "$S",
+                                                    OffsetDateTime.now().format(DATETIME_FORMATTER))
+                                                .addMember("comments", "$S", PROCESSOR_COMMENTS)
+                                                .build());
 
     var defaultFieldElement = root.getFields().getFirst();
 
@@ -238,15 +239,15 @@ public final class ClassCreator {
 
     root.getMethods().forEach(method -> {
       var methodSpecBuilder = MethodSpec.methodBuilder(method.getName())
-        .addModifiers(Modifier.PUBLIC)
-        .returns(method.getReturnType());
+                                        .addModifiers(Modifier.PUBLIC)
+                                        .returns(method.getReturnType());
 
       method.getAnnotations().forEach(annotation -> methodSpecBuilder.addAnnotation(buildAnnotationSpec(annotation)));
 
       method.getParameters().forEach(parameter -> {
         var parameterSpecBuilder = ParameterSpec.builder(parameter.getType(), parameter.getName());
         parameter.getAnnotations()
-          .forEach(annotation -> parameterSpecBuilder.addAnnotation(buildAnnotationSpec(annotation)));
+                 .forEach(annotation -> parameterSpecBuilder.addAnnotation(buildAnnotationSpec(annotation)));
 
         methodSpecBuilder.addParameter(parameterSpecBuilder.build());
       });
@@ -368,9 +369,8 @@ public final class ClassCreator {
       return methodBodyTemplates.get(METHOD_BODY_TEMPLATE_ERROR_INVALID_METHOD);
     }
 
-    var fieldName = method.getBody().getFieldName().isBlank()
-      ? defaultFieldElement.getName()
-      : method.getBody().getFieldName();
+    var fieldName = method.getBody().getFieldName().isBlank() ? defaultFieldElement.getName() : method.getBody()
+                                                                                                      .getFieldName();
     var methodName = method.getBody().getInvokeMethodName();
     List<String> parameters = method.getParameters().stream().map(ElementParameter::getName).toList();
     var parameterNames = String.join(", ", parameters);
@@ -380,9 +380,7 @@ public final class ClassCreator {
       consumedTemplates.add(method.getName());
     } else {
       // void 返回类型使用 void 模板（不含 return 语句），否则使用通用模板
-      String defaultTemplate = TypeName.VOID.equals(method.getReturnType())
-        ? METHOD_BODY_TEMPLATE_VOID_RETURN
-        : METHOD_BODY_TEMPLATE_GENERAL;
+      String defaultTemplate = TypeName.VOID.equals(method.getReturnType()) ? METHOD_BODY_TEMPLATE_VOID_RETURN : METHOD_BODY_TEMPLATE_GENERAL;
       body = methodBodyTemplates.get(defaultTemplate);
       if (!Strings.isBlank(body)) {
         consumedTemplates.add(defaultTemplate);
@@ -443,19 +441,24 @@ public final class ClassCreator {
         /* 字符串 */
         case String s -> annotationSpecBuilder.addMember(key, "$S", s);
         /* 枚举常量 → e.g. RequestMethod.GET */
-        case VariableElement ve -> annotationSpecBuilder.addMember(key, "$T.$L",
-          ClassName.get((TypeElement) ve.getEnclosingElement()), ve.getSimpleName());
+        case VariableElement ve -> annotationSpecBuilder.addMember(key,
+            "$T.$L",
+            ClassName.get((TypeElement) ve.getEnclosingElement()),
+            ve.getSimpleName());
         /* Class 字面量 → e.g. IOException.class */
         case TypeMirror tm -> annotationSpecBuilder.addMember(key, "$T.class", tm);
         /* 嵌套注解 */
         case AnnotationMirror nested -> {
-          var nestedSpec = buildAnnotationSpec(new ElementAnnotation(
-            ClassName.get((TypeElement) nested.getAnnotationType().asElement()),
-            Utils.readAnnotationMembers(nested)));
+          var nestedSpec = buildAnnotationSpec(new ElementAnnotation(ClassName.get((TypeElement) nested.getAnnotationType()
+                                                                                                       .asElement()),
+              Utils.readAnnotationMembers(nested)));
           annotationSpecBuilder.addMember(key, "$L", nestedSpec);
         }
-        default -> throw new IllegalArgumentException(
-          "unsupported annotation member type: " + value.getClass().getName() + " for key '" + key + "'");
+        default -> throw new IllegalArgumentException("unsupported annotation member type: " +
+                                                      value.getClass().getName() +
+                                                      " for key '" +
+                                                      key +
+                                                      "'");
       }
     });
     return annotationSpecBuilder.build();
@@ -480,5 +483,9 @@ public final class ClassCreator {
     }
     block.add("}");
     return block.build();
+  }
+
+  private record TemplateParseResult(List<String> imports, String body) {
+
   }
 }

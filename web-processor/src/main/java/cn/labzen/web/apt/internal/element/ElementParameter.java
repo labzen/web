@@ -34,7 +34,9 @@ public final class ElementParameter implements Element {
 
   @Override
   public boolean equals(Object o) {
-    if (o == null || getClass() != o.getClass()) return false;
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     ElementParameter parameter = (ElementParameter) o;
     return index == parameter.index && Objects.equals(type, parameter.type);
   }

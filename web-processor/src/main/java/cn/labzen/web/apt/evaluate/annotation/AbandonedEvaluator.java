@@ -15,10 +15,7 @@ import java.util.Map;
 import static cn.labzen.web.apt.definition.TypeNames.APT_ANNOTATION_ABANDONED;
 
 /**
- * @Abandoned 注解评价器
- * <p>
- * 处理 @Abandoned 注解，该注解用于标记已废弃的接口方法。
- * 评价结果为：移除 @Abandoned 注解本身，并设置方法为废弃状态。
+ *
  */
 public final class AbandonedEvaluator implements MethodAnnotationErasableEvaluator {
 
@@ -48,8 +45,8 @@ public final class AbandonedEvaluator implements MethodAnnotationErasableEvaluat
   /**
    * 评价 @Abandoned 注解，生成废弃方法建议
    *
-   * @param config 处理器配置
-   * @param type 注解类型
+   * @param config  处理器配置
+   * @param type    注解类型
    * @param members 注解成员值
    * @return 代码生成建议列表
    */

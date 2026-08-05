@@ -19,14 +19,7 @@ import java.util.Objects;
 import static cn.labzen.web.apt.definition.TypeNames.*;
 
 /**
- * @MappingVersion 注解评价器
- * <p>
- * 处理接口方法上的 @MappingVersion 注解，根据配置的版本携带方式生成相应的代码建议：
- * <ul>
- *   <li>URI - 添加 @APIVersion 注解</li>
- *   <li>HEADER - 修改 @RequestMapping 的 produces 属性</li>
- *   <li>PARAMETER - 修改 @RequestMapping 的 params 属性</li>
- * </ul>
+ *
  */
 public final class MappingVersionEvaluator implements MethodAnnotationErasableEvaluator {
 
@@ -60,14 +53,15 @@ public final class MappingVersionEvaluator implements MethodAnnotationErasableEv
   /**
    * 评价 @MappingVersion 注解，生成版本控制建议
    *
-   * @param config 处理器配置
-   * @param type 注解类型
+   * @param config  处理器配置
+   * @param type    注解类型
    * @param members 注解成员值
    * @return 代码生成建议列表
    */
   @Override
   public List<? extends Suggestion> evaluate(Config config, TypeName type, Map<String, Object> members) {
-    List<Suggestion> suggestions = Lists.newArrayList(new RemoveSuggestion(Utils.getSimpleName(supportedAnnotationType), ElementMethod.class));
+    List<Suggestion> suggestions = Lists.newArrayList(new RemoveSuggestion(Utils.getSimpleName(supportedAnnotationType),
+        ElementMethod.class));
 
     String carrier = config.apiVersionCarrier();
     if (Objects.equals(carrier, "DISABLE")) {
@@ -101,26 +95,28 @@ public final class MappingVersionEvaluator implements MethodAnnotationErasableEv
   /**
    * 通过 Header Accept 方式设置版本
    *
-   * @param config 处理器配置
+   * @param config  处理器配置
    * @param version 版本号
    * @return 代码建议
    */
   private Suggestion versionByHeader(Config config, String version) {
     String headerVersion = "application/vnd." + config.apiVersionHeaderVND() + "." + version + "+json";
-    ElementAnnotation annotation = new ElementAnnotation(requestMappingType, Map.of("produces", new String[]{headerVersion}));
+    ElementAnnotation annotation = new ElementAnnotation(requestMappingType,
+        Map.of("produces", new String[]{headerVersion}));
     return new ReplaceSuggestion(ANNOTATION_SPRING_REQUEST_MAPPING, annotation);
   }
 
   /**
    * 通过请求参数方式设置版本
    *
-   * @param config 处理器配置
+   * @param config  处理器配置
    * @param version 版本号
    * @return 代码建议
    */
   private Suggestion versionByParameter(Config config, String version) {
     String paramVersion = config.apiVersionParameterName() + "=" + version;
-    ElementAnnotation annotation = new ElementAnnotation(requestMappingType, Map.of("params", new String[]{paramVersion}));
+    ElementAnnotation annotation = new ElementAnnotation(requestMappingType,
+        Map.of("params", new String[]{paramVersion}));
     return new ReplaceSuggestion(ANNOTATION_SPRING_REQUEST_MAPPING, annotation);
   }
 }

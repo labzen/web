@@ -11,7 +11,11 @@ import java.util.Map;
 /**
  * 方法注解集合评价器
  */
-public sealed interface MethodAnnotationErasableEvaluator permits AbandonedEvaluator, CallEvaluator, LabzenControllerEvaluator, MappingVersionEvaluator, RequestMappingEvaluator {
+public sealed interface MethodAnnotationErasableEvaluator permits AbandonedEvaluator,
+                                                                  CallEvaluator,
+                                                                  LabzenControllerEvaluator,
+                                                                  MappingVersionEvaluator,
+                                                                  RequestMappingEvaluator {
 
   /**
    * 初始化

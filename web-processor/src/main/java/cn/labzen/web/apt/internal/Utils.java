@@ -15,12 +15,12 @@ import java.util.stream.Collectors;
 public final class Utils {
 
   private static final Set<String> REQUEST_MAPPING_ANNOTATIONS = Set.of(
-    "org.springframework.web.bind.annotation.RequestMapping",
-    "org.springframework.web.bind.annotation.GetMapping",
-    "org.springframework.web.bind.annotation.PostMapping",
-    "org.springframework.web.bind.annotation.DeleteMapping",
-    "org.springframework.web.bind.annotation.PutMapping",
-    "org.springframework.web.bind.annotation.PatchMapping");
+      "org.springframework.web.bind.annotation.RequestMapping",
+      "org.springframework.web.bind.annotation.GetMapping",
+      "org.springframework.web.bind.annotation.PostMapping",
+      "org.springframework.web.bind.annotation.DeleteMapping",
+      "org.springframework.web.bind.annotation.PutMapping",
+      "org.springframework.web.bind.annotation.PatchMapping");
 
   private Utils() {
   }
@@ -30,18 +30,19 @@ public final class Utils {
   }
 
   public static Map<String, Object> readAnnotationMembers(AnnotationMirror annotation) {
-    return annotation.getElementValues().entrySet().stream()
-      .collect(Collectors.toMap(
-        entry -> entry.getKey().getSimpleName().toString(),
-        entry -> {
-          Object value = entry.getValue().getValue();
-          if (value instanceof List<?> list) {
-            return list.stream()
-              .map(item -> ((AnnotationValue) item).getValue()).collect(Collectors.toList());
-          }
+    return annotation.getElementValues()
+                     .entrySet()
+                     .stream()
+                     .collect(Collectors.toMap(entry -> entry.getKey().getSimpleName().toString(), entry -> {
+                       Object value = entry.getValue().getValue();
+                       if (value instanceof List<?> list) {
+                         return list.stream()
+                                    .map(item -> ((AnnotationValue) item).getValue())
+                                    .collect(Collectors.toList());
+                       }
 
-          return value;
-        }));
+                       return value;
+                     }));
   }
 
   public static ClassName classOf(Element type) {
@@ -59,7 +60,9 @@ public final class Utils {
       case ArrayTypeName arrayTypeName -> getSimpleName(arrayTypeName.componentType) + "[]";
       case ParameterizedTypeName parameterizedTypeName -> {
         String raw = getSimpleName(parameterizedTypeName.rawType);
-        String typeArgs = parameterizedTypeName.typeArguments.stream().map(Utils::getSimpleName).collect(Collectors.joining(","));
+        String typeArgs = parameterizedTypeName.typeArguments.stream()
+                                                             .map(Utils::getSimpleName)
+                                                             .collect(Collectors.joining(","));
         yield raw + "<" + typeArgs + ">";
       }
       case TypeVariableName typeVariableName -> typeVariableName.name;

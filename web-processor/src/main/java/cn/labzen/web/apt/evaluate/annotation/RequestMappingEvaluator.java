@@ -53,8 +53,8 @@ public final class RequestMappingEvaluator implements MethodAnnotationErasableEv
   /**
    * 评价请求映射注解，添加默认版本控制
    *
-   * @param config 处理器配置
-   * @param type 注解类型
+   * @param config  处理器配置
+   * @param type    注解类型
    * @param members 注解成员值
    * @return 代码生成建议列表
    */
@@ -90,9 +90,9 @@ public final class RequestMappingEvaluator implements MethodAnnotationErasableEv
   /**
    * 通过 Header Accept 方式设置版本
    *
-   * @param config 处理器配置
+   * @param config  处理器配置
    * @param version 版本号
-   * @param type 注解类型
+   * @param type    注解类型
    * @return 代码建议
    */
   private Suggestion versionByHeader(Config config, String version, TypeName type) {
@@ -104,9 +104,9 @@ public final class RequestMappingEvaluator implements MethodAnnotationErasableEv
   /**
    * 通过请求参数方式设置版本
    *
-   * @param config 处理器配置
+   * @param config  处理器配置
    * @param version 版本号
-   * @param type 注解类型
+   * @param type    注解类型
    * @return 代码建议
    */
   private Suggestion versionByParameter(Config config, String version, TypeName type) {

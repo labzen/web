@@ -63,6 +63,57 @@ public final class MetadataGenerateProcessor implements InternalProcessor {
   private final Set<String> processedControllers = new HashSet<>();
 
   /**
+   * 将 Map 结构序列化为 JSON 字符串。
+   * <p>
+   * 使用手动拼接方式，避免在 APT 处理器中引入 Jackson/Gson 等依赖。
+   */
+  private static String toJson(Object obj) {
+    if (obj == null) {
+      return "null";
+    }
+    if (obj instanceof String s) {
+      return "\"" + escapeJson(s) + "\"";
+    }
+    if (obj instanceof Number || obj instanceof Boolean) {
+      return obj.toString();
+    }
+    if (obj instanceof Map<?, ?> map) {
+      StringBuilder sb = new StringBuilder("{\n");
+      int i = 0;
+      for (Map.Entry<?, ?> entry : map.entrySet()) {
+        if (i > 0) {
+          sb.append(",\n");
+        }
+        sb.append("  \"").append(entry.getKey()).append("\": ");
+        sb.append(toJson(entry.getValue()));
+        i++;
+      }
+      sb.append("\n}");
+      return sb.toString();
+    }
+    if (obj instanceof List<?> list) {
+      StringBuilder sb = new StringBuilder("[");
+      for (int i = 0; i < list.size(); i++) {
+        if (i > 0) {
+          sb.append(", ");
+        }
+        sb.append(toJson(list.get(i)));
+      }
+      sb.append("]");
+      return sb.toString();
+    }
+    return "\"" + escapeJson(obj.toString()) + "\"";
+  }
+
+  // ============================================================
+  // 注解解析
+  // ============================================================
+
+  private static String escapeJson(String s) {
+    return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t");
+  }
+
+  /**
    * 为当前 Controller 生成 JSON 元数据文件。
    */
   @Override
@@ -124,10 +175,6 @@ public final class MetadataGenerateProcessor implements InternalProcessor {
     }
   }
 
-  // ============================================================
-  // 注解解析
-  // ============================================================
-
   private String extractClassLevelPath(ElementClass root) {
     for (ElementAnnotation annotation : root.getAnnotations()) {
       if (isRequestMappingAnnotation(annotation)) {
@@ -171,6 +218,10 @@ public final class MetadataGenerateProcessor implements InternalProcessor {
     return "GET";
   }
 
+  // ============================================================
+  // 简易 JSON 序列化（不引入第三方依赖）
+  // ============================================================
+
   private String extractUrlPattern(ElementMethod method) {
     for (ElementAnnotation annotation : method.getAnnotations()) {
       TypeName type = annotation.getType();
@@ -202,57 +253,6 @@ public final class MetadataGenerateProcessor implements InternalProcessor {
       }
     }
     return sb.toString();
-  }
-
-  // ============================================================
-  // 简易 JSON 序列化（不引入第三方依赖）
-  // ============================================================
-
-  /**
-   * 将 Map 结构序列化为 JSON 字符串。
-   * <p>
-   * 使用手动拼接方式，避免在 APT 处理器中引入 Jackson/Gson 等依赖。
-   */
-  private static String toJson(Object obj) {
-    if (obj == null) {
-      return "null";
-    }
-    if (obj instanceof String s) {
-      return "\"" + escapeJson(s) + "\"";
-    }
-    if (obj instanceof Number || obj instanceof Boolean) {
-      return obj.toString();
-    }
-    if (obj instanceof Map<?, ?> map) {
-      StringBuilder sb = new StringBuilder("{\n");
-      int i = 0;
-      for (Map.Entry<?, ?> entry : map.entrySet()) {
-        if (i > 0) {
-          sb.append(",\n");
-        }
-        sb.append("  \"").append(entry.getKey()).append("\": ");
-        sb.append(toJson(entry.getValue()));
-        i++;
-      }
-      sb.append("\n}");
-      return sb.toString();
-    }
-    if (obj instanceof List<?> list) {
-      StringBuilder sb = new StringBuilder("[");
-      for (int i = 0; i < list.size(); i++) {
-        if (i > 0) {
-          sb.append(", ");
-        }
-        sb.append(toJson(list.get(i)));
-      }
-      sb.append("]");
-      return sb.toString();
-    }
-    return "\"" + escapeJson(obj.toString()) + "\"";
-  }
-
-  private static String escapeJson(String s) {
-    return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t");
   }
 
   /**

@@ -21,15 +21,7 @@ import java.util.Map;
 import static cn.labzen.web.apt.definition.TypeNames.APT_ANNOTATION_CALL;
 
 /**
- * @Call 注解评价器
- * <p>
- * 处理 @Call 注解，该注解用于声明接口方法调用其他服务的方法。
- * 评价结果为：
- * <ul>
- *   <li>移除 @Call 注解本身</li>
- *   <li>根据 target 属性添加服务层依赖注入字段</li>
- *   <li>根据 method 属性设置方法调用体</li>
- * </ul>
+ *
  */
 public final class CallEvaluator implements MethodAnnotationErasableEvaluator {
 
@@ -59,14 +51,15 @@ public final class CallEvaluator implements MethodAnnotationErasableEvaluator {
   /**
    * 评价 @Call 注解，生成服务调用建议
    *
-   * @param config 处理器配置
-   * @param type 注解类型
+   * @param config  处理器配置
+   * @param type    注解类型
    * @param members 注解成员值
    * @return 代码生成建议列表
    */
   @Override
   public List<? extends Suggestion> evaluate(Config config, TypeName type, Map<String, Object> members) {
-    List<Suggestion> suggestions = Lists.newArrayList(new RemoveSuggestion(Utils.getSimpleName(supportedAnnotationType), ElementMethod.class));
+    List<Suggestion> suggestions = Lists.newArrayList(new RemoveSuggestion(Utils.getSimpleName(supportedAnnotationType),
+        ElementMethod.class));
 
     Object target = members.get("target");
 
@@ -83,7 +76,9 @@ public final class CallEvaluator implements MethodAnnotationErasableEvaluator {
 
     Object method = members.get("method");
     if (fieldName != null || method instanceof String) {
-      ElementMethodBody body = new ElementMethodBody(Strings.value(fieldName, ""), Strings.value(method, ""), Collections.emptyList());
+      ElementMethodBody body = new ElementMethodBody(Strings.value(fieldName, ""),
+          Strings.value(method, ""),
+          Collections.emptyList());
       suggestions.add(new ReplaceSuggestion(body.keyword(), body));
     }
 

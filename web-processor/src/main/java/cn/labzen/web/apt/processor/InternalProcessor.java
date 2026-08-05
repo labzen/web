@@ -2,7 +2,13 @@ package cn.labzen.web.apt.processor;
 
 import cn.labzen.web.apt.internal.context.ControllerContext;
 
-public sealed interface InternalProcessor permits CreativeProcessor, EvaluateFieldsProcessor, EvaluateMethodsProcessor, MetadataGenerateProcessor, PrepareProcessor, ReadAnnotationsProcessor, ReadSourceProcessor {
+public sealed interface InternalProcessor permits CreativeProcessor,
+                                                  EvaluateFieldsProcessor,
+                                                  EvaluateMethodsProcessor,
+                                                  MetadataGenerateProcessor,
+                                                  PrepareProcessor,
+                                                  ReadAnnotationsProcessor,
+                                                  ReadSourceProcessor {
 
   int PRIORITY_PREPARE = 1;
   int PRIORITY_READ_SOURCE = 2;

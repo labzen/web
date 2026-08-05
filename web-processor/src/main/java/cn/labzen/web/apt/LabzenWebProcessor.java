@@ -36,11 +36,13 @@ import static cn.labzen.web.apt.definition.TypeNames.APT_ANNOTATION_LABZEN_CONTR
 @AutoService(Processor.class)
 public class LabzenWebProcessor extends AbstractProcessor {
 
-  private static final Comparator<InternalProcessor> PROCESSOR_COMPARATOR = Comparator
-    .comparing(InternalProcessor::priority);
+  private static final Comparator<InternalProcessor> PROCESSOR_COMPARATOR = Comparator.comparing(InternalProcessor::priority);
 
   // 全局静态可访问的 AnnotationProcessorContext，使用 ThreadLocal 确保线程安全
   private static final ThreadLocal<AnnotationProcessorContext> CONTEXT_HOLDER = new ThreadLocal<>();
+  private final Set<TypeElement> processedControllers = Sets.newConcurrentHashSet();
+  private final Set<DeferredController> deferredControllers = Sets.newConcurrentHashSet();
+  private volatile List<InternalProcessor> cachedProcessors;
 
   /**
    * 获取当前线程的 AnnotationProcessorContext
@@ -51,10 +53,6 @@ public class LabzenWebProcessor extends AbstractProcessor {
     return CONTEXT_HOLDER.get();
   }
 
-  private final Set<TypeElement> processedControllers = Sets.newConcurrentHashSet();
-  private final Set<DeferredController> deferredControllers = Sets.newConcurrentHashSet();
-  private volatile List<InternalProcessor> cachedProcessors;
-
   @Override
   public synchronized void init(ProcessingEnvironment processingEnv) {
     super.init(processingEnv);
@@ -62,7 +60,10 @@ public class LabzenWebProcessor extends AbstractProcessor {
     Config config = ConfigLoader.load(processingEnv.getFiler());
 
     AnnotationProcessorContext context = new AnnotationProcessorContext(processingEnv.getElementUtils(),
-      processingEnv.getTypeUtils(), processingEnv.getMessager(), processingEnv.getFiler(), config);
+        processingEnv.getTypeUtils(),
+        processingEnv.getMessager(),
+        processingEnv.getFiler(),
+        config);
 
     // 设置全局静态访问的上下文
     CONTEXT_HOLDER.set(context);
@@ -113,8 +114,7 @@ public class LabzenWebProcessor extends AbstractProcessor {
    */
   private void outputFailedControllers() {
     deferredControllers.forEach(deferred -> {
-      TypeElement deferredElement = getContext().elements()
-        .getTypeElement(deferred.element().getQualifiedName());
+      TypeElement deferredElement = getContext().elements().getTypeElement(deferred.element().getQualifiedName());
       getContext().messaging().error("LabzenWebProcessor: 无法实现 Controller " + deferredElement.getQualifiedName());
     });
   }
@@ -128,8 +128,9 @@ public class LabzenWebProcessor extends AbstractProcessor {
    */
   private List<ControllerContext> getAndResetDeferredControllers() {
     List<ControllerContext> result = deferredControllers.stream()
-      .filter(DeferredController::canRetry)
-      .map(controller -> new ControllerContext(controller.element())).toList();
+                                                        .filter(DeferredController::canRetry)
+                                                        .map(controller -> new ControllerContext(controller.element()))
+                                                        .toList();
     // 仅移除可重试的控制器，不可重试的保留到 processingOver 阶段报告错误
     deferredControllers.removeIf(DeferredController::canRetry);
     return result;
@@ -144,11 +145,12 @@ public class LabzenWebProcessor extends AbstractProcessor {
    */
   private List<ControllerContext> getControllers(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
     return annotations.stream()
-      .filter(annotation -> annotation.getKind() == ElementKind.ANNOTATION_TYPE)
-      .flatMap(annotation -> roundEnv.getElementsAnnotatedWith(annotation).stream()
-        .map(this::asTypeElement)
-        .map(ControllerContext::new))
-      .toList();
+                      .filter(annotation -> annotation.getKind() == ElementKind.ANNOTATION_TYPE)
+                      .flatMap(annotation -> roundEnv.getElementsAnnotatedWith(annotation)
+                                                     .stream()
+                                                     .map(this::asTypeElement)
+                                                     .map(ControllerContext::new))
+                      .toList();
   }
 
   /**
@@ -171,7 +173,9 @@ public class LabzenWebProcessor extends AbstractProcessor {
       }
 
       processedControllers.add(context.getSource());
-      getContext().messaging().info("Labzen web processor -     process success controller: " + context.getSource().getQualifiedName());
+      getContext().messaging()
+                  .info("Labzen web processor -     process success controller: " +
+                        context.getSource().getQualifiedName());
     } catch (Throwable e) {
       // 延迟处理：将控制器加入重试队列，使用 WARNING 而非 ERROR
       // 关键：如果在此处报告 ERROR，ECJ（Eclipse 编译器）会进入"proceed on error"模式，
@@ -179,11 +183,14 @@ public class LabzenWebProcessor extends AbstractProcessor {
       // 最终生成 throw new Error("Unresolved compilation problem: ...") 的占位字节码。
       // 改为 WARNING 后，控制器仍会被延迟重试，只有重试耗尽后才在 outputFailedControllers 中报告 ERROR。
       DeferredController existing = findDeferredController(context.getSource());
-      DeferredController deferred = existing != null ? existing.incrementRetry() : new DeferredController(context.getSource());
+      DeferredController deferred = existing !=
+                                    null ? existing.incrementRetry() : new DeferredController(context.getSource());
       deferredControllers.remove(existing);
       deferredControllers.add(deferred);
       handleUncaughtError(context.getSource(), e, deferred.canRetry());
-      getContext().messaging().info("Labzen web processor -     process failed controller: " + context.getSource().getQualifiedName());
+      getContext().messaging()
+                  .info("Labzen web processor -     process failed controller: " +
+                        context.getSource().getQualifiedName());
     }
   }
 
@@ -191,10 +198,7 @@ public class LabzenWebProcessor extends AbstractProcessor {
    * 在延迟队列中查找指定的控制器
    */
   private DeferredController findDeferredController(TypeElement source) {
-    return deferredControllers.stream()
-      .filter(dc -> dc.element().equals(source))
-      .findFirst()
-      .orElse(null);
+    return deferredControllers.stream().filter(dc -> dc.element().equals(source)).findFirst().orElse(null);
   }
 
   /**
@@ -233,10 +237,11 @@ public class LabzenWebProcessor extends AbstractProcessor {
       synchronized (this) {
         if (cachedProcessors == null) {
           ClassLoader classLoader = this.getClass().getClassLoader();
-          cachedProcessors = ServiceLoader.load(InternalProcessor.class, classLoader).stream()
-            .map(ServiceLoader.Provider::get)
-            .sorted(PROCESSOR_COMPARATOR)
-            .toList();
+          cachedProcessors = ServiceLoader.load(InternalProcessor.class, classLoader)
+                                          .stream()
+                                          .map(ServiceLoader.Provider::get)
+                                          .sorted(PROCESSOR_COMPARATOR)
+                                          .toList();
         }
       }
     }

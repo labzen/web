@@ -21,7 +21,9 @@ public final class CreativeProcessor implements InternalProcessor {
     try {
       new ClassCreator(context.getRoot(), context.getApc().filer(), context.getSource()).create();
     } catch (Throwable e) {
-      context.getApc().messaging().warning("CreativeProcessor: 类型检查失败，可能导致生成的代码无法编译: " + e.getMessage());
+      context.getApc()
+             .messaging()
+             .warning("CreativeProcessor: 类型检查失败，可能导致生成的代码无法编译: " + e.getMessage());
       throw e;
     }
   }

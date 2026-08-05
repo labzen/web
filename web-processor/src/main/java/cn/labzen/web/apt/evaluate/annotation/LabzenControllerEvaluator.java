@@ -14,10 +14,7 @@ import java.util.Map;
 import static cn.labzen.web.apt.definition.TypeNames.APT_ANNOTATION_LABZEN_CONTROLLER;
 
 /**
- * @LabzenController 注解评价器
- * <p>
- * 处理 Controller 接口类上的 @LabzenController 注解。
- * 该注解仅用于标记，不应出现在生成的实现类中，因此评价结果为移除该注解。
+ *
  */
 public final class LabzenControllerEvaluator implements MethodAnnotationErasableEvaluator {
 
@@ -30,7 +27,9 @@ public final class LabzenControllerEvaluator implements MethodAnnotationErasable
    */
   @Override
   public void init(AnnotationProcessorContext context) {
-    supportedAnnotationType = TypeName.get(context.elements().getTypeElement(APT_ANNOTATION_LABZEN_CONTROLLER).asType());
+    supportedAnnotationType = TypeName.get(context.elements()
+                                                  .getTypeElement(APT_ANNOTATION_LABZEN_CONTROLLER)
+                                                  .asType());
   }
 
   /**
@@ -47,8 +46,8 @@ public final class LabzenControllerEvaluator implements MethodAnnotationErasable
   /**
    * 评价 @LabzenController 注解，生成移除建议
    *
-   * @param config 处理器配置
-   * @param type 注解类型
+   * @param config  处理器配置
+   * @param type    注解类型
    * @param members 注解成员值
    * @return 代码生成建议列表
    */

@@ -29,19 +29,24 @@ public final class EvaluateFieldsProcessor implements InternalProcessor {
   @Override
   public void process(ControllerContext context) {
     // 读取所有继承的父接口定义的泛型参数类型
-    List<? extends TypeMirror> directSupertypes = context.getApc().types().directSupertypes(context.getSource().asType());
+    List<? extends TypeMirror> directSupertypes = context.getApc()
+                                                         .types()
+                                                         .directSupertypes(context.getSource().asType());
 
     directSupertypes.forEach(inter -> {
       List<TypeName> typeArguments = detectTypeArguments(inter);
-      if (typeArguments == null || typeArguments.isEmpty()) return;
+      if (typeArguments == null || typeArguments.isEmpty()) {
+        return;
+      }
 
       TypeName interfaceClassName = Utils.typeOf(inter);
 
       // 遍历每一个评价器
-      List<Suggestion> suggestions = context.getGenericsEvaluators().stream()
-        .filter(evaluator -> evaluator.support(interfaceClassName))
-        .flatMap(evaluator -> evaluator.evaluate(typeArguments).stream())
-        .collect(Collectors.toList());
+      List<Suggestion> suggestions = context.getGenericsEvaluators()
+                                            .stream()
+                                            .filter(evaluator -> evaluator.support(interfaceClassName))
+                                            .flatMap(evaluator -> evaluator.evaluate(typeArguments).stream())
+                                            .collect(Collectors.toList());
 
       suggestions.forEach(suggestion -> {
         switch (suggestion) {
@@ -58,7 +63,7 @@ public final class EvaluateFieldsProcessor implements InternalProcessor {
   /**
    * 解析追加建议，添加新字段或注解
    *
-   * @param root 根节点
+   * @param root       根节点
    * @param suggestion 追加建议
    */
   private void parseAppendSuggestion(ElementClass root, AppendSuggestion suggestion) {
@@ -74,7 +79,7 @@ public final class EvaluateFieldsProcessor implements InternalProcessor {
   /**
    * 解析移除建议，删除指定字段
    *
-   * @param root 根节点
+   * @param root       根节点
    * @param suggestion 移除建议
    */
   private void parseRemoveSuggestion(ElementClass root, RemoveSuggestion suggestion) {
@@ -82,21 +87,30 @@ public final class EvaluateFieldsProcessor implements InternalProcessor {
       return;
     }
 
-    List<ElementField> needlessFields = root.getFields().stream().filter(field -> field.keyword().equals(suggestion.keyword())).toList();
+    List<ElementField> needlessFields = root.getFields()
+                                            .stream()
+                                            .filter(field -> field.keyword().equals(suggestion.keyword()))
+                                            .toList();
     needlessFields.forEach(field -> root.getFields().remove(field));
-    List<ElementAnnotation> needlessAnnotations = root.getAnnotations().stream().filter(ann -> ann.keyword().equals(suggestion.keyword())).toList();
+    List<ElementAnnotation> needlessAnnotations = root.getAnnotations()
+                                                      .stream()
+                                                      .filter(ann -> ann.keyword().equals(suggestion.keyword()))
+                                                      .toList();
     needlessAnnotations.forEach(field -> root.getAnnotations().remove(field));
   }
 
   /**
    * 解析替换建议，修改注解属性
    *
-   * @param root 根节点
+   * @param root       根节点
    * @param suggestion 替换建议
    */
   private void parseReplaceSuggestion(ElementClass root, ReplaceSuggestion suggestion) {
     if (suggestion.element() instanceof ElementAnnotation annotation) {
-      List<ElementAnnotation> annotations = root.getAnnotations().stream().filter(ann -> ann.keyword().equals(suggestion.keyword())).toList();
+      List<ElementAnnotation> annotations = root.getAnnotations()
+                                                .stream()
+                                                .filter(ann -> ann.keyword().equals(suggestion.keyword()))
+                                                .toList();
       annotations.forEach(ann -> ann.getMembers().putAll(annotation.getMembers()));
     }
   }

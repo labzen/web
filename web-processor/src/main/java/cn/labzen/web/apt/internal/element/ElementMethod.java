@@ -28,7 +28,10 @@ public final class ElementMethod implements Element {
 
   @Override
   public String keyword() {
-    String parameters = this.parameters.stream().sorted(Comparator.comparingInt(ElementParameter::getIndex)).map(ElementParameter::keyword).collect(Collectors.joining(", "));
+    String parameters = this.parameters.stream()
+                                       .sorted(Comparator.comparingInt(ElementParameter::getIndex))
+                                       .map(ElementParameter::keyword)
+                                       .collect(Collectors.joining(", "));
     return Utils.getSimpleName(returnType) + " " + name + "(" + parameters + ")";
   }
 
@@ -39,7 +42,9 @@ public final class ElementMethod implements Element {
 
   @Override
   public boolean equals(Object o) {
-    if (o == null || getClass() != o.getClass()) return false;
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     ElementMethod that = (ElementMethod) o;
     return Objects.equals(keyword(), that.keyword());
   }

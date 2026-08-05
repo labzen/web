@@ -44,7 +44,8 @@ public class Config {
    * @return 版本携带方式字符串，默认 "HEADER"
    */
   public String apiVersionCarrier() {
-    var carrier = properties.getOrDefault(API_VERSION_CARRIER.getValue(), API_VERSION_CARRIER_VALUE.getValue()).toString();
+    var carrier = properties.getOrDefault(API_VERSION_CARRIER.getValue(), API_VERSION_CARRIER_VALUE.getValue())
+                            .toString();
     return carrier.isBlank() ? API_VERSION_CARRIER_VALUE.getValue() : carrier;
   }
 
@@ -54,7 +55,8 @@ public class Config {
    * @return 版本前缀，默认 "v"
    */
   public String apiVersionPrefix() {
-    var original = properties.getOrDefault(API_VERSION_PREFIX.getValue(), API_VERSION_PREFIX_VALUE.getValue()).toString();
+    var original = properties.getOrDefault(API_VERSION_PREFIX.getValue(), API_VERSION_PREFIX_VALUE.getValue())
+                             .toString();
     return original.isBlank() ? API_VERSION_PREFIX_VALUE.getValue() : original;
   }
 
@@ -66,7 +68,9 @@ public class Config {
   public int apiVersionBased() {
     var based = properties.getOrDefault(API_VERSION_BASED.getValue(), API_VERSION_BASED_VALUE.getValue()).toString();
     return Optional.ofNullable(Ints.tryParse(based)).orElseGet(() -> {
-      LabzenWebProcessor.getContext().messaging().warning("No valid processor.api-version.based is configured, 1 is used by default");
+      LabzenWebProcessor.getContext()
+                        .messaging()
+                        .warning("No valid processor.api-version.based is configured, 1 is used by default");
       return 1;
     });
   }
@@ -79,7 +83,8 @@ public class Config {
    * @return vendor 名称，默认 "app"
    */
   public String apiVersionHeaderVND() {
-    var original = properties.getOrDefault(API_VERSION_HEADER_VND.getValue(), API_VERSION_HEADER_VND_VALUE.getValue()).toString();
+    var original = properties.getOrDefault(API_VERSION_HEADER_VND.getValue(), API_VERSION_HEADER_VND_VALUE.getValue())
+                             .toString();
     return original.isBlank() ? API_VERSION_HEADER_VND_VALUE.getValue() : original;
   }
 
@@ -89,7 +94,8 @@ public class Config {
    * @return 参数名称，默认 "version"
    */
   public String apiVersionParameterName() {
-    var original = properties.getOrDefault(API_VERSION_PARAMETER_NAME.getValue(), API_VERSION_PARAMETER_NAME_VALUE.getValue()).toString();
+    var original = properties.getOrDefault(API_VERSION_PARAMETER_NAME.getValue(),
+        API_VERSION_PARAMETER_NAME_VALUE.getValue()).toString();
     return original.isBlank() ? API_VERSION_PARAMETER_NAME_VALUE.getValue() : original;
   }
 }

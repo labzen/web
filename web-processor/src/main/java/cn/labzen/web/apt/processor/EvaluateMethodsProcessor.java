@@ -42,12 +42,11 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
   /**
    * 废弃方法时需要保留的注解集合
    */
-  private static final Set<TypeName> RESERVED_ANNOTATIONS_WHEN_DISCARD_METHOD = Set.of(
-    TypeName.get(Override.class),
-    TypeName.get(Nonnull.class),
-    TypeName.get(javax.annotation.Nonnull.class),
-    TypeName.get(Nullable.class),
-    TypeName.get(jakarta.annotation.Nullable.class));
+  private static final Set<TypeName> RESERVED_ANNOTATIONS_WHEN_DISCARD_METHOD = Set.of(TypeName.get(Override.class),
+      TypeName.get(Nonnull.class),
+      TypeName.get(javax.annotation.Nonnull.class),
+      TypeName.get(Nullable.class),
+      TypeName.get(jakarta.annotation.Nullable.class));
 
   private final Map<String, ElementMethod> parsedMethods = new ConcurrentHashMap<>();
 
@@ -126,17 +125,22 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
     }).toList();
     String parametersSignature = String.join(", ", parameterTypeNames);
 
-    List<String> parameterNames = method.getParameters().stream()
-      .map(param -> param.getSimpleName().toString()).toList();
+    List<String> parameterNames = method.getParameters()
+                                        .stream()
+                                        .map(param -> param.getSimpleName().toString())
+                                        .toList();
 
     // 检查参数名是否为arg0、arg1等形式，如果是，给出警告
     boolean hasArgParameters = parameterNames.stream().anyMatch(name -> name.matches("arg\\d+"));
     if (hasArgParameters) {
-      context.getApc().messaging()
-        .warning("LabzenWebProcessor: The parameters name of Method [" + methodName + "] are defined of arg0 or arg1, " +
-          "this can lead to incorrect parameter names in the generated code. " +
-          "Please be sure the 'maven-compiler-plugin' plugin has config '<parameters>true</parameters>' in pom.xml file, " +
-          "used to preserve method parameter names when enabling compilation.");
+      context.getApc()
+             .messaging()
+             .warning("LabzenWebProcessor: The parameters name of Method [" +
+                      methodName +
+                      "] are defined of arg0 or arg1, " +
+                      "this can lead to incorrect parameter names in the generated code. " +
+                      "Please be sure the 'maven-compiler-plugin' plugin has config '<parameters>true</parameters>' in pom.xml file, " +
+                      "used to preserve method parameter names when enabling compilation.");
     }
 
     String methodSignature = Utils.getSimpleName(returnType) + " " + methodName + "(" + parametersSignature + ")";
@@ -157,11 +161,12 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
       }
 
       // 重写的方法，参数列表需要覆盖掉父接口中定义的注解集合
-      Optional<ElementParameter> found = elementMethod.getParameters().stream()
-        .filter(ep -> ep.equals(parameter)).findFirst();
+      Optional<ElementParameter> found = elementMethod.getParameters()
+                                                      .stream()
+                                                      .filter(ep -> ep.equals(parameter))
+                                                      .findFirst();
       found.ifPresent(ep -> ep.getAnnotations().addAll(parameter.getAnnotations()));
     });
-//    elementMethod.getParameters().addAll(methodParameters);
 
     // 读取所有的方法注解
     List<ElementAnnotation> methodAnnotations = method.getAnnotationMirrors().stream().filter(annotationMirror -> {
@@ -186,7 +191,8 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
    * @param actualParameterTypes 实际参数类型列表
    * @return 参数元素列表
    */
-  private List<ElementParameter> readParameters(List<? extends VariableElement> parameterElements, List<? extends TypeMirror> actualParameterTypes) {
+  private List<ElementParameter> readParameters(List<? extends VariableElement> parameterElements,
+                                                List<? extends TypeMirror> actualParameterTypes) {
     List<ElementParameter> parameters = new ArrayList<>();
     int index = 0;
 
@@ -229,16 +235,19 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
    * @param method 方法元素
    */
   private void parseMethodAnnotations(ElementMethod method) {
-    List<? extends Suggestion> suggestions = method.getAnnotations().stream()
-      .flatMap(annotation ->
-        evaluators.stream().flatMap(evaluator -> {
-          TypeName type = annotation.getType();
-          if (evaluator.support(type)) {
-            return evaluator.evaluate(context.getApc().config(), type, annotation.getMembers()).stream();
-          } else {
-            return Stream.of();
-          }
-        })).toList();
+    List<? extends Suggestion> suggestions = method.getAnnotations()
+                                                   .stream()
+                                                   .flatMap(annotation -> evaluators.stream().flatMap(evaluator -> {
+                                                     TypeName type = annotation.getType();
+                                                     if (evaluator.support(type)) {
+                                                       return evaluator.evaluate(context.getApc().config(),
+                                                           type,
+                                                           annotation.getMembers()).stream();
+                                                     } else {
+                                                       return Stream.of();
+                                                     }
+                                                   }))
+                                                   .toList();
 
     suggestions.forEach(suggestion -> {
       switch (suggestion) {
@@ -278,7 +287,8 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
     if (ElementClass.class.equals(suggestion.kind())) {
       removeNeedlessElements(elementClass.getFields(), field -> field.keyword().equals(suggestion.keyword()));
 
-      removeNeedlessElements(elementClass.getAnnotations(), annotation -> annotation.keyword().equals(suggestion.keyword()));
+      removeNeedlessElements(elementClass.getAnnotations(),
+          annotation -> annotation.keyword().equals(suggestion.keyword()));
     } else if (ElementMethod.class.equals(suggestion.kind())) {
       removeNeedlessElements(method.getAnnotations(), annotation -> annotation.keyword().equals(suggestion.keyword()));
     }
@@ -293,7 +303,8 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
   private void parseReplaceSuggestion(ElementMethod method, ReplaceSuggestion suggestion) {
     if (suggestion.element() instanceof ElementMethodBody elementMethodBody) {
       String fieldName = Strings.valueWhenBlank(elementMethodBody.getFieldName(), method.getBody().getFieldName());
-      String invokeMethodName = Strings.valueWhenBlank(elementMethodBody.getInvokeMethodName(), method.getBody().getInvokeMethodName());
+      String invokeMethodName = Strings.valueWhenBlank(elementMethodBody.getInvokeMethodName(),
+          method.getBody().getInvokeMethodName());
       List<String> parameterNames = elementMethodBody.getParameterNames();
       if (Collections.isNullOrEmpty(parameterNames)) {
         parameterNames = method.getBody().getParameterNames();
@@ -301,8 +312,10 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
 
       method.setBody(new ElementMethodBody(fieldName, invokeMethodName, parameterNames));
     } else if (suggestion.element() instanceof ElementAnnotation elementAnnotation) {
-      Optional<ElementAnnotation> found = method.getAnnotations().stream()
-        .filter(annotation -> annotation.keyword().equals(suggestion.keyword())).findFirst();
+      Optional<ElementAnnotation> found = method.getAnnotations()
+                                                .stream()
+                                                .filter(annotation -> annotation.keyword().equals(suggestion.keyword()))
+                                                .findFirst();
       found.ifPresent(annotation -> annotation.getMembers().putAll(elementAnnotation.getMembers()));
     }
   }
@@ -314,11 +327,13 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
    */
   private void parseDiscardSuggestion(ElementMethod method) {
     // 移除方法上的注解，忽略Override, Nonnull等
-    removeNeedlessElements(method.getAnnotations(), annotation -> !RESERVED_ANNOTATIONS_WHEN_DISCARD_METHOD.contains(((ElementAnnotation) annotation).getType()));
+    removeNeedlessElements(method.getAnnotations(),
+        annotation -> !RESERVED_ANNOTATIONS_WHEN_DISCARD_METHOD.contains(((ElementAnnotation) annotation).getType()));
 
     method.getParameters().forEach(parameter -> {
       // 移除方法参数的注解，忽略Override, Nonnull等
-      removeNeedlessElements(parameter.getAnnotations(), annotation -> !RESERVED_ANNOTATIONS_WHEN_DISCARD_METHOD.contains(((ElementAnnotation) annotation).getType()));
+      removeNeedlessElements(parameter.getAnnotations(),
+          annotation -> !RESERVED_ANNOTATIONS_WHEN_DISCARD_METHOD.contains(((ElementAnnotation) annotation).getType()));
     });
 
     method.setBody(new ElementMethodBody("", "", java.util.Collections.emptyList()));

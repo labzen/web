@@ -12,6 +12,6 @@ package cn.labzen.web.apt.suggestion;
  *   <li>DiscardSuggestion - 废弃整个方法</li>
  * </ul>
  */
-public sealed interface Suggestion
-  permits AppendSuggestion, DiscardSuggestion, RemoveSuggestion, ReplaceSuggestion {
+public sealed interface Suggestion permits AppendSuggestion, DiscardSuggestion, RemoveSuggestion, ReplaceSuggestion {
+
 }

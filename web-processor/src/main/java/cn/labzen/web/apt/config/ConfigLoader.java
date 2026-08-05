@@ -46,7 +46,9 @@ public final class ConfigLoader {
       try (InputStream is = moduleConfig.toURI().toURL().openStream()) {
         merged.load(is);
       } catch (IOException e) {
-        LabzenWebProcessor.getContext().messaging().error("Failed to load module config: " + moduleConfig.getAbsolutePath());
+        LabzenWebProcessor.getContext()
+                          .messaging()
+                          .error("Failed to load module config: " + moduleConfig.getAbsolutePath());
       }
     }
 

@@ -17,6 +17,7 @@ public final class TypeNames {
   public static final String INTERFACE_FILE_CONTROLLER = "cn.labzen.web.api.controller.FileController";
   public static final String ANNOTATION_SPRING_REQUEST_MAPPING = "org.springframework.web.bind.annotation.RequestMapping";
   public static final String ANNOTATION_JAKARTA_RESOURCE = "jakarta.annotation.Resource";
+
   private TypeNames() {
   }
 }

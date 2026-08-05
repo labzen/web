@@ -27,9 +27,12 @@ public class ControllerContext {
   public ControllerContext(TypeElement source) {
     this.source = source;
 
-    ancestorControllerType = LabzenWebProcessor.getContext().elements().getTypeElement(INTERFACE_BASE_CONTROLLER).asType();
+    ancestorControllerType = LabzenWebProcessor.getContext()
+                                               .elements()
+                                               .getTypeElement(INTERFACE_BASE_CONTROLLER)
+                                               .asType();
   }
-  
+
   public AnnotationProcessorContext getApc() {
     return LabzenWebProcessor.getContext();
   }

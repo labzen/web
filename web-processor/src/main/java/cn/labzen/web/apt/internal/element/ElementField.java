@@ -32,7 +32,9 @@ public final class ElementField implements Element {
 
   @Override
   public boolean equals(Object o) {
-    if (o == null || getClass() != o.getClass()) return false;
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     ElementField that = (ElementField) o;
     return Objects.equals(name, that.name) && Objects.equals(type, that.type);
   }

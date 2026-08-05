@@ -42,7 +42,9 @@ public final class ElementAnnotation implements Element {
 
   @Override
   public boolean equals(Object o) {
-    if (o == null || getClass() != o.getClass()) return false;
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     ElementAnnotation that = (ElementAnnotation) o;
     return Objects.equals(type, that.type);
   }
