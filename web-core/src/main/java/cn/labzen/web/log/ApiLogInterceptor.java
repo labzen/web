@@ -119,7 +119,7 @@ public class ApiLogInterceptor implements HandlerInterceptor {
     if (configAttr instanceof ApiEndpointLogConfig config && Boolean.TRUE.equals(config.getLogResponse())) {
       Object interfaceAttr = request.getAttribute(API_CONTROLLER_META_ATTRIBUTE);
       if (interfaceAttr instanceof String interfaceName) {
-        Object responseBody = request.getAttribute(API_LOG_RESPONSE_BODY_ATTRIBUTE);
+        Object responseBody = request.getAttribute(RESPONSE_RESULT_BODY_ATTRIBUTE);
         messageBuilder.logResponse(interfaceName, config, request, response, responseBody);
       }
     }

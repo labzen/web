@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
 import static cn.labzen.web.api.definition.Constants.API_LOG_CONFIG_ATTRIBUTE;
-import static cn.labzen.web.api.definition.Constants.API_LOG_RESPONSE_BODY_ATTRIBUTE;
+import static cn.labzen.web.api.definition.Constants.RESPONSE_RESULT_BODY_ATTRIBUTE;
 
 /**
  * API 日志响应体捕获器。
@@ -60,7 +60,7 @@ public class ApiLogResponseAdvice implements ResponseBodyAdvice<Object> {
     Object configAttr = httpRequest.getAttribute(API_LOG_CONFIG_ATTRIBUTE);
     if (configAttr instanceof ApiEndpointLogConfig config && Boolean.TRUE.equals(config.getLogResponse())) {
       // 原始响应体直接存入 request attribute，由 ApiLogMessageBuilder 统一处理
-      httpRequest.setAttribute(API_LOG_RESPONSE_BODY_ATTRIBUTE, body);
+      httpRequest.setAttribute(RESPONSE_RESULT_BODY_ATTRIBUTE, body);
     }
 
     return body;

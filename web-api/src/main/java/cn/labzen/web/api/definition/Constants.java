@@ -11,15 +11,10 @@ public final class Constants {
    * Web 组件初始化场景标识
    */
   public static final String LOGGER_SCENE_WEB_INIT = "WEB-INIT";
-
   /**
    * Web 组件初始化场景标识
    */
   public static final String LOGGER_SCENE_PAGING = "PAGING";
-  /**
-   * API 日志场景标识
-   */
-  public static final String LOGGER_SCENE_API_LOG = "API-LOG";
   /**
    * API 日志初始化场景标识
    */
@@ -33,6 +28,10 @@ public final class Constants {
    * 请求异常已记录属性键
    */
   public static final String EXCEPTION_WAS_LOGGED_DURING_REQUEST = "labzen.web.runtime.exception.logged";
+  /**
+   * 响应体属性键
+   */
+  public static final String RESPONSE_RESULT_BODY_ATTRIBUTE = "labzen.web.runtime.response-body";
 
   /**
    * API 日志配置缓存属性键，用于在请求处理链（Interceptor → Controller → ResponseAdvice）中传递日志配置
@@ -42,18 +41,11 @@ public final class Constants {
    * API 日志控制器元数据属性键，用于在请求处理链中传递 ControllerMeta
    */
   public static final String API_CONTROLLER_META_ATTRIBUTE = "labzen.web.runtime.controller-meta";
-  /**
-   * API 日志响应体属性键，用于 ApiLogResponseAdvice 将响应体传递给 ApiLogInterceptor.postHandle
-   */
-  public static final String API_LOG_RESPONSE_BODY_ATTRIBUTE = "labzen.web.log.response-body";
+
   /**
    * classpath 下 API 日志 YAML 配置文件的存放目录
    */
   public static final String API_LOG_CONFIG_DIR = "labzen-web";
-  /**
-   * 全局配置 key，用于 programmaticConfigs 中表示全局默认配置
-   */
-  //public static final String API_LOG_KEY_GLOBAL = "__global__";
   /**
    * 通用配置 key，用于 Controller 级配置 Map 中表示 general 通用配置
    */
