@@ -1,16 +1,19 @@
 package cn.labzen.web.log;
 
+import cn.labzen.logger.Loggers;
+import cn.labzen.logger.kernel.LabzenLogger;
 import cn.labzen.web.api.log.config.ApiEndpointLogConfig;
 import cn.labzen.web.api.log.config.ConditionGroup;
 import cn.labzen.web.api.log.config.ConditionRule;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Enumeration;
+
+import static cn.labzen.web.api.definition.Constants.LOGGER_SCENE_API_LOG_CONFIG;
 
 /**
  * API 日志条件规则评估器。
@@ -26,7 +29,6 @@ import java.util.Enumeration;
  * @see ConditionGroup
  * @see ConditionRule
  */
-@Slf4j
 public class ApiLogConditionEvaluator {
 
   private static final DateTimeFormatter[] DATE_FORMATTERS = {DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
@@ -35,6 +37,8 @@ public class ApiLogConditionEvaluator {
                                                               DateTimeFormatter.ISO_DATE_TIME,
                                                               DateTimeFormatter.ISO_LOCAL_DATE_TIME,
                                                               DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")};
+
+  private final LabzenLogger logger = Loggers.getLogger(ApiLogConditionEvaluator.class);
 
   /**
    * 评估请求是否匹配配置中的条件树。
@@ -120,10 +124,10 @@ public class ApiLogConditionEvaluator {
         case AFTER -> compareDate(paramValue, rule.matchValue()) > 0;
       };
     } catch (Exception e) {
-      logger.debug("条件匹配评估失败 [paramName={}, matchType={}]: {}",
-          rule.paramName(),
-          rule.matchType(),
-          e.getMessage());
+      logger.atDebug()
+            .scene(LOGGER_SCENE_API_LOG_CONFIG)
+            .setCause(e)
+            .log("条件匹配评估失败 [paramName={}, matchType={}]", rule.paramName(), rule.matchType());
       return false;
     }
   }

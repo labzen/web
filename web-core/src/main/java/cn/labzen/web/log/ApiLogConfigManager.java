@@ -1,5 +1,8 @@
 package cn.labzen.web.log;
 
+import cn.labzen.logger.Loggers;
+import cn.labzen.logger.kernel.LabzenLogger;
+import cn.labzen.logger.kernel.enums.Status;
 import cn.labzen.meta.Labzens;
 import cn.labzen.web.api.log.config.ApiEndpointLogConfig;
 import cn.labzen.web.api.log.config.ApiLogConfig;
@@ -8,7 +11,7 @@ import cn.labzen.web.api.log.registry.ControllerMethodMeta;
 import cn.labzen.web.log.bean.ApiEndpointDetail;
 import cn.labzen.web.meta.WebCoreConfiguration;
 import jakarta.annotation.Resource;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.core.Ordered;
 
@@ -20,7 +23,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static cn.labzen.web.api.definition.Constants.API_LOG_KEY_GENERAL;
+import static cn.labzen.web.api.definition.Constants.*;
 
 /**
  * API 日志配置统一管理组件。
@@ -44,10 +47,11 @@ import static cn.labzen.web.api.definition.Constants.API_LOG_KEY_GENERAL;
  * @see ApiLogConfigLoader
  * @see ApiLogConditionEvaluator
  */
-@Slf4j
-public final class ApiLogConfigManager implements SmartInitializingSingleton, Ordered {
+public final class ApiLogConfigManager implements SmartInitializingSingleton, Ordered, DisposableBean {
 
   private static final long CLEANUP_INTERVAL_SECONDS = 30;
+
+  private final LabzenLogger logger = Loggers.getLogger(ApiLogConfigManager.class);
 
   // ============================================================
   // 存储结构
@@ -119,7 +123,10 @@ public final class ApiLogConfigManager implements SmartInitializingSingleton, Or
     ApiLogConfigLoader loader = new ApiLogConfigLoader(registry);
     Map<String, Map<String, ApiLogConfig>> loaded = loader.loadAll();
     yamlConfigs.putAll(loaded);
-    logger.info("API 日志配置管理器初始化完成: 已加载 {} 个 Controller 的 YAML 配置", loaded.size());
+    logger.atInfo()
+          .scene(LOGGER_SCENE_API_LOG_INIT)
+          .status(Status.SUCCESS)
+          .log("API 日志配置初始化完成: 已加载 {} 个 YAML 配置", loaded.size());
   }
 
   private void startCleanupScheduler() {
@@ -133,7 +140,11 @@ public final class ApiLogConfigManager implements SmartInitializingSingleton, Or
           });
         });
       } catch (Exception e) {
-        logger.warn("API 日志过期配置清理失败", e);
+        logger.atWarn()
+              .scene(LOGGER_SCENE_API_LOG_CONFIG)
+              .status(Status.FAILED)
+              .setCause(e)
+              .log("API 日志清理过期配置发生问题");
       }
     }, CLEANUP_INTERVAL_SECONDS, CLEANUP_INTERVAL_SECONDS, TimeUnit.SECONDS);
   }
@@ -148,7 +159,10 @@ public final class ApiLogConfigManager implements SmartInitializingSingleton, Or
   @SuppressWarnings("unused")
   public void configureGlobal(ApiLogConfig config) {
     globalApiLogConfig.get().merge(config);
-    logger.atWarn().log("API 日志输出全局配置已更新: {}", config);
+    logger.atWarn()
+          .scene(LOGGER_SCENE_API_LOG_CONFIG)
+          .status(Status.SUCCESS)
+          .log("API 日志输出全局配置已更新: {}", config);
   }
 
   /**
@@ -166,6 +180,8 @@ public final class ApiLogConfigManager implements SmartInitializingSingleton, Or
         if (config == null) {
           methodConfigs.remove(methodHash);
           logger.atInfo()
+                .scene(LOGGER_SCENE_API_LOG_CONFIG)
+                .status(Status.SUCCESS)
                 .log("API 日志方法级配置已删除: {}, method={}, url={}",
                     controllerName,
                     controllerMethodMeta.methodName(),
@@ -173,6 +189,8 @@ public final class ApiLogConfigManager implements SmartInitializingSingleton, Or
         } else {
           methodConfigs.put(methodHash, config);
           logger.atInfo()
+                .scene(LOGGER_SCENE_API_LOG_CONFIG)
+                .status(Status.SUCCESS)
                 .log("API 日志方法级配置已更新: {}, method={}, url={}, level={}",
                     controllerName,
                     controllerMethodMeta.methodName(),
@@ -181,10 +199,16 @@ public final class ApiLogConfigManager implements SmartInitializingSingleton, Or
         }
         resolvedConfigCache.remove(controllerName + ":" + methodHash);
       } else {
-        logger.atWarn().log("API 日志方法级配置更新失败: 未找到对应方法: {}, method={}", controllerName, methodHash);
+        logger.atWarn()
+              .scene(LOGGER_SCENE_API_LOG_CONFIG)
+              .status(Status.FIXME)
+              .log("API 日志方法级配置更新失败: 未找到对应方法: {}, method={}", controllerName, methodHash);
       }
     } else {
-      logger.atWarn().log("API 日志方法级配置更新失败: 未找到对应 Controller: {}", controllerName);
+      logger.atWarn()
+            .scene(LOGGER_SCENE_API_LOG_CONFIG)
+            .status(Status.FIXME)
+            .log("API 日志方法级配置更新失败: 未找到对应 Controller: {}", controllerName);
     }
   }
 
@@ -255,7 +279,6 @@ public final class ApiLogConfigManager implements SmartInitializingSingleton, Or
    */
   @SuppressWarnings("unused")
   public List<ApiEndpointDetail> getApiEndpointsDetail(String controllerName) {
-    //    ensureYamlLoaded();
     if (registry == null) {
       return Collections.emptyList();
     }
@@ -282,16 +305,9 @@ public final class ApiLogConfigManager implements SmartInitializingSingleton, Or
     }).orElse(Collections.emptyList());
   }
 
-  //public void destroy() {
-  //  cleanupExecutor.shutdown();
-  //  try {
-  //    if (!cleanupExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
-  //      cleanupExecutor.shutdownNow();
-  //    }
-  //  } catch (InterruptedException e) {
-  //    cleanupExecutor.shutdownNow();
-  //    Thread.currentThread().interrupt();
-  //  }
-  //}
+  @Override
+  public void destroy() {
+    cleanupExecutor.shutdown();
+  }
 
 }

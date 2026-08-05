@@ -8,14 +8,27 @@ package cn.labzen.web.api.definition;
 public final class Constants {
 
   /**
-   * Controller 日志场景标识
+   * Web 组件初始化场景标识
    */
-  public static final String LOGGER_SCENE_CONTROLLER = "Controller";
+  public static final String LOGGER_SCENE_WEB_INIT = "WEB-INIT";
 
   /**
    * Web 组件初始化场景标识
    */
-  public static final String WEB_INIT_SCENE = "LABZEN-WEB-INIT";
+  public static final String LOGGER_SCENE_PAGING = "PAGING";
+  /**
+   * API 日志场景标识
+   */
+  public static final String LOGGER_SCENE_API_LOG = "API-LOG";
+  /**
+   * API 日志初始化场景标识
+   */
+  public static final String LOGGER_SCENE_API_LOG_INIT = "API-LOG-INIT";
+  /**
+   * API 日志初始化场景标识
+   */
+  public static final String LOGGER_SCENE_API_LOG_CONFIG = "API-LOG-CONFIG";
+
   /**
    * 请求异常已记录属性键
    */
@@ -40,7 +53,7 @@ public final class Constants {
   /**
    * 全局配置 key，用于 programmaticConfigs 中表示全局默认配置
    */
-  public static final String API_LOG_KEY_GLOBAL = "__global__";
+  //public static final String API_LOG_KEY_GLOBAL = "__global__";
   /**
    * 通用配置 key，用于 Controller 级配置 Map 中表示 general 通用配置
    */

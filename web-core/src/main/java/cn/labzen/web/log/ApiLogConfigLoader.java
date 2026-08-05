@@ -1,12 +1,14 @@
 package cn.labzen.web.log;
 
+import cn.labzen.logger.Loggers;
+import cn.labzen.logger.kernel.LabzenLogger;
+import cn.labzen.logger.kernel.enums.Status;
 import cn.labzen.tool.util.Strings;
 import cn.labzen.web.api.log.config.ApiEndpointLogConfig;
 import cn.labzen.web.api.log.config.ApiLogConfig;
 import cn.labzen.web.api.log.config.ConditionGroup;
 import cn.labzen.web.api.log.registry.ControllerMeta;
 import cn.labzen.web.log.bean.YamlFile;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.io.support.ResourcePatternResolver;
@@ -18,8 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import static cn.labzen.web.api.definition.Constants.API_LOG_CONFIG_DIR;
-import static cn.labzen.web.api.definition.Constants.API_LOG_KEY_GENERAL;
+import static cn.labzen.web.api.definition.Constants.*;
 
 /**
  * 只读 classpath YAML 配置加载器。
@@ -49,12 +50,12 @@ import static cn.labzen.web.api.definition.Constants.API_LOG_KEY_GENERAL;
  * @see ApiEndpointLogConfig
  * @see ApiLogConfigManager
  */
-@Slf4j
 public class ApiLogConfigLoader {
 
   private static final String CLASSPATH_PATTERN = "classpath*:" + API_LOG_CONFIG_DIR + "/*.yml";
   private static final Yaml YAML = new Yaml();
 
+  private final LabzenLogger logger = Loggers.getLogger(ApiLogConfigLoader.class);
   private final LoggableControllerMetaRegistry registry;
 
   ApiLogConfigLoader(LoggableControllerMetaRegistry registry) {
@@ -94,7 +95,11 @@ public class ApiLogConfigLoader {
     try {
       resources = resolver.getResources(CLASSPATH_PATTERN);
     } catch (Exception e) {
-      logger.warn("无法扫描 API 日志配置文件目录 [{}]: {}", API_LOG_CONFIG_DIR, e.getMessage());
+      logger.atWarn()
+            .scene(LOGGER_SCENE_API_LOG_CONFIG)
+            .status(Status.WRONG)
+            .setCause(e)
+            .log("无法扫描 API 日志配置文件目录 {}", API_LOG_CONFIG_DIR);
       return allConfigs;
     }
 
@@ -108,7 +113,10 @@ public class ApiLogConfigLoader {
 
         Optional<ControllerMeta> lookupMeta = registry.lookup(controllerName);
         if (lookupMeta.isEmpty()) {
-          logger.warn("API 日志配置文件 [{}] 对应的 Controller 未在元数据注册表中找到，跳过", filename);
+          logger.atWarn()
+                .scene(LOGGER_SCENE_API_LOG_CONFIG)
+                .status(Status.FIXME)
+                .log("API 日志配置文件 [{}] 未在 Controller 元数据注册表中找到，跳过", filename);
           continue;
         }
         ControllerMeta controllerMeta = lookupMeta.get();
@@ -120,16 +128,21 @@ public class ApiLogConfigLoader {
           yamlFile = YAML.loadAs(reader, YamlFile.class);
         }
 
-        if (yamlFile == null || yamlFile.general == null) {
-          logger.warn("API 日志配置文件 [{}] 的 general 配置无效，跳过", filename);
+        if (yamlFile == null) {
+          logger.atWarn()
+                .scene(LOGGER_SCENE_API_LOG_CONFIG)
+                .status(Status.FIXME)
+                .log("API 日志配置文件 [{}] 无效，跳过", filename);
           continue;
         }
 
         Map<String, ApiLogConfig> controllerConfigs = new LinkedHashMap<>();
-        controllerConfigs.put(API_LOG_KEY_GENERAL, yamlFile.general);
+        if (yamlFile.getGeneral() != null) {
+          controllerConfigs.put(API_LOG_KEY_GENERAL, yamlFile.getGeneral());
+        }
 
         // methods → ApiEndpointLogConfig
-        Map<String, ApiEndpointLogConfig> methods = yamlFile.methods;
+        Map<String, ApiEndpointLogConfig> methods = yamlFile.getMethods();
         if (methods != null) {
           for (Map.Entry<String, ApiEndpointLogConfig> entry : methods.entrySet()) {
             String rawKey = entry.getKey();
@@ -144,15 +157,28 @@ public class ApiLogConfigLoader {
               String hash = controllerMeta.methods().get(rawKey).hash();
               controllerConfigs.put(hash, methodConfig);
             } else {
-              logger.warn("配置 [{}] 的方法 [{}] 在 Controller 元数据中找不到，跳过", filename, rawKey);
+              logger.atWarn()
+                    .scene(LOGGER_SCENE_API_LOG_CONFIG)
+                    .status(Status.FIXME)
+                    .log("配置 [{}] 的方法 [{}] 在 Controller 元数据中找不到，跳过", filename, rawKey);
             }
           }
         }
 
         allConfigs.put(interfaceName, controllerConfigs);
-        logger.debug("已加载 API 日志配置: {} ({} 个方法级配置)", controllerName, controllerConfigs.size() - 1);
+        if (logger.isDebugEnabled()) {
+          long methodsCount = controllerConfigs.keySet().stream().filter(k -> !k.equals(API_LOG_KEY_GENERAL)).count();
+          logger.atDebug()
+                .scene(LOGGER_SCENE_API_LOG_CONFIG)
+                .status(Status.REMIND)
+                .log("已加载 API 日志配置: {} ({} 个方法级配置)", controllerName, methodsCount);
+        }
       } catch (Exception e) {
-        logger.warn("解析 API 日志配置文件 [{}] 失败: {}", resource.getFilename(), e.getMessage());
+        logger.atWarn()
+              .scene(LOGGER_SCENE_API_LOG_CONFIG)
+              .status(Status.FIXME)
+              .setCause(e)
+              .log("解析 API 日志配置文件 [{}] 失败", resource.getFilename());
       }
     }
 

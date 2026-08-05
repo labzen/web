@@ -1,5 +1,8 @@
 package cn.labzen.web.paging.internal;
 
+import cn.labzen.logger.Loggers;
+import cn.labzen.logger.kernel.LabzenLogger;
+import cn.labzen.logger.kernel.enums.Status;
 import cn.labzen.meta.Labzens;
 import cn.labzen.web.api.paging.Pageable;
 import cn.labzen.web.meta.WebCoreConfiguration;
@@ -7,11 +10,11 @@ import cn.labzen.web.paging.convert.PageConverterHolder;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.dynamic.DynamicType;
+import net.bytebuddy.dynamic.DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition;
 import net.bytebuddy.implementation.MethodDelegation;
 import net.bytebuddy.implementation.bind.annotation.AllArguments;
 import net.bytebuddy.implementation.bind.annotation.Origin;
@@ -28,6 +31,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static cn.labzen.web.api.definition.Constants.LOGGER_SCENE_PAGING;
+
 /**
  * Pageable 动态代理工厂
  * <p>
@@ -41,7 +46,6 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>支持调试模式：保留原始字段用于调试观察</li>
  * </ul>
  */
-@Slf4j
 public final class PageableDelegator {
 
   private static final String DEBUGGER_PAGING_FIELD_NAME = "_paging";
@@ -56,6 +60,7 @@ public final class PageableDelegator {
   // 缓存已生成的代理类，避免每次请求都重新生成导致 Metaspace OOM
   private static final ConcurrentHashMap<Class<?>, Class<?>> PROXY_CLASS_CACHE = new ConcurrentHashMap<>();
   private static final boolean FRIENDLY_FOR_DEBUGGER_VIEW;
+  private static final LabzenLogger LOGGER = Loggers.getLogger(PageableDelegator.class);
 
   static {
     WebCoreConfiguration configuration = Labzens.configurationWith(WebCoreConfiguration.class);
@@ -96,18 +101,11 @@ public final class PageableDelegator {
                                          PageableValuesInterceptor pageableInterceptor,
                                          PageableBeanAttributesInterceptor beanAttributesInterceptor) {
     Class<?> proxyClass = PROXY_CLASS_CACHE.computeIfAbsent(parameterType, pt -> {
-      DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<?> buddyBuilder = new ByteBuddy().subclass(pt)
-                                                                                                   .method(
-                                                                                                       PAGEABLE_METHOD_NAMES)
-                                                                                                   .intercept(
-                                                                                                       MethodDelegation.to(
-                                                                                                           pageableInterceptor))
-                                                                                                   .method(
-                                                                                                       ElementMatchers.not(
-                                                                                                           PAGEABLE_METHOD_NAMES))
-                                                                                                   .intercept(
-                                                                                                       MethodDelegation.to(
-                                                                                                           beanAttributesInterceptor));
+      ReceiverTypeDefinition<?> buddyBuilder = new ByteBuddy().subclass(pt)
+                                                              .method(PAGEABLE_METHOD_NAMES)
+                                                              .intercept(MethodDelegation.to(pageableInterceptor))
+                                                              .method(ElementMatchers.not(PAGEABLE_METHOD_NAMES))
+                                                              .intercept(MethodDelegation.to(beanAttributesInterceptor));
 
       try (DynamicType.Unloaded<?> made = buddyBuilder.make()) {
         return made.load(pt.getClassLoader()).getLoaded();
@@ -130,21 +128,14 @@ public final class PageableDelegator {
   private static Object delegateForDebugger(Class<?> parameterType,
                                             PageableValuesInterceptor pageableInterceptor,
                                             PageableBeanAttributesInterceptor beanAttributesInterceptor) {
-    DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<?> buddyBuilder = new ByteBuddy().subclass(parameterType)
-                                                                                                 .defineField(
-                                                                                                     DEBUGGER_PAGING_FIELD_NAME,
-                                                                                                     Paging.class,
-                                                                                                     Visibility.PRIVATE)
-                                                                                                 .method(
-                                                                                                     PAGEABLE_METHOD_NAMES)
-                                                                                                 .intercept(
-                                                                                                     MethodDelegation.to(
-                                                                                                         pageableInterceptor))
-                                                                                                 .method(ElementMatchers.not(
-                                                                                                     PAGEABLE_METHOD_NAMES))
-                                                                                                 .intercept(
-                                                                                                     MethodDelegation.to(
-                                                                                                         beanAttributesInterceptor));
+    ReceiverTypeDefinition<?> buddyBuilder = new ByteBuddy().subclass(parameterType)
+                                                            .defineField(DEBUGGER_PAGING_FIELD_NAME,
+                                                                Paging.class,
+                                                                Visibility.PRIVATE)
+                                                            .method(PAGEABLE_METHOD_NAMES)
+                                                            .intercept(MethodDelegation.to(pageableInterceptor))
+                                                            .method(ElementMatchers.not(PAGEABLE_METHOD_NAMES))
+                                                            .intercept(MethodDelegation.to(beanAttributesInterceptor));
 
     try (DynamicType.Unloaded<?> unloaded = buddyBuilder.make()) {
       Class<?> proxyType = unloaded.load(parameterType.getClassLoader()).getLoaded();
@@ -173,7 +164,11 @@ public final class PageableDelegator {
           f.setAccessible(true);
           f.set(target, f.get(source));
         } catch (IllegalAccessException e) {
-          logger.warn("无法复制字段 {} 的值: {}", f.getName(), e.getMessage());
+          LOGGER.atWarn()
+                .scene(LOGGER_SCENE_PAGING)
+                .status(Status.FAILED)
+                .setCause(e)
+                .log("无法复制字段 {} 的值", f.getName());
         }
       }
       clazz = clazz.getSuperclass();
@@ -189,13 +184,14 @@ public final class PageableDelegator {
       p.setAccessible(true);
       p.set(proxy, paging);
     } catch (Exception e) {
-      logger.warn("无法注入分页数据到代理对象: {}", e.getMessage());
+      LOGGER.atWarn().scene(LOGGER_SCENE_PAGING).status(Status.FAILED).setCause(e).log("无法注入分页数据到代理对象");
     }
   }
 
   /**
    * 处理 {@link Pageable} 接口定义的几个接口参数获取
    */
+  @SuppressWarnings("unused")
   @RequiredArgsConstructor
   public static final class PageableValuesInterceptor {
 
@@ -218,6 +214,7 @@ public final class PageableDelegator {
   /**
    * 处理实现了 {@link Pageable} 接口的 Bean Class 的其他参数获取（除接口定义的方法）
    */
+  @SuppressWarnings("unused")
   @RequiredArgsConstructor
   public static final class PageableBeanAttributesInterceptor {
 

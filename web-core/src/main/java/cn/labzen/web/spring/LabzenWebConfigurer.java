@@ -1,5 +1,6 @@
 package cn.labzen.web.spring;
 
+import cn.labzen.logger.Loggers;
 import cn.labzen.logger.kernel.LabzenLogger;
 import cn.labzen.logger.kernel.enums.Status;
 import cn.labzen.meta.Labzens;
@@ -10,7 +11,6 @@ import cn.labzen.web.spring.runtime.LabzenHandlerExceptionResolver;
 import cn.labzen.web.spring.runtime.LabzenRestRequestHandlerInterceptor;
 import com.google.common.base.Strings;
 import jakarta.annotation.Nonnull;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.ApplicationContext;
@@ -28,10 +28,11 @@ import java.util.List;
 import java.util.OptionalInt;
 import java.util.stream.IntStream;
 
-import static cn.labzen.web.api.definition.Constants.LOGGER_SCENE_CONTROLLER;
+import static cn.labzen.web.api.definition.Constants.LOGGER_SCENE_WEB_INIT;
 
-@Slf4j
 public class LabzenWebConfigurer implements WebMvcConfigurer, ApplicationContextAware {
+
+  private final LabzenLogger logger = Loggers.getLogger(LabzenWebConfigurer.class);
 
   private ApplicationContext applicationContext;
 
@@ -59,10 +60,10 @@ public class LabzenWebConfigurer implements WebMvcConfigurer, ApplicationContext
 
     String apiPathPrefix = configuration.apiPathPrefix();
     if (!Strings.isNullOrEmpty(apiPathPrefix)) {
-      ((LabzenLogger) logger).atInfo()
-                             .status(Status.IMPORTANT)
-                             .scene(LOGGER_SCENE_CONTROLLER)
-                             .log("系统 API 请求路径统一前缀为：'/" + apiPathPrefix + "'");
+      logger.atInfo()
+            .status(Status.IMPORTANT)
+            .scene(LOGGER_SCENE_WEB_INIT)
+            .log("系统 API 请求路径统一前缀为：'/" + apiPathPrefix + "'");
 
       configurer.addPathPrefix(apiPathPrefix, predicate -> true);
     }

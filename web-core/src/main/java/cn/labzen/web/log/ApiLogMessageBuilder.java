@@ -231,7 +231,7 @@ public class ApiLogMessageBuilder {
       logger = Loggers.getLogger(ex.getStackTrace()[0].getClassName());
     }
     logger.atError()
-          .status(Status.WRONG)
+          .status(Status.FAILED)
           .setCause(ex)
           .log("Exception caught with URI: {} | by class {}", request.getRequestURI(), controllerName);
   }

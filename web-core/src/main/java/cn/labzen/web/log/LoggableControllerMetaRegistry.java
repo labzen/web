@@ -17,7 +17,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 
-import static cn.labzen.web.api.definition.Constants.LOGGER_SCENE_CONTROLLER;
+import static cn.labzen.web.api.definition.Constants.LOGGER_SCENE_API_LOG_INIT;
 
 /**
  * API 日志 Controller 元数据注册表（final 类，单例模式）。
@@ -70,7 +70,7 @@ public final class LoggableControllerMetaRegistry implements SmartInitializingSi
     Map<String, ControllerMeta> loaded = loadAllMetaFiles();
     this.registry = loaded;
     logger.atInfo()
-          .scene(LOGGER_SCENE_CONTROLLER)
+          .scene(LOGGER_SCENE_API_LOG_INIT)
           .status(Status.SUCCESS)
           .log("Controller元数据加载注册完成: 已处理 {} 个 Controller 的元数据", loaded.size());
   }
@@ -142,9 +142,10 @@ public final class LoggableControllerMetaRegistry implements SmartInitializingSi
       return Collections.unmodifiableMap(loaded);
     } catch (IOException e) {
       logger.atWarn()
-            .scene(LOGGER_SCENE_CONTROLLER)
-            .status(Status.WRONG)
-            .log("加载Controller元数据文件失败: {}", e.getMessage());
+            .scene(LOGGER_SCENE_API_LOG_INIT)
+            .status(Status.IMPORTANT)
+            .setCause(e)
+            .log("加载 Controller 元数据文件失败");
       return Collections.emptyMap();
     }
   }
@@ -174,6 +175,7 @@ public final class LoggableControllerMetaRegistry implements SmartInitializingSi
 
       Map<String, ControllerMethodMeta> methods = new LinkedHashMap<>();
       Object methodsObj = raw.get("methods");
+      int loadedMethodCount = 0;
       if (methodsObj instanceof Map<?, ?> methodsMap) {
         for (Map.Entry<?, ?> entry : methodsMap.entrySet()) {
           String hashKey = (String) entry.getKey();  // MD5 前5位
@@ -205,6 +207,8 @@ public final class LoggableControllerMetaRegistry implements SmartInitializingSi
             }
             String httpUrlKey = httpMethod + " " + fullUrlPattern;
             methods.putIfAbsent(httpUrlKey, meta);
+
+            loadedMethodCount++;
           }
         }
       }
@@ -212,14 +216,15 @@ public final class LoggableControllerMetaRegistry implements SmartInitializingSi
       ControllerMeta controller = new ControllerMeta(interfaceClass, simpleName, methods);
       loaded.put(simpleName, controller);
       logger.atDebug()
-            .scene(LOGGER_SCENE_CONTROLLER)
+            .scene(LOGGER_SCENE_API_LOG_INIT)
             .status(Status.REMIND)
-            .log("已加载 Controller 元数据: {} ({} 个端点)", simpleName, methods.size() / 3);
+            .log("已加载 Controller 元数据: {} ({} 个端点)", simpleName, loadedMethodCount);
     } catch (IOException | ClassNotFoundException e) {
       logger.atWarn()
-            .scene(LOGGER_SCENE_CONTROLLER)
-            .status(Status.WRONG)
-            .log("解析元数据文件 [{}] 失败: {}", filename, e.getMessage());
+            .scene(LOGGER_SCENE_API_LOG_INIT)
+            .status(Status.IMPORTANT)
+            .setCause(e)
+            .log("解析元数据文件 [{}] 失败", filename);
     }
   }
 }

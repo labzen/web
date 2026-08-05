@@ -2,6 +2,7 @@ package cn.labzen.web.spring;
 
 import cn.labzen.logger.Loggers;
 import cn.labzen.logger.kernel.LabzenLogger;
+import cn.labzen.logger.kernel.enums.Status;
 import cn.labzen.meta.Labzens;
 import cn.labzen.meta.spring.SpringInitializationOrder;
 import cn.labzen.spring.Springs;
@@ -16,7 +17,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.Ordered;
 import org.springframework.util.ClassUtils;
 
-import static cn.labzen.web.api.definition.Constants.WEB_INIT_SCENE;
+import static cn.labzen.web.api.definition.Constants.LOGGER_SCENE_WEB_INIT;
 
 /**
  * Web 组件上下文初始化器
@@ -55,15 +56,23 @@ public class LabzenWebContextInitializer implements ApplicationContextInitialize
         PageConverter<?> converter = ((PageConverter<?>) Springs.getOrCreate(pageConverterClass));
         PageConverterHolder.setConverter(converter);
       } else {
-        logger.atWarn().scene(WEB_INIT_SCENE).log("Class [{}] 无法识别为 PageConverter<> 的实现类", pageConverterClass);
+        logger.atWarn()
+              .scene(LOGGER_SCENE_WEB_INIT)
+              .status(Status.FIXME)
+              .log("Class [{}] 无法识别为 PageConverter<> 的实现类", pageConverterClass);
       }
     } catch (ClassNotFoundException e) {
-      logger.atError().scene(WEB_INIT_SCENE).log("初始化 PageConverter 实例异常", e);
+      logger.atError()
+            .scene(LOGGER_SCENE_WEB_INIT)
+            .status(Status.FAILED)
+            .setCause(e)
+            .log("初始化 PageConverter 实例异常");
     }
 
     if (PageConverterHolder.getConverter() instanceof NonePageConverter) {
       logger.atWarn()
-            .scene(WEB_INIT_SCENE)
+            .scene(LOGGER_SCENE_WEB_INIT)
+            .status(Status.FIXME)
             .log("未注册分页转换器，将使用默认实现 {}，这将影响系统正常的分页参数转换功能", pageConverterFQCN);
     }
   }
