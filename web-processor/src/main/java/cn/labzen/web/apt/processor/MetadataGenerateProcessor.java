@@ -30,7 +30,7 @@ import java.util.*;
  * <b>JSON 文件格式：</b>
  * <pre>{@code
  * {
- *   "interfaceName": "com.example.controller.UserController",
+ *   "interfaceClass": "com.example.controller.UserController",
  *   "simpleName": "UserController",
  *   "methods": {
  *     "a1b2c3d4": {

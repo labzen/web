@@ -6,10 +6,12 @@ import cn.labzen.web.api.response.result.Result;
 import cn.labzen.web.exception.RequestException;
 import cn.labzen.web.meta.WebCoreConfiguration;
 import cn.labzen.web.response.format.CompositeResponseFormatter;
+import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.core.MethodParameter;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.server.ServerHttpRequest;
@@ -19,8 +21,6 @@ import org.springframework.http.server.ServletServerHttpResponse;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
-
-import jakarta.annotation.Nonnull;
 
 /**
  * REST 响应体增强处理
@@ -37,6 +37,7 @@ import jakarta.annotation.Nonnull;
  * @see CompositeResponseFormatter
  */
 @RestControllerAdvice
+@Order(1_000)
 public class LabzenRestResponseBodyAdvice implements ResponseBodyAdvice<Object>, InitializingBean {
 
   private final CompositeResponseFormatter responseFormatter = new CompositeResponseFormatter();
@@ -76,12 +77,8 @@ public class LabzenRestResponseBodyAdvice implements ResponseBodyAdvice<Object>,
                                 @Nonnull Class<? extends HttpMessageConverter<?>> selectedConverterType,
                                 @Nonnull ServerHttpRequest request,
                                 @Nonnull ServerHttpResponse response) {
-    HttpServletRequest httpRequest = (request instanceof ServletServerHttpRequest servletRequest)
-      ? servletRequest.getServletRequest()
-      : null;
-    HttpServletResponse httpResponse = (response instanceof ServletServerHttpResponse servletResponse)
-      ? servletResponse.getServletResponse()
-      : null;
+    HttpServletRequest httpRequest = (request instanceof ServletServerHttpRequest servletRequest) ? servletRequest.getServletRequest() : null;
+    HttpServletResponse httpResponse = (response instanceof ServletServerHttpResponse servletResponse) ? servletResponse.getServletResponse() : null;
 
     if (httpRequest == null || httpResponse == null) {
       return body;

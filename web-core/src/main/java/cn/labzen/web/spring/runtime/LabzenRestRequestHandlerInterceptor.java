@@ -1,20 +1,17 @@
 package cn.labzen.web.spring.runtime;
 
 import cn.labzen.meta.Labzens;
-import cn.labzen.tool.util.DateTimes;
 import cn.labzen.tool.util.Strings;
 import cn.labzen.web.api.definition.APIVersionCarrier;
 import cn.labzen.web.meta.WebCoreConfiguration;
+import cn.labzen.web.util.ControllerDisposeHelper;
+import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.servlet.HandlerInterceptor;
 
-import jakarta.annotation.Nonnull;
 import java.util.function.Supplier;
-
-import static cn.labzen.web.api.definition.Constants.REST_REQUEST_TIME;
-import static cn.labzen.web.api.definition.Constants.REST_REQUEST_TIME_MILLIS;
 
 /**
  * 请求拦截器
@@ -64,8 +61,9 @@ public class LabzenRestRequestHandlerInterceptor implements HandlerInterceptor {
     }
 
     // 用于统计一个请求的用时
-    request.setAttribute(REST_REQUEST_TIME_MILLIS, System.currentTimeMillis());
-    request.setAttribute(REST_REQUEST_TIME, DateTimes.formattedNow());
+//    request.setAttribute(REST_REQUEST_TIME_MILLIS, System.currentTimeMillis());
+//    request.setAttribute(REST_REQUEST_TIME, DateTimes.formattedNow());
+    ControllerDisposeHelper.recordRequestTime(request);
     return true;
   }
 }

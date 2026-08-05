@@ -1,8 +1,8 @@
 package cn.labzen.web.api.log.config;
 
 import cn.labzen.tool.util.Collections;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import jakarta.annotation.Nonnull;
+import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -31,8 +31,7 @@ import java.util.Set;
  * @see ApiLogConfig
  * @see ConditionGroup
  */
-@Getter
-@Setter
+@Data
 @EqualsAndHashCode(callSuper = true)
 public class ApiEndpointLogConfig extends ApiLogConfig {
 
@@ -43,17 +42,17 @@ public class ApiEndpointLogConfig extends ApiLogConfig {
   /**
    * 仅打印指定参数（白名单），与 excludeParams 互斥，includeParams 非空时优先
    */
-  private Set<String> includeParams = Sets.newHashSet();
+  private Set<String> includeParams;
 
   /**
    * 排除指定参数（黑名单）
    */
-  private Set<String> excludeParams = Sets.newHashSet();
+  private Set<String> excludeParams;
 
   /**
    * 响应体脱敏规则：JSON Path → 脱敏规则名称（如 "phone-mask"、"idcard-mask"）
    */
-  private Map<String, String> responseMaskPatterns = Maps.newHashMap();
+  private Map<String, String> responseMaskPatterns;
 
   // ============================================================
   // 条件触发字段
@@ -121,40 +120,68 @@ public class ApiEndpointLogConfig extends ApiLogConfig {
    * 用 {@code override} 中的非默认值字段覆盖当前实例，返回新实例。
    * <p>
    * 用于三层配置合并（框架默认 → YAML → 程序化 → 运行时）。
-   * 支持 {@link ApiLogConfig} 和 {@link ApiEndpointLogConfig} 两种覆盖源。
+   * 基于 {@code this} 复制所有字段，仅用 {@code override} 中显式设置的值覆盖。
+   * boolean 类型以 {@code true} 为"显式设置"，{@code false} 保留原值；
+   * {@code samplingRate} 不等于 0.0 时为"显式设置"；
+   * 端点特有字段以非空为"显式设置"。
    */
-  public ApiEndpointLogConfig mergeFrom(ApiLogConfig override) {
-    if (override == null) return this;
+//  public ApiEndpointLogConfig mergeFrom(ApiLogConfig override) {
+//    if (override == null) return this;
+//
+//    ApiEndpointLogConfig merged = new ApiEndpointLogConfig();
+//    // 先复制 this 的全部字段
+//    merged.setEnabled(this.isEnabled());
+//    merged.setLevel(this.getLevel());
+//    merged.setLogRequest(this.isLogRequestParams());
+//    merged.setLogResponse(this.isLogResponseBody());
+//    merged.setLogException(this.isLogException());
+//    merged.setSamplingRate(this.getSamplingRate());
+//    merged.includeParams = new java.util.HashSet<>(this.includeParams);
+//    merged.excludeParams = new java.util.HashSet<>(this.excludeParams);
+//    merged.responseMaskPatterns = new java.util.LinkedHashMap<>(this.responseMaskPatterns);
+//    merged.expiresAt = this.expiresAt;
+//    merged.ttl = this.ttl;
+//    merged.createdAt = this.createdAt;
+//    merged.conditionExpression = this.conditionExpression;
+//    merged.resolvedConditionGroup = this.resolvedConditionGroup;
+//
+//    // 然后用 override 中显式设置的值覆盖
+//    if (override.isEnabled()) merged.setEnabled(true);
+//    if (!"DEBUG".equals(override.getLevel().name()) || override instanceof ApiEndpointLogConfig) {
+//      merged.setLevel(override.getLevel());
+//    }
+//    if (!override.isLogRequestParams()) merged.setLogRequest(false);
+//    if (!override.isLogResponseBody()) merged.setLogResponse(false);
+//    if (!override.isLogException()) merged.setLogException(false);
+//    if (override.getSamplingRate() != 0.0) merged.setSamplingRate(override.getSamplingRate());
+//
+//    if (override instanceof ApiEndpointLogConfig ep) {
+//      if (!Collections.isNullOrEmpty(ep.includeParams)) merged.includeParams = ep.includeParams;
+//      if (!Collections.isNullOrEmpty(ep.excludeParams)) merged.excludeParams = ep.excludeParams;
+//      if (ep.responseMaskPatterns != null && !ep.responseMaskPatterns.isEmpty())
+//        merged.responseMaskPatterns = ep.responseMaskPatterns;
+//      if (ep.expiresAt != null) merged.expiresAt = ep.expiresAt;
+//      if (ep.ttl != null) merged.ttl = ep.ttl;
+//      if (ep.createdAt != null) merged.createdAt = ep.createdAt;
+//      if (ep.conditionExpression != null && !ep.conditionExpression.isEmpty()) {
+//        merged.conditionExpression = ep.conditionExpression;
+//        merged.resolvedConditionGroup = ep.resolvedConditionGroup;
+//      }
+//    }
+//    return merged;
+//  }
 
-    ApiEndpointLogConfig merged = new ApiEndpointLogConfig();
-    // 通用字段
-    merged.setEnabled(override.isEnabled());
-    merged.setLevel(override.getLevel());
-    merged.setLogRequestParams(override.isLogRequestParams());
-    merged.setLogResponseBody(override.isLogResponseBody());
-    merged.setLogException(override.isLogException());
-    merged.setSamplingRate(override.getSamplingRate());
+  public void merge(@Nonnull ApiEndpointLogConfig override) {
+    super.merge(override);
 
-    if (override instanceof ApiEndpointLogConfig ep) {
-      // 端点特有字段：非空时采用
-      merged.includeParams = Collections.isNullOrEmpty(ep.includeParams) ? this.includeParams : ep.includeParams;
-      merged.excludeParams = Collections.isNullOrEmpty(ep.excludeParams) ? this.excludeParams : ep.excludeParams;
-      merged.responseMaskPatterns = ep.responseMaskPatterns != null && !ep.responseMaskPatterns.isEmpty()
-        ? ep.responseMaskPatterns : this.responseMaskPatterns;
-      merged.expiresAt = ep.expiresAt != null ? ep.expiresAt : this.expiresAt;
-      merged.ttl = ep.ttl != null ? ep.ttl : this.ttl;
-      merged.createdAt = ep.createdAt != null ? ep.createdAt : this.createdAt;
-
-      // 条件表达式：非空时采用
-      if (ep.conditionExpression != null && !ep.conditionExpression.isEmpty()) {
-        merged.conditionExpression = ep.conditionExpression;
-        merged.resolvedConditionGroup = ep.resolvedConditionGroup;
-      } else {
-        merged.conditionExpression = this.conditionExpression;
-        merged.resolvedConditionGroup = this.resolvedConditionGroup;
-      }
-    }
-    return merged;
+    this.setIncludeParams(value(this.getIncludeParams(), override.getIncludeParams()));
+    this.setExcludeParams(value(this.getExcludeParams(), override.getExcludeParams()));
+    this.setResponseMaskPatterns(value(this.getResponseMaskPatterns(), override.getResponseMaskPatterns()));
+    this.setConditionExpression(value(this.getConditionExpression(), override.getConditionExpression()));
+    this.setConditionGroup(value(this.getConditionGroup(), override.getConditionGroup()));
+    this.setTtl(value(this.getTtl(), override.getTtl()));
+    this.setCreatedAt(value(this.getCreatedAt(), override.getCreatedAt()));
+    this.setExpiresAt(value(this.getExpiresAt(), override.getExpiresAt()));
   }
 
   // ============================================================

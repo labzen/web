@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
 import jakarta.annotation.Resource;
 import org.springframework.beans.factory.SmartInitializingSingleton;
+import org.springframework.core.Ordered;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
 import java.io.IOException;
@@ -27,8 +28,6 @@ import static cn.labzen.web.api.definition.Constants.LOGGER_SCENE_CONTROLLER;
  * <p>
  * <b>使用方式：</b>
  * <pre>{@code
- *   LoggableControllerMetaRegistry registry = LoggableControllerMetaRegistry.getInstance();
- *
  *   // 获取所有 Controller 元数据
  *   Map<String, ControllerMeta> all = registry.getAllMetas();
  *
@@ -42,7 +41,7 @@ import static cn.labzen.web.api.definition.Constants.LOGGER_SCENE_CONTROLLER;
  * @see ControllerMeta
  * @see ControllerMethodMeta
  */
-public final class LoggableControllerMetaRegistry implements SmartInitializingSingleton {
+public final class LoggableControllerMetaRegistry implements SmartInitializingSingleton, Ordered {
 
   /**
    * JSON 元数据文件 classpath 搜索路径
@@ -57,23 +56,35 @@ public final class LoggableControllerMetaRegistry implements SmartInitializingSi
   private final LabzenLogger logger = Loggers.getLogger(LoggableControllerMetaRegistry.class);
   /**
    * 所有 Controller 的元数据（只读）。
-   * <p>
-   * 使用 volatile 保证 {@link #afterSingletonsInstantiated()} 写入后对所有线程可见。
    */
-  private volatile Map<String, ControllerMeta> registry;
+  private Map<String, ControllerMeta> registry;
 
   @Resource
   private ObjectMapper objectMapper;
 
   /**
-   * 启动时扫描 classpath 并加载所有 JSON 元数据文件
+   * 启动时扫描 classpath 并加载所有 JSON 元数据文件。
    */
+//  public LoggableControllerMetaRegistry(ObjectMapper objectMapper) {
+//    this.objectMapper = objectMapper;
+//    Map<String, ControllerMeta> loaded = loadAllMetaFiles();
+//    this.registry = loaded;
+//    logger.atInfo().scene(LOGGER_SCENE_CONTROLLER).status(Status.SUCCESS)
+//      .log("Controller元数据加载注册完成: 已处理 {} 个 Controller 的元数据", loaded.size());
+//  }
+
   @Override
   public void afterSingletonsInstantiated() {
     Map<String, ControllerMeta> loaded = loadAllMetaFiles();
     this.registry = loaded;
     logger.atInfo().scene(LOGGER_SCENE_CONTROLLER).status(Status.SUCCESS)
       .log("Controller元数据加载注册完成: 已处理 {} 个 Controller 的元数据", loaded.size());
+  }
+
+  @Override
+  public int getOrder() {
+    // 保证在 ApiLogConfigManager 之前执行，先加载好所有 Controller 的元数据
+    return Integer.MIN_VALUE + 1_000;
   }
 
   // ============================================================
@@ -161,6 +172,7 @@ public final class LoggableControllerMetaRegistry implements SmartInitializingSi
       });
 
       String interfaceName = (String) raw.get("interfaceName");
+      Class<?> interfaceClass = Class.forName(interfaceName);
       String simpleName = (String) raw.get("simpleName");
 
       Map<String, ControllerMethodMeta> methods = new LinkedHashMap<>();
@@ -182,7 +194,7 @@ public final class LoggableControllerMetaRegistry implements SmartInitializingSi
               }
             }
 
-            ControllerMethodMeta meta = new ControllerMethodMeta(methodName, httpMethod, urlPattern, fullUrlPattern, parameterTypes);
+            ControllerMethodMeta meta = new ControllerMethodMeta(hashKey, methodName, httpMethod, urlPattern, fullUrlPattern, parameterTypes);
 
             // 注册三个 key：hash、方法名、HTTP方法+URL（自行组装）
             methods.putIfAbsent(hashKey, meta);
@@ -195,10 +207,10 @@ public final class LoggableControllerMetaRegistry implements SmartInitializingSi
         }
       }
 
-      ControllerMeta controller = new ControllerMeta(interfaceName, simpleName, methods);
+      ControllerMeta controller = new ControllerMeta(interfaceClass, simpleName, methods);
       loaded.put(simpleName, controller);
       logger.atDebug().scene(LOGGER_SCENE_CONTROLLER).status(Status.REMIND).log("已加载 Controller 元数据: {} ({} 个端点)", simpleName, methods.size() / 3);
-    } catch (IOException e) {
+    } catch (IOException | ClassNotFoundException e) {
       logger.atWarn().scene(LOGGER_SCENE_CONTROLLER).status(Status.WRONG).log("解析元数据文件 [{}] 失败: {}", filename, e.getMessage());
     }
   }

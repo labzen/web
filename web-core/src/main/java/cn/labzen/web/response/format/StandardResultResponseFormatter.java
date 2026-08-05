@@ -1,18 +1,14 @@
 package cn.labzen.web.response.format;
 
-import cn.labzen.tool.util.Strings;
 import cn.labzen.web.api.paging.Pagination;
 import cn.labzen.web.api.response.out.Meta;
 import cn.labzen.web.api.response.out.Response;
 import cn.labzen.web.api.response.result.ValueResult;
-import com.google.common.primitives.Longs;
+import cn.labzen.web.util.ControllerDisposeHelper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.Optional;
-
-import static cn.labzen.web.api.definition.Constants.REST_REQUEST_TIME;
-import static cn.labzen.web.api.definition.Constants.REST_REQUEST_TIME_MILLIS;
 
 /**
  * 标准结果格式化器
@@ -43,18 +39,20 @@ public class StandardResultResponseFormatter implements ResponseFormatter {
    */
   @Override
   public Object format(Object result, HttpServletRequest request, HttpServletResponse response) {
-    Object timeAttr = request.getAttribute(REST_REQUEST_TIME);
-    String requestTime = Strings.value(timeAttr, "");
-    Object millsAttr = request.getAttribute(REST_REQUEST_TIME_MILLIS);
-    String requestMillsStr = Strings.value(millsAttr, "0");
-    long requestMills = Optional.ofNullable(Longs.tryParse(requestMillsStr)).orElse(0L);
-    long executionTime = System.currentTimeMillis() - requestMills;
+//    Object timeAttr = request.getAttribute(REST_REQUEST_TIME);
+//    String requestTime = Strings.value(timeAttr, "");
+//    Object millsAttr = request.getAttribute(REST_REQUEST_TIME_MILLIS);
+//    String requestMillsStr = Strings.value(millsAttr, "0");
+//    long requestMills = Optional.ofNullable(Longs.tryParse(requestMillsStr)).orElse(0L);
+//    long executionTime = System.currentTimeMillis() - requestMills;
 
     ValueResult data = (ValueResult) result;
 
     int code = data.code();
     String message = Optional.ofNullable(data.message()).orElse("success");
     Object value = data.value();
+    String requestTime = ControllerDisposeHelper.getRequestTime(request);
+    long executionTime = ControllerDisposeHelper.calculateExecutionTime(request);
 
     if (value instanceof Pagination<?> pagination) {
       Meta meta = new Meta(requestTime, executionTime, pagination.pageable() ? pagination.copyWithoutRecords() : null, null, null);

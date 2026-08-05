@@ -4,7 +4,6 @@ import cn.labzen.logger.kernel.LabzenLogger;
 import cn.labzen.logger.kernel.enums.Status;
 import cn.labzen.meta.Labzens;
 import cn.labzen.web.log.ApiLogInterceptor;
-import cn.labzen.web.log.LoggableControllerMetaRegistry;
 import cn.labzen.web.meta.WebCoreConfiguration;
 import cn.labzen.web.spring.runtime.LabzenExceptionCatchingFilter;
 import cn.labzen.web.spring.runtime.LabzenHandlerExceptionResolver;
@@ -12,7 +11,10 @@ import cn.labzen.web.spring.runtime.LabzenRestRequestHandlerInterceptor;
 import com.google.common.base.Strings;
 import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeansException;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
@@ -29,24 +31,23 @@ import java.util.stream.IntStream;
 import static cn.labzen.web.api.definition.Constants.LOGGER_SCENE_CONTROLLER;
 
 @Slf4j
-public class LabzenWebConfigurer implements WebMvcConfigurer {
+public class LabzenWebConfigurer implements WebMvcConfigurer, ApplicationContextAware {
+
+  private ApplicationContext applicationContext;
+
+  @Override
+  public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
+    this.applicationContext = applicationContext;
+  }
 
   @Override
   public void addInterceptors(@Nonnull InterceptorRegistry registry) {
     // 注册 API 日志拦截器（在 RestRequestHandlerInterceptor 之前执行）
-    LoggableControllerMetaRegistry controllerMetaRegistry = loggableControllerMetaRegistry();
-    ApiLogInterceptor apiLogInterceptor = new ApiLogInterceptor(controllerMetaRegistry);
+    ApiLogInterceptor apiLogInterceptor = applicationContext.getBean(ApiLogInterceptor.class);
     registry.addInterceptor(apiLogInterceptor);
     registry.addInterceptor(new LabzenRestRequestHandlerInterceptor());
   }
 
-  /**
-   * 创建 API 日志控制器元信息注册表 Bean。
-   */
-  @Bean
-  public LoggableControllerMetaRegistry loggableControllerMetaRegistry() {
-    return new LoggableControllerMetaRegistry();
-  }
 
   /**
    * 定义API的前缀等
@@ -66,22 +67,28 @@ public class LabzenWebConfigurer implements WebMvcConfigurer {
     }
   }
 
+//  @Bean
+//  public LabzenExceptionCatchingFilter labzenExceptionCatchingFilter(ObjectMapper objectMapper) {
+//    return new LabzenExceptionCatchingFilter(objectMapper);
+//  }
+
   /**
    * 注册异常捕捉过滤器
    */
   @Bean
   public FilterRegistrationBean<OncePerRequestFilter> filterRegistrationBean() {
+    LabzenExceptionCatchingFilter labzenExceptionCatchingFilter = applicationContext.getBean(LabzenExceptionCatchingFilter.class);
     FilterRegistrationBean<OncePerRequestFilter> filterRegistration = new FilterRegistrationBean<>();
-    filterRegistration.setFilter(new LabzenExceptionCatchingFilter());
+    filterRegistration.setFilter(labzenExceptionCatchingFilter);
     filterRegistration.addUrlPatterns("/*");
     filterRegistration.setOrder(Integer.MIN_VALUE);
     return filterRegistration;
   }
 
-  @Bean
-  public HandlerExceptionResolver labzenHandlerExceptionResolver() {
-    return new LabzenHandlerExceptionResolver();
-  }
+//  @Bean
+//  public HandlerExceptionResolver labzenHandlerExceptionResolver() {
+//    return new LabzenHandlerExceptionResolver();
+//  }
 
   /**
    * 扩展异常处理解析器
@@ -92,7 +99,8 @@ public class LabzenWebConfigurer implements WebMvcConfigurer {
     if (configuration.responseFormattingForcedAll()) {
       OptionalInt found = IntStream.range(0, resolvers.size()).filter(i -> resolvers.get(i) instanceof DefaultHandlerExceptionResolver).findFirst();
       found.ifPresent(i -> {
-        resolvers.add(i, labzenHandlerExceptionResolver());
+        LabzenHandlerExceptionResolver labzenHandlerExceptionResolver = applicationContext.getBean(LabzenHandlerExceptionResolver.class);
+        resolvers.add(i, labzenHandlerExceptionResolver);
       });
     }
   }

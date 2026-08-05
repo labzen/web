@@ -107,12 +107,12 @@ public interface WebCoreConfiguration {
   // ===================================================================================================================
 
   /**
-   * API 日志全局开关，默认关闭。
+   * API 日志全局开关，默认关闭，可根据业务需要，针对某些特定API单独打开。
    * <p>
    * 开启后，所有 Controller 方法的请求和响应日志将按照各接口的配置进行打印。
    * 建议在开发环境开启，生产环境按需临时开启排查问题。
    */
-  @Item(path = "api-log.enabled", required = false, defaultValue = "false")
+  @Item(path = "log.enabled", required = false, defaultValue = "false")
   boolean apiLogEnabled();
 
   /**
@@ -121,7 +121,7 @@ public interface WebCoreConfiguration {
    * 可选值：TRACE、DEBUG、INFO、WARN、ERROR。
    * 可通过 YAML 或程序化 API 按 Controller/方法级别覆盖。
    */
-  @Item(path = "api-log.level", required = false, defaultValue = "DEBUG")
+  @Item(path = "log.level", required = false, defaultValue = "DEBUG")
   String apiLogLevel();
 
   /**
@@ -129,15 +129,12 @@ public interface WebCoreConfiguration {
    * <p>
    * 用于防止高 QPS 接口的日志风暴。设置为 0.1 表示仅 10% 的请求打印日志。
    */
-  @Item(path = "api-log.sampling-rate", required = false, defaultValue = "1.0")
+  @Item(path = "log.sampling-rate", required = false, defaultValue = "1.0")
   double apiLogSamplingRate();
 
-  @Item(path = "api-log.out-request", required = false, defaultValue = "true")
-  boolean logRequestParams();
+  @Item(path = "log.out-request", required = false, defaultValue = "true")
+  boolean apiLogRequest();
 
-  @Item(path = "api-log.out-response", required = false, defaultValue = "false")
-  boolean logResponseBody();
-
-  @Item(path = "api-log.out-exception", required = false, defaultValue = "true")
-  boolean logException();
+  @Item(path = "log.out-response", required = false, defaultValue = "false")
+  boolean apiLogResponse();
 }

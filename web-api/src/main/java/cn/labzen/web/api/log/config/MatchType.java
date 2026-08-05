@@ -58,22 +58,22 @@ public enum MatchType {
   // ============================================================
 
   /**
-   * 大于，运算符别名: >, gt
+   * 大于，运算符别名: &gt;, gt
    */
   GREATER_THAN(">", "gt"),
 
   /**
-   * 小于，运算符别名: <, lt
+   * 小于，运算符别名: &lt;, lt
    */
   LESS_THAN("<", "lt"),
 
   /**
-   * 大于等于，运算符别名: >=, gte
+   * 大于等于，运算符别名: &gt;=, gte
    */
   GREATER_THAN_OR_EQUAL(">=", "gte"),
 
   /**
-   * 小于等于，运算符别名: <=, lte
+   * 小于等于，运算符别名: &lt;=, lte
    */
   LESS_THAN_OR_EQUAL("<=", "lte"),
 
@@ -82,12 +82,12 @@ public enum MatchType {
   // ============================================================
 
   /**
-   * 早于，运算符别名: <, before（与 LESS_THAN 共享 <，通过上下文区分）
+   * 早于，运算符别名: &lt;, before（与 LESS_THAN 共享 &lt;，通过上下文区分）
    */
   BEFORE("<", "before"),
 
   /**
-   * 晚于，运算符别名: >, after（与 GREATER_THAN 共享 >，通过上下文区分）
+   * 晚于，运算符别名: &gt;, after（与 GREATER_THAN 共享 &gt;，通过上下文区分）
    */
   AFTER(">", "after");
 

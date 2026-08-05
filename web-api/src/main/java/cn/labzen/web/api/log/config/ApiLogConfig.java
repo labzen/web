@@ -1,5 +1,7 @@
 package cn.labzen.web.api.log.config;
 
+import jakarta.annotation.Nonnull;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.event.Level;
@@ -13,21 +15,21 @@ import org.slf4j.event.Level;
  * <b>设计说明：</b>{@code level} 字段为 String 类型，直接接收 YAML 中的字符串值（如 "DEBUG"），
  * {@link #getLevel()} 将其懒转换为 {@link Level} 枚举。这避免了为 SnakeYAML 映射创建冗余 Bean。
  */
-@Getter
-@Setter
+@SuppressWarnings("unused")
+@Data
 public class ApiLogConfig {
 
   /**
    * 总开关，默认关闭
    */
-  private boolean enabled = false;
+  private Boolean enabled;
 
   /**
    * 日志级别（YAML 映射字段，接收字符串如 "DEBUG"、"INFO"）。
    * <p>
    * 通过 {@link #getLevel()} 获取解析后的 {@link Level} 枚举值。
    */
-  private String level = "DEBUG";
+  private String level;
 
   /**
    * level 字符串解析后的枚举缓存（懒加载）
@@ -35,24 +37,19 @@ public class ApiLogConfig {
   private Level resolvedLevel;
 
   /**
-   * 请求体打印开关（独立控制）
+   * 请求打印开关（独立控制）
    */
-  private boolean logRequestParams = true;
+  private Boolean logRequest;
 
   /**
-   * 响应体打印开关（独立控制）
+   * 响应打印开关（独立控制）
    */
-  private boolean logResponseBody = true;
-
-  /**
-   * 异常日志开关
-   */
-  private boolean logException = true;
+  private Boolean logResponse;
 
   /**
    * 采样率，范围 [0.0, 1.0]，默认 1.0（全量打印）
    */
-  private double samplingRate = 1.0;
+  private Double samplingRate;
 
   /**
    * 获取日志级别枚举值。
@@ -60,26 +57,46 @@ public class ApiLogConfig {
    * 将 {@code level} 字符串懒解析为 {@link Level} 枚举。解析失败时返回 {@link Level#DEBUG}。
    */
   public Level getLevel() {
-    if (resolvedLevel != null) {
-      return resolvedLevel;
-    }
-    if (level == null || level.isEmpty()) {
-      resolvedLevel = Level.DEBUG;
-      return resolvedLevel;
-    }
-    try {
-      resolvedLevel = Level.valueOf(level.toUpperCase());
-    } catch (IllegalArgumentException e) {
-      resolvedLevel = Level.DEBUG;
-    }
     return resolvedLevel;
   }
 
   /**
-   * 设置日志级别枚举值（同时更新 level 字符串以保持一致性）。
+   * 设置日志级别枚举值。
    */
   public void setLevel(Level level) {
     this.resolvedLevel = level;
-    this.level = level != null ? level.name() : "DEBUG";
+    if (level != null) {
+      this.level = level.name();
+    }
+  }
+
+  /**
+   * 设置日志级别枚举值。
+   */
+  public void setLevel(String level) {
+    try {
+      this.resolvedLevel = Level.valueOf(level);
+      this.level = level;
+    } catch (IllegalArgumentException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * 用 override 中的非空字段覆盖当前实例属性
+   */
+  public void merge(@Nonnull ApiLogConfig override) {
+    this.setEnabled(value(this.getEnabled(), override.getEnabled()));
+    this.setLevel(value(this.getLevel(), override.getLevel()));
+    this.setLogRequest(value(this.getLogRequest(), override.getLogRequest()));
+    this.setLogResponse(value(this.getLogResponse(), override.getLogResponse()));
+    this.setSamplingRate(value(this.getSamplingRate(), override.getSamplingRate()));
+  }
+
+  protected <T> T value(T originalValue, T overrideValue) {
+    if (overrideValue != null) {
+      return overrideValue;
+    }
+    return originalValue;
   }
 }

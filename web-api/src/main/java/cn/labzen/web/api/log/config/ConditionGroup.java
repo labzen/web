@@ -24,16 +24,21 @@ import java.util.List;
  *     ConditionGroup(ruleC)
  *   ])
  * }</pre>
- *
- * @param operator 逻辑运算符（叶子节点为 null）
- * @param children 子组（叶子节点为空列表）
- * @param rule     单条条件规则（逻辑节点为 null）
  */
 @Data
 public class ConditionGroup {
 
+  /**
+   * 逻辑运算符（叶子节点为 null）
+   */
   private LogicOperator operator;
+  /**
+   * 子组（叶子节点为空列表）
+   */
   private List<ConditionGroup> children = new ArrayList<>();
+  /**
+   * 单条条件规则（逻辑节点为 null）
+   */
   private ConditionRule rule;
 
   // ============================================================

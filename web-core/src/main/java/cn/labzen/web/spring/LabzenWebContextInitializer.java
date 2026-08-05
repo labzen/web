@@ -1,5 +1,7 @@
 package cn.labzen.web.spring;
 
+import cn.labzen.logger.Loggers;
+import cn.labzen.logger.kernel.LabzenLogger;
 import cn.labzen.meta.Labzens;
 import cn.labzen.meta.spring.SpringInitializationOrder;
 import cn.labzen.spring.Springs;
@@ -8,13 +10,13 @@ import cn.labzen.web.api.paging.PageConverter;
 import cn.labzen.web.meta.WebCoreConfiguration;
 import cn.labzen.web.paging.convert.NonePageConverter;
 import cn.labzen.web.paging.convert.PageConverterHolder;
-import lombok.extern.slf4j.Slf4j;
+import jakarta.annotation.Nonnull;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.Ordered;
 import org.springframework.util.ClassUtils;
 
-import jakarta.annotation.Nonnull;
+import static cn.labzen.web.api.definition.Constants.WEB_INIT_SCENE;
 
 /**
  * Web 组件上下文初始化器
@@ -28,10 +30,11 @@ import jakarta.annotation.Nonnull;
  *
  * @see ApplicationContextInitializer
  */
-@Slf4j
 public class LabzenWebContextInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext>, Ordered {
 
   private static final String NONE_PAGE_CONVERTER_FQCN = NonePageConverter.class.getName();
+
+  private final LabzenLogger logger = Loggers.getLogger(LabzenWebContextInitializer.class);
 
   /**
    * 初始化 Web 组件必要数据
@@ -50,9 +53,15 @@ public class LabzenWebContextInitializer implements ApplicationContextInitialize
       if (PageConverter.class.isAssignableFrom(pageConverterClass)) {
         PageConverter<?> converter = ((PageConverter<?>) Springs.getOrCreate(pageConverterClass));
         PageConverterHolder.setConverter(converter);
+      } else {
+        logger.atWarn().scene(WEB_INIT_SCENE).log("Class [{}] 无法识别为 PageConverter<> 的实现类", pageConverterClass);
       }
     } catch (ClassNotFoundException e) {
-      logger.error("初始化 PageConverter 实例异常", e);
+      logger.atError().scene(WEB_INIT_SCENE).log("初始化 PageConverter 实例异常", e);
+    }
+
+    if (PageConverterHolder.getConverter() instanceof NonePageConverter) {
+      logger.atWarn().scene(WEB_INIT_SCENE).log("未注册分页转换器，将使用默认实现 {}，这将影响系统正常的分页参数转换功能", pageConverterFQCN);
     }
   }
 

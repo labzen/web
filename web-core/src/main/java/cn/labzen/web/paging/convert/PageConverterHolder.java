@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public final class PageConverterHolder {
 
-  private static final AtomicReference<PageConverter<?>> CONVERTER_REFERENCE = new AtomicReference<>(null);
+  private static final AtomicReference<PageConverter<?>> CONVERTER_REFERENCE = new AtomicReference<>(new NonePageConverter());
 
   public static void setConverter(PageConverter<?> converter) {
     CONVERTER_REFERENCE.set(converter);

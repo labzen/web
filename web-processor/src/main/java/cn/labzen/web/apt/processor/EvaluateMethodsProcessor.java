@@ -47,7 +47,7 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
     TypeName.get(Nonnull.class),
     TypeName.get(javax.annotation.Nonnull.class),
     TypeName.get(Nullable.class),
-    TypeName.get(javax.annotation.Nullable.class));
+    TypeName.get(jakarta.annotation.Nullable.class));
 
   private final Map<String, ElementMethod> parsedMethods = new ConcurrentHashMap<>();
 

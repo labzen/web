@@ -12,6 +12,7 @@ import java.util.List;
  * @param parameterTypes 参数类型的简单名称列表
  */
 public record ControllerMethodMeta(
+  String hash,
   String methodName,
   String httpMethod,
   String urlPattern,

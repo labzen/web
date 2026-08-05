@@ -1,5 +1,7 @@
 package cn.labzen.web.api.definition;
 
+import java.util.Map;
+
 /**
  * HTTP Response（状态）增量定义，描述一个请求的返回状态，不覆盖标准HTTP状态
  */
@@ -66,4 +68,21 @@ public record HttpStatusExt(int code, String description) {
    */
   public static final HttpStatusExt UNEXPECTED_ERROR = new HttpStatusExt(599, "无法确定的内部错误");
 
+  private static final Map<Integer, HttpStatusExt> CODE_MAP = Map.ofEntries(
+    Map.entry(IP_BLACKLIST.code(), IP_BLACKLIST),
+    Map.entry(IP_TOO_OFTEN.code(), IP_TOO_OFTEN),
+    Map.entry(APPENDING.code(), APPENDING),
+    Map.entry(GET_FROM_ANOTHER.code(), GET_FROM_ANOTHER),
+    Map.entry(USELESS_PROOF.code(), USELESS_PROOF),
+    Map.entry(NO_PERMISSION.code(), NO_PERMISSION),
+    Map.entry(INVALID_PARAMETER.code(), INVALID_PARAMETER),
+    Map.entry(INVALID_SIGNATURE.code(), INVALID_SIGNATURE),
+    Map.entry(NO_MORE_QUOTA.code(), NO_MORE_QUOTA),
+    Map.entry(THIRD_PARTY_ERROR.code(), THIRD_PARTY_ERROR),
+    Map.entry(UNEXPECTED_ERROR.code(), UNEXPECTED_ERROR)
+  );
+
+  public static HttpStatusExt valueOf(int code) {
+    return CODE_MAP.get(code);
+  }
 }

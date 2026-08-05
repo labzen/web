@@ -48,6 +48,23 @@ public class APTTest {
 
     // 断言编译成功
     Assertions.assertEquals(Compilation.Status.SUCCESS, compilation.status());
+
+    // 验证元数据文件已生成
+    boolean metaFound = compilation.generatedFiles().stream()
+      .anyMatch(f -> f.getName().endsWith(".meta.json"));
+    Assertions.assertTrue(metaFound, "应生成 META-INF/labzen/MenuController.meta.json 元数据文件");
+
+    // 打印生成的元数据文件内容
+    compilation.generatedFiles().stream()
+      .filter(f -> f.getName().endsWith(".meta.json"))
+      .forEach(f -> {
+        try {
+          System.out.println("--- Generated: " + f.getName() + " ---");
+          System.out.println(f.getCharContent(true));
+        } catch (IOException e) {
+          System.out.println("无法读取生成文件: " + e.getMessage());
+        }
+      });
   }
 
   private JavaFileObject readTextFile() throws IOException {
