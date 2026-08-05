@@ -7,4 +7,5 @@ package cn.labzen.web.api.response.out;
  * @param checksum   返回信息摘要，用于快速校验数据完整性，防止信息篡改
  */
 public record Security(boolean encryption, String checksum) {
+
 }

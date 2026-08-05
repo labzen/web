@@ -7,7 +7,6 @@ import java.util.List;
 
 import static cn.labzen.web.api.definition.Constants.DEFAULT_PAGE_NUMBER;
 
-
 /**
  * 标识可分页的资源，存储分页请求数据，由 [PageableArgumentResolver] 解析分页请求参数，并代理资源Bean来获取分页相关数据。<br/>
  * <b>不建议数据库表映射 Java Bean 实现本接口</b>，推荐定义数据传输对象DTO，作为前端请求参数与后端数据库表存储结构之间的数据

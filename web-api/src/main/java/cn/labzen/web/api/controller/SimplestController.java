@@ -14,4 +14,5 @@ package cn.labzen.web.api.controller;
  * @param <BS> 业务服务组件类
  */
 public interface SimplestController<BS> extends LabzenController {
+
 }

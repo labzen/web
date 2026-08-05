@@ -8,4 +8,5 @@ package cn.labzen.web.api.paging;
  * @param nulls 空值排序策略，仅支持 "first" 或 "last"（不区分大小写），用于兼容支持 NULLS FIRST/LAST 语法的数据库
  */
 public record Order(String name, boolean asc, String nulls) {
+
 }

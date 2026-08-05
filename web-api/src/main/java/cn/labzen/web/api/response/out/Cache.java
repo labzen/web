@@ -7,4 +7,5 @@ package cn.labzen.web.api.response.out;
  * @param expiration 缓存过期时间，用于前端判断数据的可信时间周期
  */
 public record Cache(String key, String expiration) {
+
 }

@@ -10,4 +10,5 @@ package cn.labzen.web.api.response.result;
  * @param message 响应消息
  */
 public record ValueResult(int code, Object value, String message) implements Result {
+
 }

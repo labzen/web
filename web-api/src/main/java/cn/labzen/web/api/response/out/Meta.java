@@ -14,4 +14,5 @@ import cn.labzen.web.api.paging.Pagination;
  * @param security      安全信息
  */
 public record Meta(String requestTime, Long executionTime, Pagination<?> pagination, Cache cache, Security security) {
+
 }

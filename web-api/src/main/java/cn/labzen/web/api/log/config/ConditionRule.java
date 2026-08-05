@@ -15,4 +15,5 @@ package cn.labzen.web.api.log.config;
  * @see ApiEndpointLogConfig
  */
 public record ConditionRule(MatchType matchType, String paramName, String matchValue) {
+
 }

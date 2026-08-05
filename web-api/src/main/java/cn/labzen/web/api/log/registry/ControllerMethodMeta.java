@@ -11,12 +11,7 @@ import java.util.List;
  * @param fullUrlPattern 完整 URL 模式（含类级别路径前缀）
  * @param parameterTypes 参数类型的简单名称列表
  */
-public record ControllerMethodMeta(
-  String hash,
-  String methodName,
-  String httpMethod,
-  String urlPattern,
-  String fullUrlPattern,
-  List<String> parameterTypes
-) {
+public record ControllerMethodMeta(String hash, String methodName, String httpMethod, String urlPattern,
+                                   String fullUrlPattern, List<String> parameterTypes) {
+
 }

@@ -11,4 +11,5 @@ package cn.labzen.web.api.response.out;
  * @param data    返回数据
  */
 public record Response(int code, String message, Meta meta, Object data) {
+
 }

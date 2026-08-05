@@ -7,4 +7,5 @@ package cn.labzen.web.api.controller;
  * 作为标记接口，用于标识实现了 Labzen Web 框架的 Controller 规范。
  */
 public interface LabzenController {
+
 }
