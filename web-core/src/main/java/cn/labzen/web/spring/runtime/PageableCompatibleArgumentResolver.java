@@ -3,6 +3,7 @@ package cn.labzen.web.spring.runtime;
 import cn.labzen.web.api.paging.Pageable;
 import cn.labzen.web.paging.internal.PageableDelegator;
 import cn.labzen.web.paging.internal.PageableResolver;
+import jakarta.annotation.Nonnull;
 import jakarta.servlet.ServletRequest;
 import org.springframework.beans.BeanUtils;
 import org.springframework.core.MethodParameter;
@@ -18,7 +19,6 @@ import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 import org.springframework.web.servlet.mvc.method.annotation.ExtendedServletRequestDataBinder;
 
-import jakarta.annotation.Nonnull;
 import java.util.Objects;
 
 /**
@@ -79,8 +79,10 @@ public class PageableCompatibleArgumentResolver implements HandlerMethodArgument
    * <p>
    * 包含完整的 Spring 数据绑定和验证流程。
    */
-  private Object bindAttribute(MethodParameter parameter, ModelAndViewContainer mavContainer,
-                               NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
+  private Object bindAttribute(MethodParameter parameter,
+                               ModelAndViewContainer mavContainer,
+                               NativeWebRequest webRequest,
+                               WebDataBinderFactory binderFactory) throws Exception {
     String name = ModelFactory.getNameForParameter(parameter);
     var modelAttribute = parameter.getParameterAnnotation(ModelAttribute.class);
     if (modelAttribute != null) {
@@ -88,14 +90,14 @@ public class PageableCompatibleArgumentResolver implements HandlerMethodArgument
     }
 
     Class<?> clazz = parameter.getParameterType();
-    Object attribute = mavContainer.containsAttribute(name)
-      ? mavContainer.getModel().get(name)
-      : BeanUtils.instantiateClass(clazz);
+    Object attribute = mavContainer.containsAttribute(name) ? mavContainer.getModel()
+                                                                          .get(name) : BeanUtils.instantiateClass(clazz);
 
     WebDataBinder binder = binderFactory.createBinder(webRequest, attribute, name);
     if (binder.getTarget() != null) {
       if (!mavContainer.isBindingDisabled(name)) {
-        ((ExtendedServletRequestDataBinder) binder).bind(Objects.requireNonNull(webRequest.getNativeRequest(ServletRequest.class)));
+        ((ExtendedServletRequestDataBinder) binder).bind(Objects.requireNonNull(webRequest.getNativeRequest(
+            ServletRequest.class)));
       }
       validateIfApplicable(binder, parameter);
       if (binder.getBindingResult().hasErrors() && isBindExceptionRequired(parameter)) {
@@ -120,8 +122,7 @@ public class PageableCompatibleArgumentResolver implements HandlerMethodArgument
   private boolean isBindExceptionRequired(MethodParameter parameter) {
     int i = parameter.getParameterIndex();
     Class<?>[] paramTypes = parameter.getExecutable().getParameterTypes();
-    boolean hasBindingResult = (paramTypes.length > (i + 1) &&
-      Errors.class.isAssignableFrom(paramTypes[i + 1]));
+    boolean hasBindingResult = (paramTypes.length > (i + 1) && Errors.class.isAssignableFrom(paramTypes[i + 1]));
     return !hasBindingResult;
   }
 

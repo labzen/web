@@ -20,7 +20,7 @@ public interface ResponseFormatter {
   /**
    * 判断是否支持格式化该类型
    *
-   * @param clazz 返回值类型
+   * @param clazz   返回值类型
    * @param request HTTP 请求
    * @return 是否支持
    */
@@ -29,8 +29,8 @@ public interface ResponseFormatter {
   /**
    * 格式化返回值
    *
-   * @param result 原始返回值
-   * @param request HTTP 请求
+   * @param result   原始返回值
+   * @param request  HTTP 请求
    * @param response HTTP 响应
    * @return 格式化后的响应
    */

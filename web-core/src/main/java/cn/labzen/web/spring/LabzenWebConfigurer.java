@@ -48,7 +48,6 @@ public class LabzenWebConfigurer implements WebMvcConfigurer, ApplicationContext
     registry.addInterceptor(new LabzenRestRequestHandlerInterceptor());
   }
 
-
   /**
    * 定义API的前缀等
    */
@@ -60,35 +59,28 @@ public class LabzenWebConfigurer implements WebMvcConfigurer, ApplicationContext
 
     String apiPathPrefix = configuration.apiPathPrefix();
     if (!Strings.isNullOrEmpty(apiPathPrefix)) {
-      ((LabzenLogger) logger).atInfo().status(Status.IMPORTANT).scene(LOGGER_SCENE_CONTROLLER)
-        .log("系统 API 请求路径统一前缀为：'/" + apiPathPrefix + "'");
+      ((LabzenLogger) logger).atInfo()
+                             .status(Status.IMPORTANT)
+                             .scene(LOGGER_SCENE_CONTROLLER)
+                             .log("系统 API 请求路径统一前缀为：'/" + apiPathPrefix + "'");
 
       configurer.addPathPrefix(apiPathPrefix, predicate -> true);
     }
   }
-
-//  @Bean
-//  public LabzenExceptionCatchingFilter labzenExceptionCatchingFilter(ObjectMapper objectMapper) {
-//    return new LabzenExceptionCatchingFilter(objectMapper);
-//  }
 
   /**
    * 注册异常捕捉过滤器
    */
   @Bean
   public FilterRegistrationBean<OncePerRequestFilter> filterRegistrationBean() {
-    LabzenExceptionCatchingFilter labzenExceptionCatchingFilter = applicationContext.getBean(LabzenExceptionCatchingFilter.class);
+    LabzenExceptionCatchingFilter labzenExceptionCatchingFilter = applicationContext.getBean(
+        LabzenExceptionCatchingFilter.class);
     FilterRegistrationBean<OncePerRequestFilter> filterRegistration = new FilterRegistrationBean<>();
     filterRegistration.setFilter(labzenExceptionCatchingFilter);
     filterRegistration.addUrlPatterns("/*");
     filterRegistration.setOrder(Integer.MIN_VALUE);
     return filterRegistration;
   }
-
-//  @Bean
-//  public HandlerExceptionResolver labzenHandlerExceptionResolver() {
-//    return new LabzenHandlerExceptionResolver();
-//  }
 
   /**
    * 扩展异常处理解析器
@@ -97,9 +89,12 @@ public class LabzenWebConfigurer implements WebMvcConfigurer, ApplicationContext
   public void extendHandlerExceptionResolvers(@Nonnull List<HandlerExceptionResolver> resolvers) {
     WebCoreConfiguration configuration = Labzens.configurationWith(WebCoreConfiguration.class);
     if (configuration.responseFormattingForcedAll()) {
-      OptionalInt found = IntStream.range(0, resolvers.size()).filter(i -> resolvers.get(i) instanceof DefaultHandlerExceptionResolver).findFirst();
+      OptionalInt found = IntStream.range(0, resolvers.size())
+                                   .filter(i -> resolvers.get(i) instanceof DefaultHandlerExceptionResolver)
+                                   .findFirst();
       found.ifPresent(i -> {
-        LabzenHandlerExceptionResolver labzenHandlerExceptionResolver = applicationContext.getBean(LabzenHandlerExceptionResolver.class);
+        LabzenHandlerExceptionResolver labzenHandlerExceptionResolver = applicationContext.getBean(
+            LabzenHandlerExceptionResolver.class);
         resolvers.add(i, labzenHandlerExceptionResolver);
       });
     }

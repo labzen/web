@@ -77,8 +77,7 @@ public class FileDownloadResponseFormatter implements ResponseFormatter {
   private void setDownloadHeaders(HttpServletResponse response, FileResult fileResult) {
     String filename = Strings.value(fileResult.filename(), fileResult.value().getName());
     // 处理中文文件名
-    String encodedFileName = URLEncoder.encode(filename, StandardCharsets.UTF_8)
-      .replaceAll("\\+", "%20");
+    String encodedFileName = URLEncoder.encode(filename, StandardCharsets.UTF_8).replaceAll("\\+", "%20");
 
     try {
       response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);

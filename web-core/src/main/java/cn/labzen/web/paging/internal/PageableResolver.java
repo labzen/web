@@ -2,7 +2,6 @@ package cn.labzen.web.paging.internal;
 
 import cn.labzen.meta.Labzens;
 import cn.labzen.web.api.paging.Order;
-import cn.labzen.web.api.paging.Pageable;
 import cn.labzen.web.meta.WebCoreConfiguration;
 import org.springframework.web.context.request.NativeWebRequest;
 
@@ -60,7 +59,9 @@ public final class PageableResolver {
     String[] parts = raw.split(",");
 
     // 第一部分必须出现，且为正整数，否则默认第一页
-    int pageNumber = Optional.ofNullable(parts.length > 0 ? parts[0] : null).flatMap(PageableResolver::parseInt).orElse(DEFAULT_PAGE_NUMBER);
+    int pageNumber = Optional.ofNullable(parts.length > 0 ? parts[0] : null)
+                             .flatMap(PageableResolver::parseInt)
+                             .orElse(DEFAULT_PAGE_NUMBER);
 
     Optional<String> pageSizeOptional = Optional.ofNullable(parts.length > 1 ? parts[1] : null);
     int pageSize = pageSizeOptional.flatMap(PageableResolver::parseInt).orElse(DEFAULT_PAGE_SIZE);
@@ -92,28 +93,27 @@ public final class PageableResolver {
     }
 
     int pageNumber = Optional.ofNullable(webRequest.getParameter("page_number"))
-      .or(() -> Optional.ofNullable(webRequest.getParameter("pageNumber")))
-      .or(() -> Optional.ofNullable(webRequest.getParameter("pn")))
-      .flatMap(PageableResolver::parseInt)
-      .orElse(DEFAULT_PAGE_NUMBER);
+                             .or(() -> Optional.ofNullable(webRequest.getParameter("pageNumber")))
+                             .or(() -> Optional.ofNullable(webRequest.getParameter("pn")))
+                             .flatMap(PageableResolver::parseInt)
+                             .orElse(DEFAULT_PAGE_NUMBER);
 
     int pageSize = Optional.ofNullable(webRequest.getParameter("page_size"))
-      .or(() -> Optional.ofNullable(webRequest.getParameter("pageSize")))
-      .or(() -> Optional.ofNullable(webRequest.getParameter("ps")))
-      .flatMap(PageableResolver::parseInt)
-      .orElse(DEFAULT_PAGE_SIZE);
+                           .or(() -> Optional.ofNullable(webRequest.getParameter("pageSize")))
+                           .or(() -> Optional.ofNullable(webRequest.getParameter("ps")))
+                           .flatMap(PageableResolver::parseInt)
+                           .orElse(DEFAULT_PAGE_SIZE);
     if (pageSize > MAX_PAGE_SIZE) {
       pageSize = MAX_PAGE_SIZE;
     }
 
-    String ordersRaw = Optional.ofNullable(webRequest.getParameter("orders"))
-      .orElse(webRequest.getParameter("od"));
+    String ordersRaw = Optional.ofNullable(webRequest.getParameter("orders")).orElse(webRequest.getParameter("od"));
 
     List<Order> orders = Optional.ofNullable(ordersRaw)
-      .map(raw -> List.of(raw.split(",")))
-      .filter(s -> !s.isEmpty())
-      .map(PageableResolver::resolveOrders)
-      .orElse(Collections.emptyList());
+                                 .map(raw -> List.of(raw.split(",")))
+                                 .filter(s -> !s.isEmpty())
+                                 .map(PageableResolver::resolveOrders)
+                                 .orElse(Collections.emptyList());
 
     return new Paging(false, pageNumber, pageSize, orders);
   }

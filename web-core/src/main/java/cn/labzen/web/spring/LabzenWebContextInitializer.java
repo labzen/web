@@ -30,7 +30,8 @@ import static cn.labzen.web.api.definition.Constants.WEB_INIT_SCENE;
  *
  * @see ApplicationContextInitializer
  */
-public class LabzenWebContextInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext>, Ordered {
+public class LabzenWebContextInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext>,
+                                                    Ordered {
 
   private static final String NONE_PAGE_CONVERTER_FQCN = NonePageConverter.class.getName();
 
@@ -61,7 +62,9 @@ public class LabzenWebContextInitializer implements ApplicationContextInitialize
     }
 
     if (PageConverterHolder.getConverter() instanceof NonePageConverter) {
-      logger.atWarn().scene(WEB_INIT_SCENE).log("未注册分页转换器，将使用默认实现 {}，这将影响系统正常的分页参数转换功能", pageConverterFQCN);
+      logger.atWarn()
+            .scene(WEB_INIT_SCENE)
+            .log("未注册分页转换器，将使用默认实现 {}，这将影响系统正常的分页参数转换功能", pageConverterFQCN);
     }
   }
 

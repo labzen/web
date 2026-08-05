@@ -31,8 +31,8 @@ public class LabzenRestRequestHandlerInterceptor implements HandlerInterceptor {
    */
   private final Supplier<Boolean> forceRequestWithVersionHeader = () -> {
     var configuration = Labzens.configurationWith(WebCoreConfiguration.class);
-    return configuration.apiVersionCarrier() == APIVersionCarrier.HEADER
-      && configuration.apiVersionHeaderAcceptForced();
+    return configuration.apiVersionCarrier() == APIVersionCarrier.HEADER &&
+           configuration.apiVersionHeaderAcceptForced();
   };
 
   /**
@@ -44,7 +44,9 @@ public class LabzenRestRequestHandlerInterceptor implements HandlerInterceptor {
    * </ul>
    */
   @Override
-  public boolean preHandle(@Nonnull HttpServletRequest request, @Nonnull HttpServletResponse response, @Nonnull Object handler) {
+  public boolean preHandle(@Nonnull HttpServletRequest request,
+                           @Nonnull HttpServletResponse response,
+                           @Nonnull Object handler) {
     // 强制请求的Header中带有Accept版本信息
     if (forceRequestWithVersionHeader.get()) {
       String acceptHeader = request.getHeader("Accept");
@@ -60,9 +62,6 @@ public class LabzenRestRequestHandlerInterceptor implements HandlerInterceptor {
       }
     }
 
-    // 用于统计一个请求的用时
-//    request.setAttribute(REST_REQUEST_TIME_MILLIS, System.currentTimeMillis());
-//    request.setAttribute(REST_REQUEST_TIME, DateTimes.formattedNow());
     ControllerDisposeHelper.recordRequestTime(request);
     return true;
   }

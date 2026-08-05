@@ -56,17 +56,16 @@ import static cn.labzen.web.api.definition.Constants.EXCEPTION_WAS_LOGGED_DURING
 public class LabzenHandlerExceptionResolver implements HandlerExceptionResolver {
 
   private static final Class<Response> RESPONSE_TYPE = Response.class;
+  private final ValidatedBindErrorMessageResolver validatedBindErrorMessageResolver;
   @Resource
   private List<HttpMessageConverter<Object>> converters;
   @Resource
   private ApiLogMessageBuilder apiLogMessageBuilder;
 
-  private final ValidatedBindErrorMessageResolver validatedBindErrorMessageResolver;
-
   public LabzenHandlerExceptionResolver() {
     this.validatedBindErrorMessageResolver = ServiceLoader.load(ValidatedBindErrorMessageResolver.class)
-      .findFirst()
-      .orElse(null);
+                                                          .findFirst()
+                                                          .orElse(null);
   }
 
   /**
@@ -90,22 +89,8 @@ public class LabzenHandlerExceptionResolver implements HandlerExceptionResolver 
       Object loggedAttr = request.getAttribute(EXCEPTION_WAS_LOGGED_DURING_REQUEST);
       if (loggedAttr == null) {
         apiLogMessageBuilder.logException(request, ex);
-//        Object metaAttr = request.getAttribute(API_LOG_CONTROLLER_META_ATTRIBUTE);
-//        String controllerName = "<unknown>";
-//        LabzenLogger logger;
-//        if (metaAttr instanceof ControllerMeta meta) {
-//          controllerName = meta.simpleName();
-//          logger = Loggers.getLogger(controllerName);
-//        } else {
-//          logger = Loggers.getLogger(ex.getStackTrace()[0].getClassName());
-//        }
-//        logger.atError().status(Status.WRONG).setCause(ex)
-//          .log("Exception caught with URI: {} | by class {}", request.getRequestURI(), controllerName);
         request.setAttribute(EXCEPTION_WAS_LOGGED_DURING_REQUEST, true);
       }
-
-      // API 日志记录：在异常解析器中统一打印异常日志
-//      logApiException(request, unwrapped);
     }
 
     return switch (unwrapped) {
@@ -115,7 +100,7 @@ public class LabzenHandlerExceptionResolver implements HandlerExceptionResolver 
       case HttpMediaTypeNotSupportedException he -> handleMediaTypeNotSupportedException(request, response, he);
       case MissingPathVariableException he -> handleMissingPathVariableException(request, response, he);
       case MissingServletRequestParameterException he ->
-        handleMissingServletRequestParameterException(request, response, he);
+          handleMissingServletRequestParameterException(request, response, he);
       case ServletRequestBindingException he -> handleServletRequestBindingException(request, response, he);
       case ConversionNotSupportedException he -> handleConversionNotSupportedException(request, response, he);
       case TypeMismatchException he -> handleTypeMismatchException(request, response, he);
@@ -247,9 +232,7 @@ public class LabzenHandlerExceptionResolver implements HandlerExceptionResolver 
   /**
    * 创建无数据的响应
    */
-  private void responseNoData(HttpStatus status,
-                              HttpServletRequest request,
-                              HttpServletResponse response) {
+  private void responseNoData(HttpStatus status, HttpServletRequest request, HttpServletResponse response) {
     Response respData = new Response(status.value(), status.getReasonPhrase(), null, null);
     try {
       out(respData, request, response);
@@ -272,47 +255,6 @@ public class LabzenHandlerExceptionResolver implements HandlerExceptionResolver 
       throw new RuntimeException(e);
     }
   }
-
-  /**
-   * 通过 API 日志系统记录异常。
-   * <p>
-   * 从请求属性中获取拦截器阶段缓存的 Controller 元数据和配置，
-   * 调用 {@link ApiLogMessageBuilder#logException} 打印结构化异常日志。
-   * 若 API 日志未启用（messageBuilder Bean 不存在），则跳过。
-   *
-   * @param request   HTTP 请求
-   * @param exception 异常对象
-   */
-//  private void logApiException(HttpServletRequest request, Exception exception) {
-//    ApiLogMessageBuilder messageBuilder = Springs.bean(ApiLogMessageBuilder.class).orElse(null);
-//    if (messageBuilder == null) {
-//      return;
-//    }
-//
-//    try {
-//      // 获取配置（优先条件日志配置）
-//      ApiEndpointLogConfig config = (ApiEndpointLogConfig) request.getAttribute(API_LOG_CONFIG_ATTRIBUTE);
-//      if (config == null) {
-//        // 尝试从匹配条件获取（record 类型直接存为 attribute）
-//        Object condAttr = request.getAttribute(API_LOG_MATCHED_CONDITION_ATTRIBUTE);
-//        if (condAttr instanceof ApiEndpointLogConfig c) {
-//          config = c;
-//        }
-//      }
-//
-//      if (config == null) {
-//        return;
-//      }
-//
-//      // 获取 Controller 类（从 handler 属性）
-//      Object handler = request.getAttribute("org.springframework.web.servlet.HandlerMapping.bestMatchingHandler");
-//      Class<?> controllerClass = handler != null ? handler.getClass() : Object.class;
-//
-//      messageBuilder.logException(controllerClass, config, exception);
-//    } catch (Exception ignored) {
-//      // API 日志记录异常不应影响异常处理流程
-//    }
-//  }
 
   /**
    * 输出响应

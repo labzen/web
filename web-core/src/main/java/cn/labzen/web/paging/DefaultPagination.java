@@ -16,14 +16,8 @@ import java.util.List;
  * @param totalPages   总页数
  * @param records      查询记录结果
  */
-public record DefaultPagination<R>(
-  boolean pageable,
-  int pageNumber,
-  int pageSize,
-  long totalRecords,
-  long totalPages,
-  List<R> records
-) implements Pagination<R> {
+public record DefaultPagination<R>(boolean pageable, int pageNumber, int pageSize, long totalRecords, long totalPages,
+                                   List<R> records) implements Pagination<R> {
 
   public static <T> DefaultPagination<T> justRecords(List<T> records) {
     return new DefaultPagination<>(false, 0, 0, 0, 0, records);
@@ -39,6 +33,11 @@ public record DefaultPagination<R>(
   }
 
   public DefaultPagination<R> copyWithoutRecords() {
-    return new DefaultPagination<>(this.pageable, this.pageNumber, this.pageSize, this.totalRecords, this.totalPages, null);
+    return new DefaultPagination<>(this.pageable,
+        this.pageNumber,
+        this.pageSize,
+        this.totalRecords,
+        this.totalPages,
+        null);
   }
 }

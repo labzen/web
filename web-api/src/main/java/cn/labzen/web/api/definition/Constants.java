@@ -13,10 +13,6 @@ public final class Constants {
   public static final String LOGGER_SCENE_CONTROLLER = "Controller";
 
   /**
-   * 请求执行时间属性键（毫秒）
-   */
-  //  public static final String REST_EXECUTION_TIME = "labzen.runtime.web.execution.time";
-  /**
    * Web 组件初始化场景标识
    */
   public static final String WEB_INIT_SCENE = "LABZEN-WEB-INIT";
@@ -25,10 +21,6 @@ public final class Constants {
    */
   public static final String EXCEPTION_WAS_LOGGED_DURING_REQUEST = "labzen.web.runtime.exception.logged";
 
-  /**
-   * API 日志场景标识，用于 LabzenLogger 结构化日志的 .scene() 调用
-   */
-  //  public static final String LOGGER_SCENE_API_LOG = "API-LOG";
   /**
    * API 日志配置缓存属性键，用于在请求处理链（Interceptor → Controller → ResponseAdvice）中传递日志配置
    */

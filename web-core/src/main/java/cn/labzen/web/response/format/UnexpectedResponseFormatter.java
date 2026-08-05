@@ -27,13 +27,6 @@ public class UnexpectedResponseFormatter implements ResponseFormatter {
    */
   @Override
   public Object format(Object result, HttpServletRequest request, HttpServletResponse response) {
-//    Object timeAttr = request.getAttribute(REST_REQUEST_TIME);
-//    String requestTime = Strings.value(timeAttr, "");
-//    Object millsAttr = request.getAttribute(REST_REQUEST_TIME_MILLIS);
-//    String requestMillsStr = Strings.value(millsAttr, "0");
-//    long requestMills = Optional.ofNullable(Longs.tryParse(requestMillsStr)).orElse(0L);
-//    long executionTime = System.currentTimeMillis() - requestMills;
-
     String requestTime = ControllerDisposeHelper.getRequestTime(request);
     long executionTime = ControllerDisposeHelper.calculateExecutionTime(request);
 

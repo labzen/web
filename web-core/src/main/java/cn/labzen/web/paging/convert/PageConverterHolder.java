@@ -8,14 +8,14 @@ public final class PageConverterHolder {
 
   private static final AtomicReference<PageConverter<?>> CONVERTER_REFERENCE = new AtomicReference<>(new NonePageConverter());
 
-  public static void setConverter(PageConverter<?> converter) {
-    CONVERTER_REFERENCE.set(converter);
+  private PageConverterHolder() {
   }
 
   public static PageConverter<?> getConverter() {
     return CONVERTER_REFERENCE.get();
   }
 
-  private PageConverterHolder() {
+  public static void setConverter(PageConverter<?> converter) {
+    CONVERTER_REFERENCE.set(converter);
   }
 }

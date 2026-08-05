@@ -47,7 +47,12 @@ public final class PageableDelegator {
   private static final String DEBUGGER_PAGING_FIELD_NAME = "_paging";
   private static final Objenesis OBJENESIS = new ObjenesisStd();
   // Pageable接口定义的几个方法
-  private static final ElementMatcher.Junction<MethodDescription> PAGEABLE_METHOD_NAMES = ElementMatchers.namedOneOf("unpaged", "pageNumber", "pageSize", "orders", "convertTo");
+  private static final ElementMatcher.Junction<MethodDescription> PAGEABLE_METHOD_NAMES = ElementMatchers.namedOneOf(
+      "unpaged",
+      "pageNumber",
+      "pageSize",
+      "orders",
+      "convertTo");
   // 缓存已生成的代理类，避免每次请求都重新生成导致 Metaspace OOM
   private static final ConcurrentHashMap<Class<?>, Class<?>> PROXY_CLASS_CACHE = new ConcurrentHashMap<>();
   private static final boolean FRIENDLY_FOR_DEBUGGER_VIEW;
@@ -87,14 +92,22 @@ public final class PageableDelegator {
    * 使用 ByteBuddy 创建子类代理，拦截 Pageable 接口方法，
    * 其他方法委托给原始 Bean 实例。
    */
-  private static Object delegateDirectly(Class<?> parameterType, PageableValuesInterceptor pageableInterceptor, PageableBeanAttributesInterceptor beanAttributesInterceptor) {
+  private static Object delegateDirectly(Class<?> parameterType,
+                                         PageableValuesInterceptor pageableInterceptor,
+                                         PageableBeanAttributesInterceptor beanAttributesInterceptor) {
     Class<?> proxyClass = PROXY_CLASS_CACHE.computeIfAbsent(parameterType, pt -> {
-      DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<?> buddyBuilder = new ByteBuddy()
-        .subclass(pt)
-        .method(PAGEABLE_METHOD_NAMES)
-        .intercept(MethodDelegation.to(pageableInterceptor))
-        .method(ElementMatchers.not(PAGEABLE_METHOD_NAMES))
-        .intercept(MethodDelegation.to(beanAttributesInterceptor));
+      DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<?> buddyBuilder = new ByteBuddy().subclass(pt)
+                                                                                                   .method(
+                                                                                                       PAGEABLE_METHOD_NAMES)
+                                                                                                   .intercept(
+                                                                                                       MethodDelegation.to(
+                                                                                                           pageableInterceptor))
+                                                                                                   .method(
+                                                                                                       ElementMatchers.not(
+                                                                                                           PAGEABLE_METHOD_NAMES))
+                                                                                                   .intercept(
+                                                                                                       MethodDelegation.to(
+                                                                                                           beanAttributesInterceptor));
 
       try (DynamicType.Unloaded<?> made = buddyBuilder.make()) {
         return made.load(pt.getClassLoader()).getLoaded();
@@ -114,18 +127,27 @@ public final class PageableDelegator {
    * 在代理对象中额外添加私有字段保存分页数据和原始 Bean，
    * 便于在调试器中观察属性值。
    */
-  private static Object delegateForDebugger(Class<?> parameterType, PageableValuesInterceptor pageableInterceptor, PageableBeanAttributesInterceptor beanAttributesInterceptor) {
-    DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<?> buddyBuilder = new ByteBuddy()
-      .subclass(parameterType)
-      .defineField(DEBUGGER_PAGING_FIELD_NAME, Paging.class, Visibility.PRIVATE)
-      .method(PAGEABLE_METHOD_NAMES)
-      .intercept(MethodDelegation.to(pageableInterceptor))
-      .method(ElementMatchers.not(PAGEABLE_METHOD_NAMES))
-      .intercept(MethodDelegation.to(beanAttributesInterceptor));
+  private static Object delegateForDebugger(Class<?> parameterType,
+                                            PageableValuesInterceptor pageableInterceptor,
+                                            PageableBeanAttributesInterceptor beanAttributesInterceptor) {
+    DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<?> buddyBuilder = new ByteBuddy().subclass(parameterType)
+                                                                                                 .defineField(
+                                                                                                     DEBUGGER_PAGING_FIELD_NAME,
+                                                                                                     Paging.class,
+                                                                                                     Visibility.PRIVATE)
+                                                                                                 .method(
+                                                                                                     PAGEABLE_METHOD_NAMES)
+                                                                                                 .intercept(
+                                                                                                     MethodDelegation.to(
+                                                                                                         pageableInterceptor))
+                                                                                                 .method(ElementMatchers.not(
+                                                                                                     PAGEABLE_METHOD_NAMES))
+                                                                                                 .intercept(
+                                                                                                     MethodDelegation.to(
+                                                                                                         beanAttributesInterceptor));
 
     try (DynamicType.Unloaded<?> unloaded = buddyBuilder.make()) {
-      Class<?> proxyType = unloaded.load(parameterType.getClassLoader())
-        .getLoaded();
+      Class<?> proxyType = unloaded.load(parameterType.getClassLoader()).getLoaded();
 
       // 使用 Objenesis 创建实例，不调用构造函数
       Object proxy = OBJENESIS.newInstance(proxyType);

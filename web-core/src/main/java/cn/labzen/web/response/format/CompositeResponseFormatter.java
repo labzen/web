@@ -48,7 +48,8 @@ public class CompositeResponseFormatter implements ResponseFormatter {
     UnexpectedResponseFormatter unexpectedRF = new UnexpectedResponseFormatter();
 
     List<ResponseFormatter> allFormatters = Lists.newArrayList(responseAgainRF, abnormalStatusRF);
-    ServiceLoader<ResponseFormatter> loadedFormatters = ServiceLoader.load(ResponseFormatter.class, this.getClass().getClassLoader());
+    ServiceLoader<ResponseFormatter> loadedFormatters = ServiceLoader.load(ResponseFormatter.class,
+        this.getClass().getClassLoader());
     for (ResponseFormatter loadedFormatter : loadedFormatters) {
       allFormatters.add(loadedFormatter);
     }
@@ -83,6 +84,9 @@ public class CompositeResponseFormatter implements ResponseFormatter {
       }
     }
 
-    return new Response(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Unexpected response formatter state: no formatter matched, this is absolutely impossible to happen.", null, null);
+    return new Response(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+        "Unexpected response formatter state: no formatter matched, this is absolutely impossible to happen.",
+        null,
+        null);
   }
 }

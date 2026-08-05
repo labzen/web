@@ -41,10 +41,6 @@ public class LabzenExceptionCatchingFilter extends OncePerRequestFilter {
   @Resource
   private ApiLogMessageBuilder apiLogMessageBuilder;
 
-//  public LabzenExceptionCatchingFilter(ObjectMapper objectMapper) {
-//    this.objectMapper = objectMapper;
-//  }
-
   /**
    * 过滤器的核心逻辑
    * <p>
@@ -58,7 +54,6 @@ public class LabzenExceptionCatchingFilter extends OncePerRequestFilter {
       filterChain.doFilter(request, response);
     } catch (Exception e) {
       logException(request, e);
-//      logApiException(request, e);
       output(request, response, e);
     }
   }
@@ -73,17 +68,6 @@ public class LabzenExceptionCatchingFilter extends OncePerRequestFilter {
     if (attribute == null) {
       if ((ex instanceof RequestException re && re.isLogging()) || !(ex instanceof RequestException)) {
         apiLogMessageBuilder.logException(request, ex);
-//        Object metaAttr = request.getAttribute(API_LOG_CONTROLLER_META_ATTRIBUTE);
-//        String controllerName = "<unknown>";
-//        LabzenLogger logger;
-//        if (metaAttr instanceof ControllerMeta meta) {
-//          controllerName = meta.simpleName();
-//          logger = Loggers.getLogger(controllerName);
-//        } else {
-//          logger = Loggers.getLogger(ex.getStackTrace()[0].getClassName());
-//        }
-//        logger.atError().status(Status.WRONG).setCause(ex)
-//          .log("Exception caught with URI: {} | by class {}", request.getRequestURI(), controllerName);
         request.setAttribute(EXCEPTION_WAS_LOGGED_DURING_REQUEST, true);
       }
     }
@@ -101,7 +85,10 @@ public class LabzenExceptionCatchingFilter extends OncePerRequestFilter {
    */
   private void output(HttpServletRequest request, HttpServletResponse response, Exception e) {
     if (e instanceof RequestException re) {
-      var data = new Response(re.getCode(), re.getMessage() != null ? re.getMessage() : HttpStatus.BAD_REQUEST.getReasonPhrase(), null, null);
+      var data = new Response(re.getCode(),
+          re.getMessage() != null ? re.getMessage() : HttpStatus.BAD_REQUEST.getReasonPhrase(),
+          null,
+          null);
       sendMessage(data, request, response);
     } else {
       Object attribute = request.getAttribute(EXCEPTION_WAS_LOGGED_DURING_REQUEST);
@@ -110,68 +97,7 @@ public class LabzenExceptionCatchingFilter extends OncePerRequestFilter {
       }
       var resp = new Response(ERROR_CODE, ERROR_REASON_PHRASE, null, null);
       sendMessage(resp, request, response);
-//      if (e instanceof LabzenRuntimeException || e instanceof LabzenException) {
-//        if (e.getMessage() != null) {
-//          logger.error("Labzen WEB Exception Catcher: ", e);
-//        }
-//        var resp = new Response(ERROR_CODE, ERROR_REASON_PHRASE, null, null);
-//        sendMessage(resp, request, response);
-//      } else {
-//        Throwable throwable = findRootCause(e);
-//        if (throwable.getMessage() != null) {
-//          logger.error("Labzen WEB Exception Catcher: ", e);
-//        }
-//        var resp = new Response(ERROR_CODE, ERROR_REASON_PHRASE, null, null);
-//        sendMessage(resp, request, response);
-//      }
     }
-  }
-
-  /**
-   * 通过 API 日志系统记录异常（过滤器层面）。
-   * <p>
-   * 作为最后一道防线，捕获经 HandlerExceptionResolver 处理后的异常。
-   * 从请求属性中获取拦截器阶段缓存的元数据。
-   *
-   * @param request   HTTP 请求
-   * @param exception 异常对象
-   */
-//  private void logApiException(HttpServletRequest request, Exception exception) {
-//    if (apiLogMessageBuilder == null) {
-//      apiLogMessageBuilder = Springs.bean(ApiLogMessageBuilder.class).orElse(null);
-//    }
-//    if (apiLogMessageBuilder == null) {
-//      return;
-//    }
-//
-//    try {
-//      ApiEndpointLogConfig config = (ApiEndpointLogConfig) request.getAttribute(API_LOG_CONFIG_ATTRIBUTE);
-//      if (config == null) {
-//        // 过滤器层面可能没有拦截器缓存的配置，使用默认
-//        config = new ApiEndpointLogConfig();
-//      }
-//
-//      Object handler = request.getAttribute("org.springframework.web.servlet.HandlerMapping.bestMatchingHandler");
-//      Class<?> controllerClass = handler != null ? handler.getClass() : Object.class;
-//
-//      apiLogMessageBuilder.logException(controllerClass, config, exception);
-//    } catch (Exception ignored) {
-//      // API 日志记录异常不应影响异常处理流程
-//    }
-//  }
-
-  /**
-   * 递归查找异常的根因
-   */
-  private Throwable findRootCause(Throwable exception) {
-    Throwable current = exception;
-    int depth = 0;
-    int maxDepth = 20;
-    while (current.getCause() != null && current != current.getCause() && depth < maxDepth) {
-      current = current.getCause();
-      depth++;
-    }
-    return current;
   }
 
   /**

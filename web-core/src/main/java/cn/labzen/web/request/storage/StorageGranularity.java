@@ -17,11 +17,7 @@ import java.time.format.DateTimeFormatter;
  */
 public enum StorageGranularity {
 
-  NONE,
-  YMD,
-  YM_D,
-  Y_M,
-  Y_M_D;
+  NONE, YMD, YM_D, Y_M, Y_M_D;
 
   private static final DateTimeFormatter YMD_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
   private static final DateTimeFormatter YM_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM");
@@ -41,8 +37,12 @@ public enum StorageGranularity {
       case YMD -> now.format(YMD_FORMATTER) + "/";
       case YM_D -> now.format(YM_FORMATTER) + "/" + String.format("%02d", now.getDayOfMonth()) + "/";
       case Y_M -> now.getYear() + "/" + String.format("%02d", now.getMonthValue()) + "/";
-      case Y_M_D -> now.getYear() + "/" + String.format("%02d", now.getMonthValue()) + "/" +
-        String.format("%02d", now.getDayOfMonth()) + "/";
+      case Y_M_D -> now.getYear() +
+                    "/" +
+                    String.format("%02d", now.getMonthValue()) +
+                    "/" +
+                    String.format("%02d", now.getDayOfMonth()) +
+                    "/";
       default -> "";
     };
   }

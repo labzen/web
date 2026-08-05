@@ -20,9 +20,13 @@ import lombok.Getter;
 @Getter
 public class RequestException extends LabzenRuntimeException {
 
-  /** 业务错误码 */
+  /**
+   * 业务错误码
+   */
   private final int code;
-  /** 是否记录日志 */
+  /**
+   * 是否记录日志
+   */
   private final boolean logging;
 
   // ========== 基础构造方法 ==========
@@ -59,9 +63,9 @@ public class RequestException extends LabzenRuntimeException {
   /**
    * 创建请求异常（带消息格式化）
    *
-   * @param code 错误码
+   * @param code    错误码
    * @param message 错误消息模板
-   * @param args 格式化参数
+   * @param args    格式化参数
    */
   public RequestException(int code, String message, Object... args) {
     super(message, args);

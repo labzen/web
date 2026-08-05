@@ -33,7 +33,7 @@ public class AbnormalStatusResponseFormatter implements ResponseFormatter {
    */
   @Override
   public Object format(Object result, HttpServletRequest request, HttpServletResponse response) {
-    @SuppressWarnings("unchecked") 
+    @SuppressWarnings("unchecked")
     Map<String, Object> data = (Map<String, Object>) result;
     String status = data.getOrDefault("status", "").toString();
     Integer code = Optional.ofNullable(Ints.tryParse(status)).orElse(UNEXPECTED_ERROR);

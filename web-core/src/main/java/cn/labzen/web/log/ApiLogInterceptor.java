@@ -46,6 +46,10 @@ public class ApiLogInterceptor implements HandlerInterceptor {
 
   private final ApiLogConditionEvaluator conditionEvaluator = new ApiLogConditionEvaluator();
   private final Map<Class<?>, String> controllerInterfaceNameCache = new ConcurrentHashMap<>();
+  /**
+   * 方法签名哈希缓存，避免每次请求都反射计算
+   */
+  private final Map<Method, String> methodHashCache = new ConcurrentHashMap<>();
 
   @Resource
   private ApiLogConfigManager configManager;
@@ -53,11 +57,6 @@ public class ApiLogInterceptor implements HandlerInterceptor {
   private LoggableControllerMetaRegistry controllerRegistry;
   @Resource
   private ApiLogMessageBuilder messageBuilder;
-
-  /**
-   * 方法签名哈希缓存，避免每次请求都反射计算
-   */
-  private final Map<Method, String> methodHashCache = new ConcurrentHashMap<>();
 
   @Override
   public boolean preHandle(@Nonnull HttpServletRequest request,

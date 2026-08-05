@@ -66,6 +66,22 @@ public class ApiLogConfigLoader {
   // ============================================================
 
   /**
+   * 将 conditionExpression 解析为 ConditionGroup 并注入到配置中。
+   */
+  private static void resolveCondition(ApiEndpointLogConfig config) {
+    if (Strings.isNotBlank(config.getConditionExpression())) {
+      ConditionGroup group = ConditionExpressionParser.parse(config.getConditionExpression());
+      if (group != null) {
+        config.setConditionGroup(group);
+      }
+    }
+  }
+
+  // ============================================================
+  // 辅助方法
+  // ============================================================
+
+  /**
    * 加载所有 classpath 下的 API 日志 YAML 配置。
    *
    * @return Map&lt;Controller接口名, Map&lt;方法Key, ApiLogConfig&gt;&gt;
@@ -141,22 +157,6 @@ public class ApiLogConfigLoader {
     }
 
     return allConfigs;
-  }
-
-  // ============================================================
-  // 辅助方法
-  // ============================================================
-
-  /**
-   * 将 conditionExpression 解析为 ConditionGroup 并注入到配置中。
-   */
-  private static void resolveCondition(ApiEndpointLogConfig config) {
-    if (Strings.isNotBlank(config.getConditionExpression())) {
-      ConditionGroup group = ConditionExpressionParser.parse(config.getConditionExpression());
-      if (group != null) {
-        config.setConditionGroup(group);
-      }
-    }
   }
 
   //private Optional<String> resolveMethodNameToHash(String controllerName, String key) {

@@ -2,6 +2,7 @@ package cn.labzen.web.spring.runtime;
 
 import cn.labzen.web.api.annotation.runtime.APIVersion;
 import cn.labzen.web.api.definition.APIVersionCarrier;
+import jakarta.annotation.Nonnull;
 import org.springframework.context.EmbeddedValueResolverAware;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.StringValueResolver;
@@ -10,7 +11,6 @@ import org.springframework.web.servlet.mvc.condition.RequestCondition;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
-import jakarta.annotation.Nonnull;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -21,8 +21,8 @@ import java.util.function.Predicate;
  * <p>
  * 仅当 `labzen.yml` 的配置项 `api-version.carrier = URI` 时生效
  */
-public class LabzenVersionedApiRequestMappingHandlerMapping
-  extends RequestMappingHandlerMapping implements EmbeddedValueResolverAware {
+public class LabzenVersionedApiRequestMappingHandlerMapping extends RequestMappingHandlerMapping implements
+                                                                                                 EmbeddedValueResolverAware {
 
   private StringValueResolver embeddedValueResolver;
 
@@ -60,17 +60,13 @@ public class LabzenVersionedApiRequestMappingHandlerMapping
     // 如果包含APIVersion注解，才会在映射路径中加入版本标识
     if (versionedMappingAnnotation != null) {
       String version = versionedMappingAnnotation.value();
-      var versionInfo = RequestMappingInfo.paths(version)
-        .options(this.getBuilderConfiguration())
-        .build();
+      var versionInfo = RequestMappingInfo.paths(version).options(this.getBuilderConfiguration()).build();
       info = versionInfo.combine(info);
     }
 
     String prefix = getPathPrefix(handlerType);
     if (prefix != null) {
-      var prefixInfo = RequestMappingInfo.paths(prefix)
-        .options(this.getBuilderConfiguration())
-        .build();
+      var prefixInfo = RequestMappingInfo.paths(prefix).options(this.getBuilderConfiguration()).build();
       info = prefixInfo.combine(info);
     }
     return info;
@@ -92,9 +88,7 @@ public class LabzenVersionedApiRequestMappingHandlerMapping
       throw new IllegalArgumentException("Unsupported element type: " + element.getClass().getName());
     }
 
-    return (requestMapping != null)
-      ? super.createRequestMappingInfo(requestMapping, condition)
-      : null;
+    return (requestMapping != null) ? super.createRequestMappingInfo(requestMapping, condition) : null;
   }
 
   /**

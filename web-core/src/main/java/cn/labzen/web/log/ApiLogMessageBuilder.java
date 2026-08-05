@@ -234,24 +234,6 @@ public class ApiLogMessageBuilder {
           .status(Status.WRONG)
           .setCause(ex)
           .log("Exception caught with URI: {} | by class {}", request.getRequestURI(), controllerName);
-
-    //    LabzenLogger logger = getLogger(controllerImplClass);
-    //    Level level = config.getLevel();
-    //
-    //    if (shouldNotLogging(logger, level)) {
-    //      return;
-    //    }
-    //
-    //    String implClassName = controllerImplClass != null
-    //      ? controllerImplClass.getSimpleName()
-    //      : "UnknownController";
-    //
-    //    String exceptionType = exception.getClass().getSimpleName();
-    //    String exceptionMessage = exception.getMessage() != null ? exception.getMessage() : "(no message)";
-    //
-    //    String message = implClassName + " | EXCEPTION | " + exceptionType + ": " + exceptionMessage;
-    //
-    //    logAtLevel(logger, level, message, "BAD-REQUEST");
   }
 
   /**

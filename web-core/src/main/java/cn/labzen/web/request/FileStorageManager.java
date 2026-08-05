@@ -94,7 +94,8 @@ public final class FileStorageManager implements SmartInitializingSingleton, Dis
       logger.warn("无法找到名为 {} 的可用存储器实例，将使用默认存储器", defaultedFileStorageName);
       fileStorage = fileStorageMap.get(DEFAULT_FILE_STORAGE_NAME);
       if (fileStorage == null) {
-        logger.error("最终无法找到任何可用的默认存储器实例，在执行存储操作时可能会导致异常，默认存储器名：{}", DEFAULT_FILE_STORAGE_NAME);
+        logger.error("最终无法找到任何可用的默认存储器实例，在执行存储操作时可能会导致异常，默认存储器名：{}",
+            DEFAULT_FILE_STORAGE_NAME);
       }
     }
 

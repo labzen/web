@@ -39,13 +39,6 @@ public class StandardResultResponseFormatter implements ResponseFormatter {
    */
   @Override
   public Object format(Object result, HttpServletRequest request, HttpServletResponse response) {
-//    Object timeAttr = request.getAttribute(REST_REQUEST_TIME);
-//    String requestTime = Strings.value(timeAttr, "");
-//    Object millsAttr = request.getAttribute(REST_REQUEST_TIME_MILLIS);
-//    String requestMillsStr = Strings.value(millsAttr, "0");
-//    long requestMills = Optional.ofNullable(Longs.tryParse(requestMillsStr)).orElse(0L);
-//    long executionTime = System.currentTimeMillis() - requestMills;
-
     ValueResult data = (ValueResult) result;
 
     int code = data.code();
@@ -55,7 +48,11 @@ public class StandardResultResponseFormatter implements ResponseFormatter {
     long executionTime = ControllerDisposeHelper.calculateExecutionTime(request);
 
     if (value instanceof Pagination<?> pagination) {
-      Meta meta = new Meta(requestTime, executionTime, pagination.pageable() ? pagination.copyWithoutRecords() : null, null, null);
+      Meta meta = new Meta(requestTime,
+          executionTime,
+          pagination.pageable() ? pagination.copyWithoutRecords() : null,
+          null,
+          null);
       return new Response(code, message, meta, pagination.records());
     } else {
       Meta meta = new Meta(requestTime, executionTime, null, null, null);
