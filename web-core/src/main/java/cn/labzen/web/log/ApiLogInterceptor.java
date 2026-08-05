@@ -14,6 +14,7 @@ import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -44,8 +45,6 @@ import static cn.labzen.web.api.definition.Constants.*;
 public class ApiLogInterceptor implements HandlerInterceptor {
 
   private final ApiLogConditionEvaluator conditionEvaluator = new ApiLogConditionEvaluator();
-  //  private final WebCoreConfiguration configuration = Labzens.configurationWith(WebCoreConfiguration.class);
-  // todo 需要暴露一个方法，清除缓存
   private final Map<Class<?>, String> controllerInterfaceNameCache = new ConcurrentHashMap<>();
 
   @Resource
@@ -58,34 +57,7 @@ public class ApiLogInterceptor implements HandlerInterceptor {
   /**
    * 方法签名哈希缓存，避免每次请求都反射计算
    */
-  private final Map<java.lang.reflect.Method, String> methodHashCache = new ConcurrentHashMap<>();
-
-  //  public ApiLogInterceptor(ApiLogConfigManager configManager,
-  //                           LoggableControllerMetaRegistry controllerRegistry,
-  //                           ApiLogMessageBuilder messageBuilder) {
-  //    this.configManager = configManager;
-  //    this.controllerRegistry = controllerRegistry;
-  //    this.messageBuilder = messageBuilder;
-  //  }
-
-  //  private record Endpoint(ControllerMeta controllerMeta, ApiEndpointLogConfig config) {
-  //  }
-  //
-  //
-  //  private Endpoint resolveConfig(HttpServletRequest request, HandlerMethod handlerMethod, Class<?> controllerClass) {
-  //    // 步骤1：通过实现类接口查找 Controller 元数据
-  //    Optional<ControllerMeta> metaOpt = resolveControllerMeta(controllerClass);
-  //    if (metaOpt.isEmpty()) {
-  //      return null;
-  //    }
-  //    ControllerMeta controllerMeta = metaOpt.get();
-  //
-  //    // 步骤2：通过方法签名哈希获取端点配置
-  //    String methodHash = computeMethodHash(handlerMethod);
-  //    ApiEndpointLogConfig config = configManager.resolveConfig(controllerMeta.simpleName(), methodHash);
-  //
-  //    return new Endpoint(controllerMeta, config);
-  //  }
+  private final Map<Method, String> methodHashCache = new ConcurrentHashMap<>();
 
   @Override
   public boolean preHandle(@Nonnull HttpServletRequest request,
@@ -96,8 +68,6 @@ public class ApiLogInterceptor implements HandlerInterceptor {
     }
 
     Class<?> controllerClass = handlerMethod.getBeanType();
-    //    Method method = handlerMethod.getMethod();
-    //    String configCacheKey = controllerClass.getSimpleName() + "#" + method.getName() + "$" + method.hashCode();
     String interfaceName = controllerInterfaceNameCache.computeIfAbsent(controllerClass, k -> {
       Optional<ControllerMeta> resolved = resolveControllerMeta(controllerClass);
       return resolved.map(ControllerMeta::interfaceClass).map(Class::getName).orElse(null);
@@ -106,51 +76,34 @@ public class ApiLogInterceptor implements HandlerInterceptor {
       //      logger.warn("Controller {} 未注册为可日志记录的接口", controllerClass.getName());
       return true;
     }
-    //    Endpoint endpoint = resolvedConfigCache.computeIfAbsent(configCacheKey, k -> resolveConfig(request, handlerMethod, controllerClass));
 
     try {
-      // 步骤1：通过实现类接口查找 Controller 元数据
-      //      Optional<ControllerMeta> metaOpt = resolveControllerMeta(controllerClass);
-      //      if (metaOpt.isEmpty()) {
-      //        return true;
-      //      }
-      //      ControllerMeta controllerMeta = metaOpt.get();
-
-      // 步骤2：通过方法签名哈希获取端点配置
+      // 通过方法签名哈希获取端点配置
       String methodHash = computeMethodHash(handlerMethod);
       ApiEndpointLogConfig config = configManager.resolveConfig(interfaceName, methodHash);
       if (config == null || !Boolean.TRUE.equals(config.getEnabled())) {
         return true;
       }
-      //      if (endpoint == null || endpoint.controllerMeta == null || endpoint.config == null) {
-      //        return true;
-      //      }
 
-      //      ApiEndpointLogConfig config = endpoint.config;
       if (!Boolean.TRUE.equals(config.getLogRequest())) {
         return true;
       }
 
-      //      ControllerMeta controllerMeta = endpoint.controllerMeta;
-      //      request.setAttribute(API_CONTROLLER_META_ATTRIBUTE, controllerMeta);
-
-      // 步骤3：采样率检查
+      // 采样率检查
       if (!checkSampling(config.getSamplingRate())) {
         return true;
       }
 
-      // 步骤4：若有条件配置，评估条件
+      // 若有条件配置，评估条件
       if (config.isConditional() && !conditionEvaluator.evaluate(config, request)) {
         return true;
       }
 
-      // 步骤5：打印请求日志，保存配置和开始时间供 postHandle 使用
+      // 打印请求日志，保存配置和开始时间供 postHandle 使用
       messageBuilder.logRequest(interfaceName, config, request);
 
       request.setAttribute(API_CONTROLLER_META_ATTRIBUTE, interfaceName);
       request.setAttribute(API_LOG_CONFIG_ATTRIBUTE, config);
-      //      request.setAttribute(API_LOG_CONFIG_ATTRIBUTE + ".startTime", System.currentTimeMillis());
-      //      request.setAttribute(API_LOG_CONFIG_ATTRIBUTE + ".controllerClass", controllerClass);
     } catch (Exception e) {
       // 日志拦截器的任何异常都不应影响正常业务流程
     }
@@ -171,24 +124,6 @@ public class ApiLogInterceptor implements HandlerInterceptor {
         messageBuilder.logResponse(interfaceName, config, request, response, responseBody);
       }
     }
-
-    //    try {
-    //      String controllerClass = "<unknown>";
-    //      LabzenLogger logger;
-    //      if (metaAttr instanceof ControllerMeta meta) {
-    ////        controllerClass = meta.interfaceClass();
-    //        logger = Loggers.getLogger(meta.interfaceClass());
-    //      } else {
-    //        logger = Loggers.getLogger(ex.getStackTrace()[0].getClassName());
-    //      }
-    //
-    //      Long startTime = (Long) request.getAttribute(API_LOG_CONFIG_ATTRIBUTE + ".startTime");
-    //      long costMs = startTime != null ? System.currentTimeMillis() - startTime : 0;
-    //
-    //      messageBuilder.logResponse(controllerClass, config, response.getStatus(), costMs);
-    //    } catch (Exception e) {
-    //      // 响应日志打印异常不影响正常业务流程
-    //    }
   }
 
   // ============================================================
@@ -205,7 +140,7 @@ public class ApiLogInterceptor implements HandlerInterceptor {
    */
 
   private String computeMethodHash(HandlerMethod handlerMethod) {
-    java.lang.reflect.Method method = handlerMethod.getMethod();
+    Method method = handlerMethod.getMethod();
     return methodHashCache.computeIfAbsent(method, m -> {
       String methodName = m.getName();
       String returnType = m.getReturnType().getSimpleName();

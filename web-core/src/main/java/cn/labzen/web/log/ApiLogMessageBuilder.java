@@ -8,7 +8,6 @@ import cn.labzen.tool.util.Strings;
 import cn.labzen.web.api.definition.HttpStatusExt;
 import cn.labzen.web.api.log.config.ApiEndpointLogConfig;
 import cn.labzen.web.api.response.out.Response;
-import cn.labzen.web.api.response.result.FileResult;
 import cn.labzen.web.log.bean.MultipartDetail;
 import cn.labzen.web.util.ControllerDisposeHelper;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -24,7 +23,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
@@ -83,11 +81,6 @@ public class ApiLogMessageBuilder {
     String method = request.getMethod();
     String uri = request.getRequestURI();
 
-    //StringBuilder message = new StringBuilder();
-    //message.append(method).append(" ").append(uri);
-
-    // 根据配置打印请求参数
-    //    if (config.isLogRequestParams()) {
     Map<String, Object> params = extractRequestParams(request);
     Map<String, Object> filtered = filterParams(params, config);
     String message;
@@ -96,9 +89,7 @@ public class ApiLogMessageBuilder {
     } else {
       String formattedParams = formatParams(filtered);
       message = String.format("%s %s | %s", method, uri, formattedParams);
-      //message.append(" | ").append(formattedParams);
     }
-    //    }
 
     doRequestLogging(logger, level, message);
   }
@@ -134,11 +125,6 @@ public class ApiLogMessageBuilder {
           String submittedFileName = part.getSubmittedFileName();
           if (submittedFileName != null) {
             MultipartDetail detail = new MultipartDetail(submittedFileName, part.getSize(), part.getContentType());
-            //Map<String, Object> fileMeta = new LinkedHashMap<>();
-            //fileMeta.put("type", "file");
-            //fileMeta.put("fileName", submittedFileName);
-            //fileMeta.put("fileSize", part.getSize());
-            //fileMeta.put("contentType", part.getContentType());
             params.put(part.getName(), detail);
           }
         }
@@ -210,17 +196,6 @@ public class ApiLogMessageBuilder {
     }
 
     String message = String.format("%s %s | %d %s (%dms)", method, uri, statusCode, statusReason, executionTime);
-    //StringBuilder message = new StringBuilder();
-    //message.append(method)
-    //       .append(" ")
-    //       .append(uri)
-    //       .append(" | ")
-    //       .append(statusCode)
-    //       .append(" ")
-    //       .append(statusReason)
-    //       .append(" (")
-    //       .append(executionTime)
-    //       .append("ms)");
 
     String json = null;
     if (responseBody instanceof Response resp) {
@@ -229,8 +204,6 @@ public class ApiLogMessageBuilder {
       } catch (JsonProcessingException e) {
         // ignore that
       }
-      //String bodyStr = serializeResponseBody(responseBody);
-      //message.append(" | ").append(bodyStr);
     } else if (responseBody != null) {
       message += " | " + responseBody;
     }
@@ -286,19 +259,11 @@ public class ApiLogMessageBuilder {
    * <p>
    * Logger 名称使用 Controller 实现类的全限定名，确保日志输出中明确标识类名。
    *
-   * @param clazz Controller 实现类
+   * @param className Controller 实现类
    * @return LabzenLogger 实例
    */
-  //private LabzenLogger getLogger(Class<?> clazz) {
-  //  Logger slf4jLogger = Loggers.getLogger(clazz);
-  //  if (slf4jLogger instanceof LabzenLogger labzenLogger) {
-  //    return labzenLogger;
-  //  }
-  //  // 降级：如果 Logger 不是 LabzenLogger 实例，使用普通 SLF4J
-  //  throw new IllegalStateException("SLF4J Logger is not a LabzenLogger instance");
-  //}
-  private LabzenLogger getLogger(String clazz) {
-    Logger slf4jLogger = Loggers.getLogger(clazz);
+  private LabzenLogger getLogger(String className) {
+    Logger slf4jLogger = Loggers.getLogger(className);
     if (slf4jLogger instanceof LabzenLogger labzenLogger) {
       return labzenLogger;
     }
@@ -346,19 +311,6 @@ public class ApiLogMessageBuilder {
    * @param content 响应内容
    */
   private void doResponseLogging(LabzenLogger logger, Level level, String message, Status status, String content) {
-    //  logAtLevel(logger, level, message, scenes.name(), status.getText());
-    //}
-    //
-    ///**
-    // * 按指定级别输出日志。
-    // *
-    // * @param logger  LabzenLogger 实例
-    // * @param level   日志级别
-    // * @param message 日志消息
-    // * @param scenes  日志场景
-    // * @param status  日志状态
-    // */
-    //private void logAtLevel(LabzenLogger logger, Level level, String message, String scenes, String status) {
     var builder = switch (level) {
       case TRACE -> logger.atTrace();
       case DEBUG -> logger.atDebug();
@@ -512,75 +464,6 @@ public class ApiLogMessageBuilder {
     meta.put("fileSize", fileSize);
     meta.put("contentType", contentType);
     return meta;
-  }
-
-  /**
-   * 安全地将对象序列化为 JSON 字符串。
-   * <p>
-   * 序列化失败时返回对象的 toString() 结果。
-   */
-  //private String toJsonSafely(Object obj) {
-  //  if (obj == null) {
-  //    return "null";
-  //  }
-  //  if (obj instanceof String s) {
-  //    return s;
-  //  }
-  //  try {
-  //    return objectMapper.writeValueAsString(obj);
-  //  } catch (JsonProcessingException e) {
-  //    return obj.toString();
-  //  }
-  //}
-
-  // ============================================================
-  // 响应体处理
-  // ============================================================
-
-  private static final int MAX_BODY_LENGTH = 4096;
-
-  /**
-   * 处理响应体为日志可用的字符串。
-   * <p>
-   * 处理逻辑：
-   * <ul>
-   *   <li>文件下载（{@link FileResult}）：打印文件元信息而非二进制内容</li>
-   *   <li>已为字符串：直接截断</li>
-   *   <li>其他对象：JSON 序列化后截断</li>
-   * </ul>
-   */
-  private String serializeResponseBody(Object body) {
-    if (body == null) {
-      return "null";
-    }
-
-    // 文件下载响应
-    if (body instanceof FileResult fileResult) {
-      File file = fileResult.value();
-      return "{type:file, filename:" + fileResult.filename() + ", size:" + file.length() + "}";
-    }
-
-    // 已为字符串（如 LabzenRestResponseBodyAdvice 已转为 JSON 字符串）
-    if (body instanceof String str) {
-      return truncate(str);
-    }
-
-    // 其他对象：JSON 序列化
-    try {
-      return truncate(objectMapper.writeValueAsString(body));
-    } catch (JsonProcessingException e) {
-      return "[无法序列化响应体: " + e.getMessage() + "]";
-    }
-  }
-
-  private String truncate(String value) {
-    if (value == null) {
-      return null;
-    }
-    if (value.length() > MAX_BODY_LENGTH) {
-      return value.substring(0, MAX_BODY_LENGTH) + "...(truncated, total " + value.length() + " chars)";
-    }
-    return value;
   }
 
   /**

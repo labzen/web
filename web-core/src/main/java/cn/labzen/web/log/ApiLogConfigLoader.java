@@ -17,7 +17,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Pattern;
 
 import static cn.labzen.web.api.definition.Constants.API_LOG_CONFIG_DIR;
 import static cn.labzen.web.api.definition.Constants.API_LOG_KEY_GENERAL;
@@ -54,7 +53,6 @@ import static cn.labzen.web.api.definition.Constants.API_LOG_KEY_GENERAL;
 public class ApiLogConfigLoader {
 
   private static final String CLASSPATH_PATTERN = "classpath*:" + API_LOG_CONFIG_DIR + "/*.yml";
-  private static final Pattern HASH_KEY_PATTERN = Pattern.compile("^[0-9a-fA-F]{5}$");
   private static final Yaml YAML = new Yaml();
 
   private final LoggableControllerMetaRegistry registry;
@@ -130,27 +128,8 @@ public class ApiLogConfigLoader {
               String hash = controllerMeta.methods().get(rawKey).hash();
               controllerConfigs.put(hash, methodConfig);
             } else {
-              logger.warn("配置文件 [{}] 的方法 [{}] 未能在 Controller 的元数据中未找到对应方法，跳过",
-                  filename,
-                  rawKey);
+              logger.warn("配置 [{}] 的方法 [{}] 在 Controller 元数据中找不到，跳过", filename, rawKey);
             }
-
-            //            if (HASH_KEY_PATTERN.matcher(rawKey).matches()) {
-            //              Optional<String> methodNameOpt = resolveMethodNameToHash(registry, controllerName, rawKey);
-            //              if (methodNameOpt.isEmpty()) {
-            //                logger.warn("配置的哈希 key [{}] 在 Controller [{}] 的元数据中未找到对应方法，跳过", rawKey, controllerName);
-            //                continue;
-            //              }
-            //              controllerConfigs.put(rawKey, methodConfig);
-            //              controllerConfigs.putIfAbsent(methodNameOpt.get(), methodConfig);
-            //              logger.debug("哈希 key [{}] 已解析为方法名 [{}]，同时注册两个映射", rawKey, methodNameOpt.get());
-            //            } else {
-            //              if (!isMethodExists(registry, controllerName, rawKey)) {
-            //                logger.warn("配置的方法名 [{}] 在 Controller [{}] 的元数据中未找到，跳过", rawKey, controllerName);
-            //                continue;
-            //              }
-            //              controllerConfigs.put(rawKey, methodConfig);
-            //            }
           }
         }
 
@@ -180,21 +159,17 @@ public class ApiLogConfigLoader {
     }
   }
 
-  private Optional<String> resolveMethodNameToHash(String controllerName, String key) {
-    Optional<ControllerMeta> lookup = registry.lookup(controllerName);
-    return lookup.map(meta -> {
-      if (meta.methods().containsKey(key)) {
-        return meta.methods().get(key).hash();
-      }
-      return null;
-    });
-    //
-    //    return registry.lookup(controllerName)
-    //      .flatMap(meta -> Optional.ofNullable(meta.methods().get(key)))
-    //      .map(ControllerMethodMeta::methodName);
-  }
-
-  private boolean isMethodExists(String controllerName, String methodName) {
-    return registry.lookup(controllerName).map(meta -> meta.methods().containsKey(methodName)).orElse(false);
-  }
+  //private Optional<String> resolveMethodNameToHash(String controllerName, String key) {
+  //  Optional<ControllerMeta> lookup = registry.lookup(controllerName);
+  //  return lookup.map(meta -> {
+  //    if (meta.methods().containsKey(key)) {
+  //      return meta.methods().get(key).hash();
+  //    }
+  //    return null;
+  //  });
+  //}
+  //
+  //private boolean isMethodExists(String controllerName, String methodName) {
+  //  return registry.lookup(controllerName).map(meta -> meta.methods().containsKey(methodName)).orElse(false);
+  //}
 }

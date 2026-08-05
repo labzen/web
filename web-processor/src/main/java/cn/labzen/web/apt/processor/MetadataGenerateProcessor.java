@@ -90,9 +90,7 @@ public final class MetadataGenerateProcessor implements InternalProcessor {
       String fullUrlPattern = buildFullUrl(classLevelPath, urlPattern);
 
       String returnType = Utils.getSimpleName(method.getReturnType());
-      List<String> parameterTypes = method.getParameters().stream()
-        .map(p -> Utils.getSimpleName(p.getType()))
-        .toList();
+      List<String> parameterTypes = method.getParameters().stream().map(p -> Utils.getSimpleName(p.getType())).toList();
       String hash = hashControllerMethod(methodName, returnType, parameterTypes);
 
       Map<String, Object> meta = new LinkedHashMap<>();
@@ -114,8 +112,10 @@ public final class MetadataGenerateProcessor implements InternalProcessor {
     // 输出 JSON 文件
     try {
       String resourcePath = META_OUTPUT_DIR + "/" + controllerSimpleName + ".meta.json";
-      FileObject fileObject = filer.createResource(
-        StandardLocation.CLASS_OUTPUT, "", resourcePath, context.getSource());
+      FileObject fileObject = filer.createResource(StandardLocation.CLASS_OUTPUT,
+          "",
+          resourcePath,
+          context.getSource());
       try (Writer writer = fileObject.openWriter()) {
         writer.write(toJson(controllerMeta));
       }
@@ -214,14 +214,22 @@ public final class MetadataGenerateProcessor implements InternalProcessor {
    * 使用手动拼接方式，避免在 APT 处理器中引入 Jackson/Gson 等依赖。
    */
   private static String toJson(Object obj) {
-    if (obj == null) return "null";
-    if (obj instanceof String s) return "\"" + escapeJson(s) + "\"";
-    if (obj instanceof Number || obj instanceof Boolean) return obj.toString();
+    if (obj == null) {
+      return "null";
+    }
+    if (obj instanceof String s) {
+      return "\"" + escapeJson(s) + "\"";
+    }
+    if (obj instanceof Number || obj instanceof Boolean) {
+      return obj.toString();
+    }
     if (obj instanceof Map<?, ?> map) {
       StringBuilder sb = new StringBuilder("{\n");
       int i = 0;
       for (Map.Entry<?, ?> entry : map.entrySet()) {
-        if (i > 0) sb.append(",\n");
+        if (i > 0) {
+          sb.append(",\n");
+        }
         sb.append("  \"").append(entry.getKey()).append("\": ");
         sb.append(toJson(entry.getValue()));
         i++;
@@ -232,7 +240,9 @@ public final class MetadataGenerateProcessor implements InternalProcessor {
     if (obj instanceof List<?> list) {
       StringBuilder sb = new StringBuilder("[");
       for (int i = 0; i < list.size(); i++) {
-        if (i > 0) sb.append(", ");
+        if (i > 0) {
+          sb.append(", ");
+        }
         sb.append(toJson(list.get(i)));
       }
       sb.append("]");
@@ -242,11 +252,7 @@ public final class MetadataGenerateProcessor implements InternalProcessor {
   }
 
   private static String escapeJson(String s) {
-    return s.replace("\\", "\\\\")
-      .replace("\"", "\\\"")
-      .replace("\n", "\\n")
-      .replace("\r", "\\r")
-      .replace("\t", "\\t");
+    return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t");
   }
 
   /**

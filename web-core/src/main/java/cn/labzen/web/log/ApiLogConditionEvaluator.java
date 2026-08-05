@@ -29,14 +29,12 @@ import java.util.Enumeration;
 @Slf4j
 public class ApiLogConditionEvaluator {
 
-  private static final DateTimeFormatter[] DATE_FORMATTERS = {
-    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
-    DateTimeFormatter.ofPattern("yyyy-MM-dd"),
-    DateTimeFormatter.ISO_INSTANT,
-    DateTimeFormatter.ISO_DATE_TIME,
-    DateTimeFormatter.ISO_LOCAL_DATE_TIME,
-    DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
-  };
+  private static final DateTimeFormatter[] DATE_FORMATTERS = {DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
+                                                              DateTimeFormatter.ofPattern("yyyy-MM-dd"),
+                                                              DateTimeFormatter.ISO_INSTANT,
+                                                              DateTimeFormatter.ISO_DATE_TIME,
+                                                              DateTimeFormatter.ISO_LOCAL_DATE_TIME,
+                                                              DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")};
 
   /**
    * 评估请求是否匹配配置中的条件树。
@@ -122,33 +120,46 @@ public class ApiLogConditionEvaluator {
         case AFTER -> compareDate(paramValue, rule.matchValue()) > 0;
       };
     } catch (Exception e) {
-      logger.debug("条件匹配评估失败 [paramName={}, matchType={}]: {}", rule.paramName(), rule.matchType(), e.getMessage());
+      logger.debug("条件匹配评估失败 [paramName={}, matchType={}]: {}",
+          rule.paramName(),
+          rule.matchType(),
+          e.getMessage());
       return false;
     }
   }
 
   private String resolveParamValue(String paramName, HttpServletRequest request) {
     Object attrValue = request.getAttribute(paramName);
-    if (attrValue != null) return attrValue.toString();
+    if (attrValue != null) {
+      return attrValue.toString();
+    }
     String queryValue = request.getParameter(paramName);
-    if (queryValue != null) return queryValue;
+    if (queryValue != null) {
+      return queryValue;
+    }
     Enumeration<String> headerNames = request.getHeaderNames();
     if (headerNames != null) {
       while (headerNames.hasMoreElements()) {
         String name = headerNames.nextElement();
-        if (name.equalsIgnoreCase(paramName)) return request.getHeader(name);
+        if (name.equalsIgnoreCase(paramName)) {
+          return request.getHeader(name);
+        }
       }
     }
     return null;
   }
 
   private int compareNumeric(String a, String b) {
-    if (a == null || b == null) throw new NumberFormatException("null");
+    if (a == null || b == null) {
+      throw new NumberFormatException("null");
+    }
     return new BigDecimal(a.trim()).compareTo(new BigDecimal(b.trim()));
   }
 
   private int compareDate(String a, String b) {
-    if (a == null || b == null) throw new DateTimeParseException("null", "", 0);
+    if (a == null || b == null) {
+      throw new DateTimeParseException("null", "", 0);
+    }
     return parseToInstant(a.trim()).compareTo(parseToInstant(b.trim()));
   }
 

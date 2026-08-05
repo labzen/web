@@ -1,11 +1,8 @@
 package cn.labzen.web.api.log.config;
 
-import cn.labzen.tool.util.Collections;
 import jakarta.annotation.Nonnull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -117,60 +114,8 @@ public class ApiEndpointLogConfig extends ApiLogConfig {
   // ============================================================
 
   /**
-   * 用 {@code override} 中的非默认值字段覆盖当前实例，返回新实例。
-   * <p>
-   * 用于三层配置合并（框架默认 → YAML → 程序化 → 运行时）。
-   * 基于 {@code this} 复制所有字段，仅用 {@code override} 中显式设置的值覆盖。
-   * boolean 类型以 {@code true} 为"显式设置"，{@code false} 保留原值；
-   * {@code samplingRate} 不等于 0.0 时为"显式设置"；
-   * 端点特有字段以非空为"显式设置"。
+   * 用 override 中的非空字段覆盖当前实例属性
    */
-//  public ApiEndpointLogConfig mergeFrom(ApiLogConfig override) {
-//    if (override == null) return this;
-//
-//    ApiEndpointLogConfig merged = new ApiEndpointLogConfig();
-//    // 先复制 this 的全部字段
-//    merged.setEnabled(this.isEnabled());
-//    merged.setLevel(this.getLevel());
-//    merged.setLogRequest(this.isLogRequestParams());
-//    merged.setLogResponse(this.isLogResponseBody());
-//    merged.setLogException(this.isLogException());
-//    merged.setSamplingRate(this.getSamplingRate());
-//    merged.includeParams = new java.util.HashSet<>(this.includeParams);
-//    merged.excludeParams = new java.util.HashSet<>(this.excludeParams);
-//    merged.responseMaskPatterns = new java.util.LinkedHashMap<>(this.responseMaskPatterns);
-//    merged.expiresAt = this.expiresAt;
-//    merged.ttl = this.ttl;
-//    merged.createdAt = this.createdAt;
-//    merged.conditionExpression = this.conditionExpression;
-//    merged.resolvedConditionGroup = this.resolvedConditionGroup;
-//
-//    // 然后用 override 中显式设置的值覆盖
-//    if (override.isEnabled()) merged.setEnabled(true);
-//    if (!"DEBUG".equals(override.getLevel().name()) || override instanceof ApiEndpointLogConfig) {
-//      merged.setLevel(override.getLevel());
-//    }
-//    if (!override.isLogRequestParams()) merged.setLogRequest(false);
-//    if (!override.isLogResponseBody()) merged.setLogResponse(false);
-//    if (!override.isLogException()) merged.setLogException(false);
-//    if (override.getSamplingRate() != 0.0) merged.setSamplingRate(override.getSamplingRate());
-//
-//    if (override instanceof ApiEndpointLogConfig ep) {
-//      if (!Collections.isNullOrEmpty(ep.includeParams)) merged.includeParams = ep.includeParams;
-//      if (!Collections.isNullOrEmpty(ep.excludeParams)) merged.excludeParams = ep.excludeParams;
-//      if (ep.responseMaskPatterns != null && !ep.responseMaskPatterns.isEmpty())
-//        merged.responseMaskPatterns = ep.responseMaskPatterns;
-//      if (ep.expiresAt != null) merged.expiresAt = ep.expiresAt;
-//      if (ep.ttl != null) merged.ttl = ep.ttl;
-//      if (ep.createdAt != null) merged.createdAt = ep.createdAt;
-//      if (ep.conditionExpression != null && !ep.conditionExpression.isEmpty()) {
-//        merged.conditionExpression = ep.conditionExpression;
-//        merged.resolvedConditionGroup = ep.resolvedConditionGroup;
-//      }
-//    }
-//    return merged;
-//  }
-
   public void merge(@Nonnull ApiEndpointLogConfig override) {
     super.merge(override);
 

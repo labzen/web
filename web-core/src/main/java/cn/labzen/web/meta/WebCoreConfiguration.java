@@ -132,9 +132,15 @@ public interface WebCoreConfiguration {
   @Item(path = "log.sampling-rate", required = false, defaultValue = "1.0")
   double apiLogSamplingRate();
 
+  /**
+   * 是否输出请求日志，默认 true
+   */
   @Item(path = "log.out-request", required = false, defaultValue = "true")
   boolean apiLogRequest();
 
+  /**
+   * 是否输出响应日志，默认 false
+   */
   @Item(path = "log.out-response", required = false, defaultValue = "false")
   boolean apiLogResponse();
 }

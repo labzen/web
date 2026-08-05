@@ -27,9 +27,13 @@ public final class ConditionExpressionParser {
   }
 
   public static ConditionGroup parse(String expression) {
-    if (expression == null || expression.isBlank()) return null;
+    if (expression == null || expression.isBlank()) {
+      return null;
+    }
     List<String> tokens = tokenize(expression.trim());
-    if (tokens.isEmpty()) return null;
+    if (tokens.isEmpty()) {
+      return null;
+    }
     int[] pos = {0};
     return parseOrExpr(tokens, pos);
   }
@@ -55,13 +59,19 @@ public final class ConditionExpressionParser {
   }
 
   private static ConditionGroup parsePrimary(List<String> tokens, int[] pos) {
-    if (pos[0] >= tokens.size()) return null;
+    if (pos[0] >= tokens.size()) {
+      return null;
+    }
     String token = tokens.get(pos[0]);
-    if (")".equals(token) || "OR".equalsIgnoreCase(token) || "AND".equalsIgnoreCase(token)) return null;
+    if (")".equals(token) || "OR".equalsIgnoreCase(token) || "AND".equalsIgnoreCase(token)) {
+      return null;
+    }
     if ("(".equals(token)) {
       pos[0]++;
       ConditionGroup inner = parseOrExpr(tokens, pos);
-      if (pos[0] < tokens.size() && ")".equals(tokens.get(pos[0]))) pos[0]++;
+      if (pos[0] < tokens.size() && ")".equals(tokens.get(pos[0]))) {
+        pos[0]++;
+      }
       return inner;
     }
     ConditionRule rule = parseSingleCondition(tokens, pos);
@@ -69,11 +79,18 @@ public final class ConditionExpressionParser {
   }
 
   private static ConditionRule parseSingleCondition(List<String> tokens, int[] pos) {
-    if (pos[0] >= tokens.size()) return null;
+    if (pos[0] >= tokens.size()) {
+      return null;
+    }
     String paramName = tokens.get(pos[0]++);
-    if (pos[0] >= tokens.size()) return null;
+    if (pos[0] >= tokens.size()) {
+      return null;
+    }
     String maybeOp = tokens.get(pos[0]);
-    if ("AND".equalsIgnoreCase(maybeOp) || "OR".equalsIgnoreCase(maybeOp) || "(".equals(maybeOp) || ")".equals(maybeOp)) {
+    if ("AND".equalsIgnoreCase(maybeOp) ||
+        "OR".equalsIgnoreCase(maybeOp) ||
+        "(".equals(maybeOp) ||
+        ")".equals(maybeOp)) {
       pos[0]--;
       return null;
     }
@@ -86,8 +103,12 @@ public final class ConditionExpressionParser {
       }
     }
     MatchType matchType = MatchType.fromOperator(operator);
-    if (matchType == null) return null;
-    if (matchType == MatchType.EXISTS) return new ConditionRule(matchType, paramName, null);
+    if (matchType == null) {
+      return null;
+    }
+    if (matchType == MatchType.EXISTS) {
+      return new ConditionRule(matchType, paramName, null);
+    }
     return new ConditionRule(matchType, paramName, matchValue);
   }
 
@@ -115,14 +136,20 @@ public final class ConditionExpressionParser {
         current.append(c);
       }
     }
-    if (!current.isEmpty()) tokens.add(current.toString());
+    if (!current.isEmpty()) {
+      tokens.add(current.toString());
+    }
     return tokens;
   }
 
   private static String stripQuotes(String value) {
-    if (value == null || value.length() < 2) return value;
+    if (value == null || value.length() < 2) {
+      return value;
+    }
     char first = value.charAt(0), last = value.charAt(value.length() - 1);
-    if ((first == '\'' && last == '\'') || (first == '"' && last == '"')) return value.substring(1, value.length() - 1);
+    if ((first == '\'' && last == '\'') || (first == '"' && last == '"')) {
+      return value.substring(1, value.length() - 1);
+    }
     return value;
   }
 }
