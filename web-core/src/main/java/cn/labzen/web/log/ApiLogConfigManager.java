@@ -47,6 +47,7 @@ import static cn.labzen.web.api.definition.Constants.*;
  * @see ApiLogConfigLoader
  * @see ApiLogConditionEvaluator
  */
+@SuppressWarnings("unused")
 public final class ApiLogConfigManager implements SmartInitializingSingleton, Ordered, DisposableBean {
 
   private static final long CLEANUP_INTERVAL_SECONDS = 30;
@@ -65,7 +66,7 @@ public final class ApiLogConfigManager implements SmartInitializingSingleton, Or
   /**
    * 启动时程序化配置
    */
-  private final Map<String, Map<String, ApiEndpointLogConfig>> programmaticConfigs = new ConcurrentHashMap<>();
+  private final Map<String, Map<String, ApiEndpointLogConfig>> programmaticEndpointConfigs = new ConcurrentHashMap<>();
 
   /**
    * resolveConfig 结果缓存。
@@ -83,6 +84,10 @@ public final class ApiLogConfigManager implements SmartInitializingSingleton, Or
   });
 
   private final AtomicReference<ApiLogConfig> globalApiLogConfig = new AtomicReference<>();
+  /**
+   * Controller 级程序化配置（接口名 → 配置）。
+   */
+  private final Map<String, ApiLogConfig> programmaticControllerConfigs = new ConcurrentHashMap<>();
 
   @Resource
   private LoggableControllerMetaRegistry registry;
@@ -132,7 +137,7 @@ public final class ApiLogConfigManager implements SmartInitializingSingleton, Or
   private void startCleanupScheduler() {
     cleanupExecutor.scheduleWithFixedDelay(() -> {
       try {
-        programmaticConfigs.forEach((controllerName, methodConfigs) -> {
+        programmaticEndpointConfigs.forEach((controllerName, methodConfigs) -> {
           Set<Map.Entry<String, ApiEndpointLogConfig>> entries = methodConfigs.entrySet();
           entries.removeIf(entry -> {
             ApiEndpointLogConfig config = entry.getValue();
@@ -154,11 +159,18 @@ public final class ApiLogConfigManager implements SmartInitializingSingleton, Or
   // ============================================================
 
   /**
+   * 获取当前全局日志配置。
+   */
+  public ApiLogConfig getGlobalConfig() {
+    return globalApiLogConfig.get();
+  }
+
+  /**
    * 动态全局配置
    */
-  @SuppressWarnings("unused")
   public void configureGlobal(ApiLogConfig config) {
     globalApiLogConfig.get().merge(config);
+    resolvedConfigCache.clear();
     logger.atWarn()
           .scene(LOGGER_SCENE_API_LOG_CONFIG)
           .status(Status.SUCCESS)
@@ -166,16 +178,60 @@ public final class ApiLogConfigManager implements SmartInitializingSingleton, Or
   }
 
   /**
+   * 获取指定 Controller 的通用程序化配置。
+   */
+  @SuppressWarnings("DuplicatedCode")
+  public ApiLogConfig getControllerConfig(String interfaceName) {
+    ApiLogConfig resolved = new ApiLogConfig();
+    resolved.merge(globalApiLogConfig.get());
+    Map<String, ApiLogConfig> yamlConfig = yamlConfigs.get(interfaceName);
+    if (yamlConfig != null) {
+      ApiLogConfig yamlGeneral = yamlConfig.get(API_LOG_KEY_GENERAL);
+      if (yamlGeneral != null) {
+        resolved.merge(yamlGeneral);
+      }
+    }
+    ApiLogConfig programmaticConfig = programmaticControllerConfigs.get(interfaceName);
+    if (programmaticConfig != null) {
+      resolved.merge(programmaticConfig);
+    }
+    return resolved;
+  }
+
+  /**
+   * 动态 Controller 级通用配置（对该 Controller 的所有方法生效）。
+   *
+   * @param interfaceName Controller 全限定类名
+   * @param config        配置对象
+   */
+  public void configureController(String interfaceName, ApiLogConfig config) {
+    Optional<ControllerMeta> lookup = registry.lookup(interfaceName);
+    if (lookup.isPresent()) {
+      programmaticControllerConfigs.put(interfaceName, config);
+      logger.atInfo()
+            .scene(LOGGER_SCENE_API_LOG_CONFIG)
+            .status(Status.SUCCESS)
+            .log("API 日志 Controller 级配置已更新: {}, {}", interfaceName, config);
+      // 清除该 Controller 下所有方法的缓存
+      resolvedConfigCache.keySet().removeIf(key -> key.startsWith(interfaceName + ":"));
+    } else {
+      logger.atWarn()
+            .scene(LOGGER_SCENE_API_LOG_CONFIG)
+            .status(Status.FIXME)
+            .log("API 日志 Controller 级配置更新失败: 未找到对应 Controller: {}", interfaceName);
+    }
+  }
+
+  /**
    * 动态 Controller 方法配置
    */
-  @SuppressWarnings("unused")
-  public void configureMethod(String controllerName, String methodHash, ApiEndpointLogConfig config) {
-    Optional<ControllerMeta> lookup = registry.lookup(controllerName);
+  public void configureMethod(String interfaceName, String methodHash, ApiEndpointLogConfig config) {
+    Optional<ControllerMeta> lookup = registry.lookup(interfaceName);
     if (lookup.isPresent()) {
       ControllerMeta controllerMeta = lookup.get();
       ControllerMethodMeta controllerMethodMeta = controllerMeta.methods().get(methodHash);
       if (controllerMethodMeta != null) {
-        Map<String, ApiEndpointLogConfig> methodConfigs = programmaticConfigs.computeIfAbsent(controllerName,
+        Map<String, ApiEndpointLogConfig> methodConfigs = programmaticEndpointConfigs.computeIfAbsent(interfaceName,
             k -> new ConcurrentHashMap<>());
         if (config == null) {
           methodConfigs.remove(methodHash);
@@ -183,7 +239,7 @@ public final class ApiLogConfigManager implements SmartInitializingSingleton, Or
                 .scene(LOGGER_SCENE_API_LOG_CONFIG)
                 .status(Status.SUCCESS)
                 .log("API 日志方法级配置已删除: {}, method={}, url={}",
-                    controllerName,
+                    interfaceName,
                     controllerMethodMeta.methodName(),
                     controllerMethodMeta.fullUrlPattern());
         } else {
@@ -192,23 +248,23 @@ public final class ApiLogConfigManager implements SmartInitializingSingleton, Or
                 .scene(LOGGER_SCENE_API_LOG_CONFIG)
                 .status(Status.SUCCESS)
                 .log("API 日志方法级配置已更新: {}, method={}, url={}, level={}",
-                    controllerName,
+                    interfaceName,
                     controllerMethodMeta.methodName(),
                     controllerMethodMeta.fullUrlPattern(),
                     config);
         }
-        resolvedConfigCache.remove(controllerName + ":" + methodHash);
+        resolvedConfigCache.remove(interfaceName + ":" + methodHash);
       } else {
         logger.atWarn()
               .scene(LOGGER_SCENE_API_LOG_CONFIG)
               .status(Status.FIXME)
-              .log("API 日志方法级配置更新失败: 未找到对应方法: {}, method={}", controllerName, methodHash);
+              .log("API 日志方法级配置更新失败: 未找到对应方法: {}, method={}", interfaceName, methodHash);
       }
     } else {
       logger.atWarn()
             .scene(LOGGER_SCENE_API_LOG_CONFIG)
             .status(Status.FIXME)
-            .log("API 日志方法级配置更新失败: 未找到对应 Controller: {}", controllerName);
+            .log("API 日志方法级配置更新失败: 未找到对应 Controller: {}", interfaceName);
     }
   }
 
@@ -221,41 +277,51 @@ public final class ApiLogConfigManager implements SmartInitializingSingleton, Or
    * <p>
    * 合并顺序：框架默认 → classpath YAML → 程序化 API。
    *
-   * @param controllerName Controller 接口名
-   * @param methodHash     方法标识（方法哈希）
+   * @param interfaceName Controller 接口名
+   * @param methodHash    方法标识（方法哈希）
    * @return 最终生效的配置（包含可能的 conditionGroup）
    */
-  public ApiEndpointLogConfig resolveConfig(String controllerName, String methodHash) {
-    String cacheKey = controllerName + ":" + methodHash;
-    return resolvedConfigCache.computeIfAbsent(cacheKey, k -> doResolve(controllerName, methodHash));
+  public ApiEndpointLogConfig resolveConfig(String interfaceName, String methodHash) {
+    String cacheKey = interfaceName + ":" + methodHash;
+    return resolvedConfigCache.computeIfAbsent(cacheKey, k -> doResolve(interfaceName, methodHash));
   }
 
-  private ApiEndpointLogConfig doResolve(String controllerName, String methodHash) {
+  @SuppressWarnings("DuplicatedCode")
+  private ApiEndpointLogConfig doResolve(String interfaceName, String methodHash) {
     ApiEndpointLogConfig resolved = new ApiEndpointLogConfig();
 
     // step 1. 先合并全局配置
     resolved.merge(globalApiLogConfig.get());
 
-    Map<String, ApiLogConfig> yamlController = yamlConfigs.get(controllerName);
-    if (yamlController != null) {
+    Map<String, ApiLogConfig> yamlControllerConfigs = this.yamlConfigs.get(interfaceName);
+    if (yamlControllerConfigs != null) {
       // step 2. 再合并YAML定义的 controller 通用配置
-      ApiLogConfig yamlGeneral = yamlController.get(API_LOG_KEY_GENERAL);
-      if (yamlGeneral != null) {
-        resolved.merge(yamlGeneral);
-      }
-
-      // step 3. 再合并YAML定义的方法配置
-      ApiLogConfig yamlMethod = yamlController.get(methodHash);
-      if (yamlMethod != null) {
-        resolved.merge(yamlMethod);
+      ApiLogConfig yamlGeneralConfig = yamlControllerConfigs.get(API_LOG_KEY_GENERAL);
+      if (yamlGeneralConfig != null) {
+        resolved.merge(yamlGeneralConfig);
       }
     }
 
-    Map<String, ApiEndpointLogConfig> progController = programmaticConfigs.get(controllerName);
-    if (progController != null) {
-      ApiEndpointLogConfig progMethod = progController.get(methodHash);
-      if (progMethod != null) {
-        resolved.merge(progMethod);
+    // step 3. 合并程序化 Controller 级配置
+    ApiLogConfig programmaticControllerConfig = programmaticControllerConfigs.get(interfaceName);
+    if (programmaticControllerConfig != null) {
+      resolved.merge(programmaticControllerConfig);
+    }
+
+    if (yamlControllerConfigs != null) {
+      // step 4. 再合并YAML定义的方法配置
+      ApiLogConfig yamlEndpointConfig = yamlControllerConfigs.get(methodHash);
+      if (yamlEndpointConfig != null) {
+        resolved.merge(yamlEndpointConfig);
+      }
+    }
+
+    // step 5. 合并程序化方法级配置
+    Map<String, ApiEndpointLogConfig> programmaticEndpointConfigs = this.programmaticEndpointConfigs.get(interfaceName);
+    if (programmaticEndpointConfigs != null) {
+      ApiEndpointLogConfig programmaticEndpointConfig = programmaticEndpointConfigs.get(methodHash);
+      if (programmaticEndpointConfig != null) {
+        resolved.merge(programmaticEndpointConfig);
       }
     }
 
@@ -269,7 +335,6 @@ public final class ApiLogConfigManager implements SmartInitializingSingleton, Or
   /**
    * 获取所有 Controller 名列表。
    */
-  @SuppressWarnings("unused")
   public List<String> allControllerNames() {
     return registry.getAllMetas().values().stream().map(ControllerMeta::interfaceClass).map(Class::getName).toList();
   }
@@ -277,13 +342,12 @@ public final class ApiLogConfigManager implements SmartInitializingSingleton, Or
   /**
    * 获取 Controller 的所有方法详情。
    */
-  @SuppressWarnings("unused")
-  public List<ApiEndpointDetail> getApiEndpointsDetail(String controllerName) {
+  public List<ApiEndpointDetail> getApiEndpointsDetail(String interfaceName) {
     if (registry == null) {
       return Collections.emptyList();
     }
 
-    return registry.lookup(controllerName).map(meta -> {
+    return registry.lookup(interfaceName).map(meta -> {
       List<ApiEndpointDetail> result = new ArrayList<>();
       for (Map.Entry<String, ControllerMethodMeta> entry : meta.methods().entrySet()) {
         String methodKey = entry.getKey();
@@ -293,11 +357,12 @@ public final class ApiLogConfigManager implements SmartInitializingSingleton, Or
           continue;
         }
 
-        ApiEndpointLogConfig config = resolveConfig(controllerName, methodKey);
+        ApiEndpointLogConfig config = resolveConfig(interfaceName, methodKey);
         result.add(new ApiEndpointDetail(methodMeta.httpMethod(),
             methodMeta.fullUrlPattern(),
             methodMeta.methodName(),
-            controllerName,
+            methodMeta.hash(),
+            interfaceName,
             methodMeta.parameterTypes(),
             config));
       }

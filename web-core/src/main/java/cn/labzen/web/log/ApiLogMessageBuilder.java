@@ -39,8 +39,8 @@ import static cn.labzen.web.api.definition.Constants.API_CONTROLLER_META_ATTRIBU
  *   <li><b>文件处理</b>：识别上传文件类型（{@link MultipartFile}/{@link Part}）打印元信息而非二进制内容</li>
  * </ul>
  * <p>
- * <b>职责边界：</b>响应体的预处理（文件类型检测、截断）由 {@link ApiLogResponseAdvice} 完成，
- * 脱敏暂不实施（日志仅供运维/开发者内部查看）。
+ * <b>职责边界：</b>所有日志消息构建（请求参数过滤、响应体处理、文件元信息提取）
+ * 统一在此完成。脱敏暂不实施（日志仅供运维/开发者内部查看）。
  * <p>
  * <b>日志格式示例：</b>
  * <pre>{@code

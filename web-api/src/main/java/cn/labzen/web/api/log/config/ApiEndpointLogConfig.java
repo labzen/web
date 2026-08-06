@@ -1,12 +1,12 @@
 package cn.labzen.web.api.log.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.annotation.Nonnull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -15,7 +15,6 @@ import java.util.Set;
  * 在通用日志配置基础上，增加端点特有的属性：
  * <ul>
  *   <li>参数过滤（includeParams / excludeParams）</li>
- *   <li>响应体脱敏（responseMaskPatterns）</li>
  *   <li>条件触发（conditionExpression / conditionGroup / ttl / createdAt / expiresAt）</li>
  * </ul>
  * <p>
@@ -45,11 +44,6 @@ public class ApiEndpointLogConfig extends ApiLogConfig {
    * 排除指定参数（黑名单）
    */
   private Set<String> excludeParams;
-
-  /**
-   * 响应体脱敏规则：JSON Path → 脱敏规则名称（如 "phone-mask"、"idcard-mask"）
-   */
-  private Map<String, String> responseMaskPatterns;
 
   // ============================================================
   // 条件触发字段
@@ -98,6 +92,7 @@ public class ApiEndpointLogConfig extends ApiLogConfig {
    *
    * @return 解析后的条件树，未解析时为 null
    */
+  @JsonIgnore
   public ConditionGroup getConditionGroup() {
     return resolvedConditionGroup;
   }
@@ -121,7 +116,6 @@ public class ApiEndpointLogConfig extends ApiLogConfig {
 
     this.setIncludeParams(value(this.getIncludeParams(), override.getIncludeParams()));
     this.setExcludeParams(value(this.getExcludeParams(), override.getExcludeParams()));
-    this.setResponseMaskPatterns(value(this.getResponseMaskPatterns(), override.getResponseMaskPatterns()));
     this.setConditionExpression(value(this.getConditionExpression(), override.getConditionExpression()));
     this.setConditionGroup(value(this.getConditionGroup(), override.getConditionGroup()));
     this.setTtl(value(this.getTtl(), override.getTtl()));
@@ -138,6 +132,6 @@ public class ApiEndpointLogConfig extends ApiLogConfig {
   }
 
   public boolean isExpired() {
-    return expiresAt != null && Instant.now().isAfter(expiresAt);
+    return expiresAt == null || Instant.now().isAfter(expiresAt);
   }
 }

@@ -15,6 +15,7 @@ import java.util.Map;
 @Data
 public class YamlFile {
 
+  private String interfaceClass;
   private ApiLogConfig general;
   private Map<String, ApiEndpointLogConfig> methods;
 }

@@ -26,6 +26,16 @@ public final class ConditionExpressionParser {
   private ConditionExpressionParser() {
   }
 
+  /**
+   * 将条件表达式字符串解析为 {@link ConditionGroup} 树。
+   * <p>
+   * 支持 AND / OR 逻辑连接和括号分组。使用递归下降解析算法。
+   *
+   * @param expression 条件表达式字符串，如 {@code "(username contains '张三' AND status = active) OR amount > 1000"}，
+   *                   为 null 或空白时返回 null
+   * @return 解析后的条件树根节点，解析失败或输入为空时返回 null
+   * @see MatchType#fromOperator(String)
+   */
   public static ConditionGroup parse(String expression) {
     if (expression == null || expression.isBlank()) {
       return null;

@@ -160,7 +160,7 @@ public class ApiLogInterceptor implements HandlerInterceptor {
    */
   private Optional<ControllerMeta> resolveControllerMeta(Class<?> implClass) {
     for (Class<?> interfaceClass : implClass.getInterfaces()) {
-      Optional<ControllerMeta> meta = controllerRegistry.lookup(interfaceClass.getSimpleName());
+      Optional<ControllerMeta> meta = controllerRegistry.lookup(interfaceClass.getName());
       if (meta.isPresent()) {
         return meta;
       }

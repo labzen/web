@@ -1,7 +1,10 @@
 package cn.labzen.web.api.log.config;
 
 import jakarta.annotation.Nonnull;
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import org.slf4j.event.Level;
 
 /**
@@ -30,8 +33,10 @@ public class ApiLogConfig {
   private String level;
 
   /**
-   * level 字符串解析后的枚举缓存（懒加载）
+   * level 字符串解析后的枚举缓存
    */
+  @Setter(AccessLevel.NONE)
+  @Getter(AccessLevel.NONE)
   private Level resolvedLevel;
 
   /**

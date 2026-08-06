@@ -111,7 +111,25 @@ public class ApiLogConfigLoader {
         }
         String controllerName = Strings.frontUntil(filename, ".", false);
 
-        Optional<ControllerMeta> lookupMeta = registry.lookup(controllerName);
+        // SnakeYAML Bean 映射：直接到 ApiLogConfig / ApiEndpointLogConfig
+        YamlFile yamlFile;
+        try (InputStreamReader reader = new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8)) {
+          yamlFile = YAML.loadAs(reader, YamlFile.class);
+        }
+        if (yamlFile == null) {
+          logger.atWarn()
+                .scene(LOGGER_SCENE_API_LOG_CONFIG)
+                .status(Status.FIXME)
+                .log("API 日志配置文件 [{}] 无效，跳过", filename);
+          continue;
+        }
+
+        Optional<ControllerMeta> lookupMeta;
+        if (Strings.isNotBlank(yamlFile.getInterfaceClass())) {
+          lookupMeta = registry.lookup(yamlFile.getInterfaceClass());
+        } else {
+          lookupMeta = registry.lookupBySimpleName(controllerName);
+        }
         if (lookupMeta.isEmpty()) {
           logger.atWarn()
                 .scene(LOGGER_SCENE_API_LOG_CONFIG)
@@ -121,20 +139,6 @@ public class ApiLogConfigLoader {
         }
         ControllerMeta controllerMeta = lookupMeta.get();
         String interfaceName = controllerMeta.interfaceClass().getName();
-
-        // SnakeYAML Bean 映射：直接到 ApiLogConfig / ApiEndpointLogConfig
-        YamlFile yamlFile;
-        try (InputStreamReader reader = new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8)) {
-          yamlFile = YAML.loadAs(reader, YamlFile.class);
-        }
-
-        if (yamlFile == null) {
-          logger.atWarn()
-                .scene(LOGGER_SCENE_API_LOG_CONFIG)
-                .status(Status.FIXME)
-                .log("API 日志配置文件 [{}] 无效，跳过", filename);
-          continue;
-        }
 
         Map<String, ApiLogConfig> controllerConfigs = new LinkedHashMap<>();
         if (yamlFile.getGeneral() != null) {

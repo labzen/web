@@ -97,11 +97,25 @@ public final class LoggableControllerMetaRegistry implements SmartInitializingSi
   /**
    * 按 Controller 简单名查找元数据。
    *
-   * @param controllerSimpleName Controller 接口简单名（如 "UserController"）
+   * @param fullName Controller 接口简单名（如 "UserController"）
    * @return ControllerMeta，未找到时返回空
    */
-  public Optional<ControllerMeta> lookup(String controllerSimpleName) {
-    return Optional.ofNullable(registry.get(controllerSimpleName));
+  public Optional<ControllerMeta> lookup(String fullName) {
+    return Optional.ofNullable(registry.get(fullName));
+  }
+
+  public Optional<ControllerMeta> lookupBySimpleName(String simpleName) {
+    List<String> list = registry.keySet().stream().filter(key -> key.endsWith(simpleName)).toList();
+    if (list.isEmpty()) {
+      return Optional.empty();
+    } else if (list.size() > 1) {
+      logger.atWarn()
+            .scene(LOGGER_SCENE_API_LOG_INIT)
+            .status(Status.FIXME)
+            .log("找到 {} 个 Controller 的元数据，请在 YAML 配置文件中通过 {interfaceClass} 属性指明 Controller 接口的 FQCN",
+                list.size());
+    }
+    return Optional.of(registry.get(list.getFirst()));
   }
 
   /**
@@ -113,12 +127,12 @@ public final class LoggableControllerMetaRegistry implements SmartInitializingSi
    *   <li>HTTP方法+URL：如 {@code "POST /api/user"}</li>
    * </ul>
    *
-   * @param controllerSimpleName Controller 接口简单名
-   * @param methodKey            方法标识
+   * @param interfaceName Controller 接口简单名
+   * @param methodKey     方法标识
    * @return ControllerMethodMeta，未找到时返回空
    */
-  public Optional<ControllerMethodMeta> lookupMethod(String controllerSimpleName, String methodKey) {
-    return lookup(controllerSimpleName).flatMap(meta -> Optional.ofNullable(meta.methods().get(methodKey)));
+  public Optional<ControllerMethodMeta> lookupMethod(String interfaceName, String methodKey) {
+    return lookup(interfaceName).flatMap(meta -> Optional.ofNullable(meta.methods().get(methodKey)));
   }
 
   // ============================================================
@@ -214,7 +228,7 @@ public final class LoggableControllerMetaRegistry implements SmartInitializingSi
       }
 
       ControllerMeta controller = new ControllerMeta(interfaceClass, simpleName, methods);
-      loaded.put(simpleName, controller);
+      loaded.put(interfaceClass.getName(), controller);
       logger.atDebug()
             .scene(LOGGER_SCENE_API_LOG_INIT)
             .status(Status.REMIND)
