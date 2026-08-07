@@ -143,4 +143,10 @@ public interface WebCoreConfiguration {
    */
   @Item(path = "log.out-response", required = false, defaultValue = "false")
   boolean apiLogResponse();
+
+  /**
+   * API 日志配置文件更新间隔时间（单位：秒），默认 30 秒
+   */
+  @Item(path = "log.config-update-interval", required = false, defaultValue = "30")
+  int apiLogProgrammaticConfigUpdateInterval();
 }

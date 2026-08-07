@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.annotation.Nonnull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -29,6 +30,7 @@ import java.util.Set;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public class ApiEndpointLogConfig extends ApiLogConfig {
 
   // ============================================================

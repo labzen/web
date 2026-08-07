@@ -4,8 +4,10 @@ import cn.labzen.logger.Loggers;
 import cn.labzen.logger.kernel.LabzenLogger;
 import cn.labzen.logger.kernel.enums.Status;
 import cn.labzen.meta.Labzens;
+import cn.labzen.tool.util.Strings;
 import cn.labzen.web.api.log.config.ApiEndpointLogConfig;
 import cn.labzen.web.api.log.config.ApiLogConfig;
+import cn.labzen.web.api.log.config.ConditionGroup;
 import cn.labzen.web.api.log.registry.ControllerMeta;
 import cn.labzen.web.api.log.registry.ControllerMethodMeta;
 import cn.labzen.web.log.bean.ApiEndpointDetail;
@@ -50,7 +52,7 @@ import static cn.labzen.web.api.definition.Constants.*;
 @SuppressWarnings("unused")
 public final class ApiLogConfigManager implements SmartInitializingSingleton, Ordered, DisposableBean {
 
-  private static final long CLEANUP_INTERVAL_SECONDS = 30;
+  //private static final long CLEANUP_INTERVAL_SECONDS = 30;
 
   private final LabzenLogger logger = Loggers.getLogger(ApiLogConfigManager.class);
 
@@ -135,13 +137,20 @@ public final class ApiLogConfigManager implements SmartInitializingSingleton, Or
   }
 
   private void startCleanupScheduler() {
+    WebCoreConfiguration configuration = Labzens.configurationWith(WebCoreConfiguration.class);
+    int interval = configuration.apiLogProgrammaticConfigUpdateInterval();
     cleanupExecutor.scheduleWithFixedDelay(() -> {
       try {
-        programmaticEndpointConfigs.forEach((controllerName, methodConfigs) -> {
-          Set<Map.Entry<String, ApiEndpointLogConfig>> entries = methodConfigs.entrySet();
-          entries.removeIf(entry -> {
-            ApiEndpointLogConfig config = entry.getValue();
-            return config.getExpiresAt() != null && Instant.now().isAfter(config.getExpiresAt());
+        programmaticEndpointConfigs.forEach((interfaceName, methodConfigs) -> {
+          methodConfigs.forEach((methodKey, config) -> {
+            if (!Boolean.TRUE.equals(config.getEnabled())) {
+              return;
+            }
+            if (config.getExpiresAt() != null && Instant.now().isAfter(config.getExpiresAt())) {
+              config.setEnabled(false);
+              String cacheKey = endpointConfigCacheKey(interfaceName, methodKey);
+              resolvedConfigCache.remove(cacheKey);
+            }
           });
         });
       } catch (Exception e) {
@@ -151,7 +160,7 @@ public final class ApiLogConfigManager implements SmartInitializingSingleton, Or
               .setCause(e)
               .log("API 日志清理过期配置发生问题");
       }
-    }, CLEANUP_INTERVAL_SECONDS, CLEANUP_INTERVAL_SECONDS, TimeUnit.SECONDS);
+    }, interval, interval, TimeUnit.SECONDS);
   }
 
   // ============================================================
@@ -227,50 +236,94 @@ public final class ApiLogConfigManager implements SmartInitializingSingleton, Or
    */
   public void configureMethod(String interfaceName, String methodHash, ApiEndpointLogConfig config) {
     Optional<ControllerMeta> lookup = registry.lookup(interfaceName);
-    if (lookup.isPresent()) {
-      ControllerMeta controllerMeta = lookup.get();
-      ControllerMethodMeta controllerMethodMeta = controllerMeta.methods().get(methodHash);
-      if (controllerMethodMeta != null) {
-        Map<String, ApiEndpointLogConfig> methodConfigs = programmaticEndpointConfigs.computeIfAbsent(interfaceName,
-            k -> new ConcurrentHashMap<>());
-        if (config == null) {
-          methodConfigs.remove(methodHash);
-          logger.atInfo()
-                .scene(LOGGER_SCENE_API_LOG_CONFIG)
-                .status(Status.SUCCESS)
-                .log("API 日志方法级配置已删除: {}, method={}, url={}",
-                    interfaceName,
-                    controllerMethodMeta.methodName(),
-                    controllerMethodMeta.fullUrlPattern());
-        } else {
-          methodConfigs.put(methodHash, config);
-          logger.atInfo()
-                .scene(LOGGER_SCENE_API_LOG_CONFIG)
-                .status(Status.SUCCESS)
-                .log("API 日志方法级配置已更新: {}, method={}, url={}, level={}",
-                    interfaceName,
-                    controllerMethodMeta.methodName(),
-                    controllerMethodMeta.fullUrlPattern(),
-                    config);
-        }
-        resolvedConfigCache.remove(interfaceName + ":" + methodHash);
-      } else {
-        logger.atWarn()
-              .scene(LOGGER_SCENE_API_LOG_CONFIG)
-              .status(Status.FIXME)
-              .log("API 日志方法级配置更新失败: 未找到对应方法: {}, method={}", interfaceName, methodHash);
-      }
-    } else {
+    if (lookup.isEmpty()) {
       logger.atWarn()
             .scene(LOGGER_SCENE_API_LOG_CONFIG)
             .status(Status.FIXME)
             .log("API 日志方法级配置更新失败: 未找到对应 Controller: {}", interfaceName);
+      return;
     }
+
+    ControllerMeta controllerMeta = lookup.get();
+    if (!controllerMeta.methods().containsKey(methodHash)) {
+      logger.atWarn()
+            .scene(LOGGER_SCENE_API_LOG_CONFIG)
+            .status(Status.FIXME)
+            .log("API 日志方法级配置更新失败: 未找到对应方法: {}, method={}", interfaceName, methodHash);
+      return;
+    }
+
+    ControllerMethodMeta controllerMethodMeta = controllerMeta.methods().get(methodHash);
+    Map<String, ApiEndpointLogConfig> methodConfigs = programmaticEndpointConfigs.computeIfAbsent(interfaceName,
+        k -> new ConcurrentHashMap<>());
+    if (config == null) {
+      methodConfigs.remove(methodHash);
+      logger.atInfo()
+            .scene(LOGGER_SCENE_API_LOG_CONFIG)
+            .status(Status.SUCCESS)
+            .log("API 日志方法级配置已删除: {}, method={}, url={}",
+                interfaceName,
+                controllerMethodMeta.methodName(),
+                controllerMethodMeta.fullUrlPattern());
+    } else {
+      config.setCreatedAt(Instant.now());
+
+      // 条件表达式：解析并验证 TTL
+      if (Strings.isNotBlank(config.getConditionExpression())) {
+        if (config.getTtl() == null) {
+          logger.atWarn()
+                .scene(LOGGER_SCENE_API_LOG_CONFIG)
+                .status(Status.FIXME)
+                .log("API 日志方法级配置更新失败: conditionExpression 必须同时设置 ttl: {}, method={}",
+                    interfaceName,
+                    controllerMethodMeta.methodName());
+          return;
+        }
+
+        ConditionGroup group = ConditionExpressionParser.parse(config.getConditionExpression());
+        if (group != null) {
+          config.setConditionGroup(group);
+        } else {
+          logger.atWarn()
+                .scene(LOGGER_SCENE_API_LOG_CONFIG)
+                .status(Status.FIXME)
+                .log("API 日志方法级配置更新失败: 解析 conditionExpression 失败，将忽略条件表达式: {}, method={}",
+                    interfaceName,
+                    controllerMethodMeta.methodName());
+          return;
+        }
+      }
+
+      if (config.getTtl() != null && !config.getTtl().isZero()) {
+        config.setExpiresAt(Instant.now().plus(config.getTtl()));
+      }
+
+      methodConfigs.put(methodHash, config);
+      logger.atWarn()
+            .scene(LOGGER_SCENE_API_LOG_CONFIG)
+            .status(Status.SUCCESS)
+            .log("API 日志方法级配置已更新: {}, method={}, url={}, level={}",
+                interfaceName,
+                controllerMethodMeta.methodName(),
+                controllerMethodMeta.fullUrlPattern(),
+                config);
+    }
+
+    String cacheKey = endpointConfigCacheKey(interfaceName, methodHash);
+    resolvedConfigCache.remove(cacheKey);
   }
 
   // ============================================================
   // 运行时配置查询（唯一入口）
   // ============================================================
+
+  private String endpointConfigCacheKey(String interfaceName, String methodHash) {
+    return interfaceName + ":" + methodHash;
+  }
+
+  public ApiEndpointLogConfig resolveConfigWithoutCache(String interfaceName, String methodHash) {
+    return doResolve(interfaceName, methodHash);
+  }
 
   /**
    * 按 Controller 名和方法标识解析最终生效的配置（三层合并 + 缓存）。
@@ -282,7 +335,7 @@ public final class ApiLogConfigManager implements SmartInitializingSingleton, Or
    * @return 最终生效的配置（包含可能的 conditionGroup）
    */
   public ApiEndpointLogConfig resolveConfig(String interfaceName, String methodHash) {
-    String cacheKey = interfaceName + ":" + methodHash;
+    String cacheKey = endpointConfigCacheKey(interfaceName, methodHash);
     return resolvedConfigCache.computeIfAbsent(cacheKey, k -> doResolve(interfaceName, methodHash));
   }
 
@@ -353,11 +406,11 @@ public final class ApiLogConfigManager implements SmartInitializingSingleton, Or
         String methodKey = entry.getKey();
         ControllerMethodMeta methodMeta = entry.getValue();
 
-        if (!methodKey.equals(methodMeta.methodName())) {
+        if (!methodKey.equals(methodMeta.hash())) {
           continue;
         }
 
-        ApiEndpointLogConfig config = resolveConfig(interfaceName, methodKey);
+        ApiEndpointLogConfig config = resolveConfigWithoutCache(interfaceName, methodKey);
         result.add(new ApiEndpointDetail(methodMeta.httpMethod(),
             methodMeta.fullUrlPattern(),
             methodMeta.methodName(),
