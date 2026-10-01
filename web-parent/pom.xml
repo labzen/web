@@ -69,7 +69,7 @@
   </repositories>
 
   <properties>
-    <revision>1.2.9</revision>
+    <revision>1.2.10</revision>
 
     <labzen.logger.version>1.6.1</labzen.logger.version>
     <labzen.tool.version>1.4.1</labzen.tool.version>

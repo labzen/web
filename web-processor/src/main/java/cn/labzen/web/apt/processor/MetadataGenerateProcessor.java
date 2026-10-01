@@ -170,8 +170,12 @@ public final class MetadataGenerateProcessor implements InternalProcessor {
       try (Writer writer = fileObject.openWriter()) {
         writer.write(toJson(controllerMeta));
       }
+      apc.messaging().info("MetadataGenerateProcessor: 已生成元数据文件 " + resourcePath);
     } catch (Exception e) {
-      apc.messaging().warning("MetadataGenerateProcessor: 无法生成元数据 JSON 文件: " + e.getMessage());
+      apc.messaging().warning("MetadataGenerateProcessor: 无法生成元数据 JSON 文件 [" +
+          controllerSimpleName +
+          ".meta.json]: " +
+          e);
     }
   }
 
