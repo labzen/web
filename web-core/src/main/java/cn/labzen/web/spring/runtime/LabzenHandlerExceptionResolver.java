@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.GenericHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.server.ServletServerHttpResponse;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
@@ -44,6 +45,7 @@ import static cn.labzen.web.api.definition.Constants.EXCEPTION_WAS_LOGGED_DURING
  *   <li>NoHandlerFoundException - 无对应处理器（404）</li>
  *   <li>HttpRequestMethodNotSupportedException - 请求方法不支持（405）</li>
  *   <li>HttpMediaTypeNotSupportedException - 媒体类型不支持（415）</li>
+ *   <li>HttpMessageNotReadableException - 请求体无法解析（如 JSON 语法错误、类型不匹配）（400）</li>
  *   <li>MissingServletRequestParameterException - 缺少请求参数（400）</li>
  *   <li>TypeMismatchException - 类型不匹配（400）</li>
  *   <li>ConversionNotSupportedException - 转换不支持（500）</li>
@@ -98,6 +100,7 @@ public class LabzenHandlerExceptionResolver implements HandlerExceptionResolver 
       case NoHandlerFoundException ignored -> handleNoHandlerFoundException(request, response);
       case HttpRequestMethodNotSupportedException he -> handleRequestMethodNotSupportedException(request, response, he);
       case HttpMediaTypeNotSupportedException he -> handleMediaTypeNotSupportedException(request, response, he);
+      case HttpMessageNotReadableException he -> handleMessageNotReadableException(request, response, he);
       case MissingPathVariableException he -> handleMissingPathVariableException(request, response, he);
       case MissingServletRequestParameterException he ->
           handleMissingServletRequestParameterException(request, response, he);
@@ -176,6 +179,13 @@ public class LabzenHandlerExceptionResolver implements HandlerExceptionResolver 
                                                             HttpServletResponse response,
                                                             HttpMediaTypeNotSupportedException exception) {
     responseWithMessage(HttpStatus.UNSUPPORTED_MEDIA_TYPE, exception.getMessage(), request, response);
+    return new ModelAndView();
+  }
+
+  private ModelAndView handleMessageNotReadableException(HttpServletRequest request,
+                                                        HttpServletResponse response,
+                                                        HttpMessageNotReadableException exception) {
+    responseWithMessage(HttpStatus.BAD_REQUEST, exception.getMessage(), request, response);
     return new ModelAndView();
   }
 
@@ -262,6 +272,7 @@ public class LabzenHandlerExceptionResolver implements HandlerExceptionResolver 
    * 根据 Accept Header 选择合适的 HttpMessageConverter 进行序列化。
    * 默认使用 application/json。
    */
+  @SuppressWarnings("unused")
   private void out(Object data, HttpServletRequest request, HttpServletResponse response) throws IOException {
     MediaType mediaType = MediaType.APPLICATION_JSON;
 

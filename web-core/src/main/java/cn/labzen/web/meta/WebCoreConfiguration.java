@@ -85,6 +85,22 @@ public interface WebCoreConfiguration {
   int maxPageSize();
 
   // ===================================================================================================================
+  // 请求反序列化
+  // ===================================================================================================================
+
+  /**
+   * 请求反序列化时，基本类型字段收到显式 {@code null} 是否报错，默认 false。
+   * <p>
+   * 开启后，对应用侧的 ObjectMapper 启用 Jackson 的 {@code FAIL_ON_NULL_FOR_PRIMITIVES}：
+   * 请求体中基本类型字段收到显式 {@code null}（如 {@code {"frozen":null}}）时抛出异常，
+   * 由 {@code LabzenHandlerExceptionResolver} 转换为 400 响应信封，避免该字段被静默赋予类型默认值。
+   * <p>
+   * 仅影响反序列化，不影响序列化。
+   */
+  @Item(path = "request.fail-on-null-for-primitives", required = false, defaultValue = "false")
+  boolean requestFailOnNullForPrimitives();
+
+  // ===================================================================================================================
 
   @Item(path = "file.upload.default-storage", required = false, defaultValue = "LocalFileStorage")
   String defaultFileStorage();

@@ -10,12 +10,20 @@ public final class TypeNames {
   public static final String APT_ANNOTATION_MAPPING_VERSION = "cn.labzen.web.api.annotation.MappingVersion";
   public static final String APT_ANNOTATION_MONITOR = "cn.labzen.web.api.annotation.Monitor";
   public static final String APT_ANNOTATION_THRESHOLD = "cn.labzen.web.api.annotation.Threshold";
+  public static final String APT_ANNOTATION_RESOURCE_BODY = "cn.labzen.web.api.annotation.ResourceBody";
   public static final String ANNOTATION_API_VERSION = "cn.labzen.web.api.annotation.runtime.APIVersion";
   public static final String INTERFACE_BASE_CONTROLLER = "cn.labzen.web.api.controller.LabzenController";
   public static final String INTERFACE_SIMPLEST_CONTROLLER = "cn.labzen.web.api.controller.SimplestController";
   public static final String INTERFACE_STANDARD_CONTROLLER = "cn.labzen.web.api.controller.StandardController";
   public static final String INTERFACE_FILE_CONTROLLER = "cn.labzen.web.api.controller.FileController";
   public static final String ANNOTATION_SPRING_REQUEST_MAPPING = "org.springframework.web.bind.annotation.RequestMapping";
+  public static final String ANNOTATION_SPRING_GET_MAPPING = "org.springframework.web.bind.annotation.GetMapping";
+  public static final String ANNOTATION_SPRING_REQUEST_BODY = "org.springframework.web.bind.annotation.RequestBody";
+  public static final String ANNOTATION_SPRING_MODEL_ATTRIBUTE = "org.springframework.web.bind.annotation.ModelAttribute";
+  /**
+   * Spring MVC 参数绑定注解所在的包名，用于判定参数上是否已显式声明绑定注解
+   */
+  public static final String ANNOTATION_SPRING_BIND_PACKAGE = "org.springframework.web.bind.annotation.";
   public static final String ANNOTATION_JAKARTA_RESOURCE = "jakarta.annotation.Resource";
 
   private TypeNames() {

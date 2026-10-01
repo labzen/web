@@ -98,4 +98,25 @@ public class Config {
         API_VERSION_PARAMETER_NAME_VALUE.getValue()).toString();
     return original.isBlank() ? API_VERSION_PARAMETER_NAME_VALUE.getValue() : original;
   }
+
+  /**
+   * 获取标准资源入参（{@code @ResourceBody} 标注的参数）的绑定方式
+   *
+   * @return 绑定方式，可选 FORM（默认）、JSON
+   */
+  public String resourceBinding() {
+    var original = properties.getOrDefault(RESOURCE_BINDING.getValue(), RESOURCE_BINDING_VALUE.getValue()).toString();
+    return original.isBlank() ? RESOURCE_BINDING_VALUE.getValue() : original;
+  }
+
+  /**
+   * 获取 JSON 绑定下"空请求体"的处理方式
+   *
+   * @return 处理方式，可选 REJECT（默认）、ALLOW
+   */
+  public String resourceBodyEmpty() {
+    var original = properties.getOrDefault(RESOURCE_BODY_EMPTY.getValue(), RESOURCE_BODY_EMPTY_VALUE.getValue())
+                             .toString();
+    return original.isBlank() ? RESOURCE_BODY_EMPTY_VALUE.getValue() : original;
+  }
 }

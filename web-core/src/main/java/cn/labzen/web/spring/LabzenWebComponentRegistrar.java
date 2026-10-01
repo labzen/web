@@ -28,6 +28,11 @@ public class LabzenWebComponentRegistrar implements ImportBeanDefinitionRegistra
     register(registry, LabzenExceptionCatchingFilter.class);
     register(registry, LabzenHandlerExceptionResolver.class);
 
+    // 依据配置，对请求反序列化启用 FAIL_ON_NULL_FOR_PRIMITIVES
+    if (configuration.requestFailOnNullForPrimitives()) {
+      register(registry, LabzenJacksonCustomizer.class);
+    }
+
     // -------------- 注册 API 日志输出相关组件 --------------------------
     // 注册 Labzen Web Controller 元数据注册器组件
     register(registry, LoggableControllerMetaRegistry.class);

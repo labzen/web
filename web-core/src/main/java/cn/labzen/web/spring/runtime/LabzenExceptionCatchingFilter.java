@@ -103,13 +103,11 @@ public class LabzenExceptionCatchingFilter extends OncePerRequestFilter {
   /**
    * 发送 JSON 响应
    * <p>
-   * 使用客户端请求的 Accept Header 作为 Content-Type，默认为 application/json。
+   * 以 application/json 写出标准响应体，真实状态码承载于响应体的 {@code code} 字段，不改变 HTTP 响应状态码。
    */
+  @SuppressWarnings("unused")
   private void sendMessage(Object message, HttpServletRequest request, HttpServletResponse response) {
-    String contentType = MediaType.APPLICATION_JSON_VALUE;
-    response.setContentType(contentType);
-    int status = (message instanceof Response resp) ? resp.code() : HttpStatus.INTERNAL_SERVER_ERROR.value();
-    response.setStatus(status);
+    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
     response.setCharacterEncoding(Constants.DEFAULT_CHARSET_NAME);
     try {
       objectMapper.writeValue(response.getWriter(), message);

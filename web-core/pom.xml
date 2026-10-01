@@ -102,5 +102,12 @@
       <optional>true</optional>
       <scope>provided</scope>
     </dependency>
+
+    <!-- Test -->
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-test</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>

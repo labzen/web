@@ -7,3 +7,4 @@
 - [ ] 自动生成API文档
 - [ ] 添加基于Controller API入口方法的日志打印
 - [ ] 接口级的加、解密机制（实现动态秘钥交换，周期性更换秘钥，交换周期内可同时存在两套可用秘钥，要具备一个协商机制）
+- [ ] 响应 HTTP 状态码策略：在 labzen.yml 增加配置项，决定「统一返回真实 HTTP 状态码」还是「统一返回 200，真实状态承载于信封 code」（详见 [http-status-response-policy.md](.archives/http-status-response-policy.md)）

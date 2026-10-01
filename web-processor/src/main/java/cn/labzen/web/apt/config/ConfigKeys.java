@@ -42,7 +42,23 @@ public enum ConfigKeys {
   /**
    * API 版本控制的名称，当 processor.api-version.carrier 为 PARAM 时有效，默认 version
    */
-  API_VERSION_PARAMETER_NAME("processor.api-version.parameter-name");
+  API_VERSION_PARAMETER_NAME("processor.api-version.parameter-name"),
+
+  /**
+   * 标准资源入参（{@code @ResourceBody} 标注的参数）在生成的 Controller 实现类中的绑定方式，可选 FORM（默认）、JSON
+   * <p>
+   * <li> FORM - 生成为 @ModelAttribute，使用 application/x-www-form-urlencoded 或 query 传递
+   * <li> JSON - 生成为 @RequestBody，使用 application/json 传递
+   */
+  RESOURCE_BINDING("processor.resource-binding"),
+
+  /**
+   * 标准资源入参（{@code @ResourceBody} 标注的参数）在 JSON 绑定下遇到"空请求体"时的处理方式，可选 REJECT（默认）、ALLOW
+   * <p>
+   * <li> REJECT - 生成为 @RequestBody，空请求体或字面量 null 请求体由框架按 400 处理
+   * <li> ALLOW  - 生成为 @RequestBody(required = false)，空请求体时以资源类型的空实例兜底，与表单模式语义对齐
+   */
+  RESOURCE_BODY_EMPTY("processor.resource-body.empty");
 
   private final String value;
 }

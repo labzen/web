@@ -372,7 +372,7 @@ public final class ClassCreator {
     var fieldName = method.getBody().getFieldName().isBlank() ? defaultFieldElement.getName() : method.getBody()
                                                                                                       .getFieldName();
     var methodName = method.getBody().getInvokeMethodName();
-    List<String> parameters = method.getParameters().stream().map(ElementParameter::getName).toList();
+    List<String> parameters = method.getParameters().stream().map(this::argumentExpression).toList();
     var parameterNames = String.join(", ", parameters);
 
     String body = methodBodyTemplates.get(method.getName());
@@ -403,7 +403,7 @@ public final class ClassCreator {
         String substring = group.substring(11, group.length() - 1);
         int index = Integer.parseInt(substring);
         String value = parameters.get(index);
-        matcher.appendReplacement(bodySB, value);
+        matcher.appendReplacement(bodySB, Matcher.quoteReplacement(value));
       }
       matcher.appendTail(bodySB);
 
@@ -411,6 +411,25 @@ public final class ClassCreator {
     }
 
     return body;
+  }
+
+  /**
+   * 构建参数在调用表达式中的写法
+   * <p>
+   * 带空请求体兜底标记的参数，为 null 时以该类型的空实例参与调用。
+   *
+   * @param parameter 参数元素
+   * @return 调用表达式中的参数写法
+   */
+  private String argumentExpression(ElementParameter parameter) {
+    if (!parameter.isEmptyBodyFallback()) {
+      return parameter.getName();
+    }
+
+    return Strings.format("{} == null ? new {}() : {}",
+        parameter.getName(),
+        Utils.getSimpleName(parameter.getType()),
+        parameter.getName());
   }
 
   /**

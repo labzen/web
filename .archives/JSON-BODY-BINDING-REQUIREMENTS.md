@@ -1,8 +1,9 @@
 # JSON 请求体绑定 —— 需求与约束（来自消费方 paragon）
 
-> **给 web 侧阅读**（人 / AI 均可）。**一句话**：`cn.labzen:web` 目前只支持 form/query 入参绑定，需要补齐 `application/json` 请求体绑定。
-> 本文列出唯一的大规模消费方 **paragon** 必须依赖的保证、必须保持不变的边界、以及**不要做的事**。
-> 读完本文应能直接开工，无需再去看 paragon 的代码。
+> **给 web 侧阅读**（人 / AI 均可）。
+> **状态更新（2026-10-01）**：`application/json` 入参**已落地** —— web 侧实现 `@ResourceBody`（编译期按 `processor.resource-binding=FORM|JSON` 落为 `@ModelAttribute` / `@RequestBody`，显式 Spring 绑定注解优先）。消费方评估结论：**载体符合本文的硬要求**。
+> 因此本文件现在的定位是：① 契约对照基线（**今后改动绑定 / 反序列化 / 异常响应相关行为时，这些保证不能破**）；② **§10 的待办条目**（消费方评估后提出的三项诉求）。
+> 读完本文即可评估改动影响，无需再去看 paragon 的代码。
 
 ---
 
@@ -10,7 +11,7 @@
 
 | 项 | 事实 |
 | --- | --- |
-| JSON 绑定 | 全仓 `@RequestBody` **0 处** |
+| JSON 绑定 | 由 `@ResourceBody` 承载（`@Target(PARAMETER)` / `RetentionPolicy.CLASS`）：全仓**没有手写的 `@RequestBody`**，绑定方式在编译期由配置决定 |
 | 现有绑定方式 | 基接口 `StandardController` / `FileController` 用 `@ModelAttribute`（资源 bean）/ `@RequestParam` / `@PathVariable` |
 | 代码生成 | `web-processor` → `LabzenWebProcessor`（`@SupportedAnnotationTypes(@LabzenController)`）内部是**有序阶段链**：`PrepareProcessor` → `ReadSourceProcessor` → `ReadAnnotationsProcessor` → `EvaluateFieldsProcessor` → `EvaluateMethodsProcessor` → `CreativeProcessor`（JavaPoet 生成 `*ControllerImpl`）；另有 `MetadataGenerateProcessor` 输出运行时元数据 |
 | 注解改写挂点 | `ReadAnnotationsProcessor` / `EvaluateMethodsProcessor` 已有 `Suggestion` 机制（`Append` / `Remove` / `Replace` / `Discard`）—— **新增或改写绑定注解的现成扩展点** |
@@ -66,15 +67,15 @@ paragon 用「**缺省 / 显式 null / 有值**」三态语义实现部分更新
 
 ---
 
-## 5. 设计岔路口（我方建议）
+## 5. 设计岔路口（已定：方案 A）
 
 | 方案 | 说明 | 评价 |
 | --- | --- | --- |
-| A. 新注解（`@RequestBody` 等价物） | 显式、无歧义、易测；消费方需逐个接口换注解 | ✅ 语义最干净 |
-| B. 同一注解按 `Content-Type` 双语义 | 消费方零改动、可灰度；但一个端点两条绑定路径，需定优先级并防 content-type 混淆 | ⚠️ 灵活但复杂 |
-| **C（推荐）A + 该注解同时接受 form/json** | 注解显式，但同一注解下两种 `Content-Type` 均可绑 | ✅✅ 消费方换一次注解即可与前端解耦（前端可先行或后行） |
+| **A（已采用）新注解 `@ResourceBody`** | 显式、无歧义、易测；配置决定落 `@ModelAttribute` 还是 `@RequestBody` | ✅ 语义最干净（消费方已确认可用） |
+| B. 同一注解按 `Content-Type` 双语义 | 消费方零改动、可灰度；但一个端点两条绑定路径，需定优先级并防 content-type 混淆 | ⚠️ 未采用 |
+| C. A + 该注解同时接受 form/json | 注解显式，同一注解下两种 `Content-Type` 均可绑 | ⚠️ 未采用：**同注解双语义会让"前端实际发的是哪种 Content-Type"变成隐式依赖**，消费方倾向显式切换 |
 
-> 若采用 B 或 C，请**明确优先级并固化到文档与测试**：**请求体提供 bean，path / query 提供标量**。
+> 补充（消费方的实际用法）：**编译期全局开关 + 端点级显式注解覆盖**已满足"逐端点灰度"（显式写 `@ModelAttribute` 的端点不会翻转），因此不需要 B / C。
 
 ---
 
@@ -83,7 +84,7 @@ paragon 用「**缺省 / 显式 null / 有值**」三态语义实现部分更新
 | 情形 | 建议 |
 | --- | --- |
 | 报文含未声明的键（typo） | 写出明确策略；建议可配置 `FAIL_ON_UNKNOWN_PROPERTIES`（在"缺省即跳过"模型下，静默忽略 typo 极难排查） |
-| primitive 字段收到显式 `null`（`{"frozen":null}`） | 建议 400（无法表达"清空"）并文档化 |
+| primitive 字段收到显式 `null`（`{"frozen":null}`） | 请落成**可配置的兜底开关**（见 §10.1） |
 | 空字符串 `""` | 原样传递，**不要**转 `null`（由消费方自行决定语义） |
 | JSON 语法错误 / 类型不匹配 | 与 `@Validated` 失败**同一信封** + 400 |
 
@@ -117,3 +118,59 @@ paragon 用「**缺省 / 显式 null / 有值**」三态语义实现部分更新
 2. 三条测试：`{}` / `{"x":null}` / `{"x":""}` 在控制器侧**可区分**；
 3. form 与 JSON 两条路径都通；
 4. 先只覆盖这一个切片，其余端点不动 —— 让消费方灰度验证后再推广。
+
+---
+
+## 10. 消费方反馈与待办（2026-10-01）
+
+> 以下三项是消费方（paragon）评估后的**明确诉求**，请 web 侧定夺并实现。前两项涉及运行期行为，第三项涉及文档口径。
+
+### 10.1 基本类型 + 显式 `null`：请提供兜底开关
+
+**问题**：JSON 下 `{"x": null}` 落到 `private boolean x` 时，Jackson 会把它变成**类型默认值**（`false`），"显式 null"这一态**在反序列化阶段就消失了**。消费方用"报文里出现过哪些字段"（`providedFields`）区分缺省与显式 null，因此会判定为"客户端要求 `false`"并**写入默认值** ⇒ 形成静默误写（例如静默撤销授权）。
+
+**消费方侧约定（契约要求）**：请求侧 DTO 的字段**一律使用包装类型**（`Boolean` / `Long` / `Integer`…），使三态在类型上天然可表达。
+
+**请 web 侧提供（兜底）**：一个**配置项**，开启时对**请求反序列化**启用 Jackson 的 `FAIL_ON_NULL_FOR_PRIMITIVES`：
+
+| 项 | 建议 |
+| --- | --- |
+| 配置项 | 例如 `web.request.fail-on-null-for-primitives`（命名由你定） |
+| 默认值 | **`false`**（不改变既有消费方行为） |
+| 生效点 | 请求 `@RequestBody` 的反序列化（Jackson deserialization feature；不影响序列化） |
+| 命中表现 | `MismatchedInputException`（被包为 `HttpMessageNotReadableException`）⇒ 由 `LabzenHandlerExceptionResolver` 输出 **`code=400`**；message 中含 Jackson 的 `through reference chain: Xxx["field"]`（字段路径可读，但**不是** `data.validator` 结构） |
+| 目的 | 把"开发者在 DTO 里写了 primitive"这一失误，从**静默误写**变成**响亮 400** |
+
+### 10.2 空请求体 / 字面量 `null` body：请给出明确保障
+
+**现状**：JSON 模式下 `@RequestBody` 的请求若**没有 body**（或 body 是字面量 `null`），会抛 `HttpMessageNotReadableException` ⇒ `code=400`；而 FORM 模式下"没有字段"等价于"全部缺省"、请求**正常受理**。⇒ **同一接口在两种模式下行为不一致**。
+
+**请 web 侧二选一（并写入文档与测试）**：
+
+- **方案 A（最低要求）**：**文档化**这条差异 —— JSON 模式下前端**必须至少发送 `{}`**；空 body ⇒ `code=400`。
+- **方案 B（行为对齐，即消费方要的"保障"）**：提供编译期配置（如 `processor.resource-body.empty=REJECT|ALLOW`），`ALLOW` 时对 `@ResourceBody` 参数生成 `@RequestBody(required = false)`，并在空 body 时用一个**空实例**兜底：
+
+  ```java
+  // 生成结果（示意）
+  Result create(@Validated @RequestBody(required = false) UserDto resource) {
+    return userRealm.create(resource == null ? new UserDto() : resource);
+  }
+  ```
+
+  ⇒ 使 JSON 模式与 FORM 模式语义一致（"空" = 全部缺省），消费方前端无需为两种模式写两套调用。
+
+  - 可行性：`RB` 的**具体类型在生成期已知**（泛型已解析为 `PermissionDto` 之类），可安全生成 `new RB()`；消费方 DTO 普遍具备无参构造。
+  - 代价：生成代码多一个三元表达式；"空 body" 与 "`{}`" 需在文档里写成同一语义。
+  - 若采纳，请写清：**空 body ⇒ 等价于 `{}`**。
+
+> 消费方立场：**A 是底线、B 才是保障**。若 B 因故不做，请给出明确回执 —— 消费方会按 A 在自身文档与前端侧兜住（要求前端一律发 `{}`）。
+
+### 10.3 HTTP 状态码：请保持"默认 200 + 信封 `code`"，并补进文档
+
+**现状（消费方已实测确认）**：后端默认**始终返回 HTTP 200**，真实状态在响应信封的 `code` 字段（`LabzenHandlerExceptionResolver` 不设置 HTTP 状态；全仓仅 `LabzenRestRequestHandlerInterceptor` 的 406 分支会设置 HTTP 状态）。
+
+**请 web 侧**：
+
+1. 在框架文档中**明确写出**这一口径（目前只在 `resource-body-binding.md` §6 里提了一句"不修改 HTTP 响应状态码"）；
+2. 后续若提供"返回真实 HTTP 状态"的配置，**默认保持"否"** —— 消费方前端目前按信封 `code` 判断，默认一旦改变会**全量失效**；
+3. 若该配置可运行期切换，请在文档中提醒：切换前后前端判断逻辑必须同步调整。

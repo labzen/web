@@ -31,6 +31,7 @@ import java.util.List;
  *   <li>{@link Crypto}：对 API 响应内容进行加密</li>
  *   <li>{@link MappingVersion}：定义 API 入口的版本号</li>
  *   <li>{@link Monitor}：对 API 接口进行监控</li>
+ *   <li>{@link ResourceBody}：标准资源入参的绑定方式（form / json）由配置决定</li>
  *   <li>{@link Threshold}：调整接口的并发访问阈值及熔断策略</li>
  * </ul>
  * <p>
@@ -72,13 +73,13 @@ public interface StandardController<BS, RB, ID> extends LabzenController {
    * 示例：Restful API 创建资源 - POST /resource
    */
   @PostMapping
-  Result create(@Validated @ModelAttribute RB resource);
+  Result create(@Validated @ResourceBody RB resource);
 
   /**
    * 示例：Restful API 修改资源 - PUT /resource/{id}
    */
   @PutMapping("{id:[A-Za-z0-9_-]+}")
-  Result edit(@PathVariable ID id, @Validated @ModelAttribute RB resource);
+  Result edit(@PathVariable ID id, @Validated @ResourceBody RB resource);
 
   /**
    * 示例：Restful API 删除资源 - DELETE /resource/{id}

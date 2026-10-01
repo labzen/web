@@ -13,6 +13,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 import static cn.labzen.web.apt.definition.JUnitConstants.JUNIT_OUTPUT_DIR;
@@ -53,6 +55,20 @@ public class APTTest {
     boolean metaFound = compilation.generatedFiles().stream()
       .anyMatch(f -> f.getName().endsWith(".meta.json"));
     Assertions.assertTrue(metaFound, "应生成 META-INF/labzen/MenuController.meta.json 元数据文件");
+
+    // 验证默认（FORM）模式下生成的实现类落型
+    Path implPath = Paths.get("target",
+        "generated-test-sources",
+        "cn",
+        "labzen",
+        "web",
+        "apt",
+        "MenuControllerImpl.java");
+    Assertions.assertTrue(Files.exists(implPath), "应生成 MenuControllerImpl.java");
+    String impl = Files.readString(implPath);
+    Assertions.assertTrue(impl.contains("@ModelAttribute MenuDto resource"), "FORM 模式下资源入参应落为 @ModelAttribute");
+    Assertions.assertFalse(impl.contains("@RequestBody"), "FORM 模式下不应生成 @RequestBody");
+    Assertions.assertFalse(impl.contains("== null ?"), "默认不应生成空请求体兜底表达式");
 
     // 打印生成的元数据文件内容
     compilation.generatedFiles().stream()

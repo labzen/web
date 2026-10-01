@@ -26,6 +26,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static cn.labzen.web.apt.definition.TypeNames.ANNOTATION_SPRING_BIND_PACKAGE;
+import static cn.labzen.web.apt.definition.TypeNames.ANNOTATION_SPRING_GET_MAPPING;
+import static cn.labzen.web.apt.definition.TypeNames.ANNOTATION_SPRING_MODEL_ATTRIBUTE;
+import static cn.labzen.web.apt.definition.TypeNames.ANNOTATION_SPRING_REQUEST_BODY;
+import static cn.labzen.web.apt.definition.TypeNames.ANNOTATION_SPRING_REQUEST_MAPPING;
+import static cn.labzen.web.apt.definition.TypeNames.APT_ANNOTATION_RESOURCE_BODY;
+
 /**
  * 评价 Controller 接口的方法
  * <p>
@@ -72,9 +79,7 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
 
     collectMethods(context.getSource());
 
-    parsedMethods.forEach((key, method) -> {
-      elementClass.getMethods().add(method);
-    });
+    parsedMethods.forEach((key, method) -> elementClass.getMethods().add(method));
   }
 
   /**
@@ -182,6 +187,7 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
     elementMethod.getAnnotations().addAll(methodAnnotations);
 
     parseMethodAnnotations(elementMethod);
+    resolveResourceBodyParameters(elementMethod);
   }
 
   /**
@@ -257,6 +263,139 @@ public final class EvaluateMethodsProcessor implements InternalProcessor {
         case DiscardSuggestion ignored -> parseDiscardSuggestion(method);
       }
     });
+  }
+
+  /**
+   * 解析参数上的 {@code @ResourceBody} 注解，将其落型为 Spring 原生的参数绑定注解。
+   * <p>
+   * 落型规则：
+   * <ul>
+   *   <li>参数上已显式声明 Spring 绑定注解时，忽略 {@code @ResourceBody}，以显式声明为准</li>
+   *   <li>GET 请求入口不存在请求体，其参数落为 {@code @ModelAttribute} 并给出编译期告警</li>
+   *   <li>其余情况按配置 {@code processor.resource-binding} 落为 {@code @ModelAttribute}（FORM）
+   *       或 {@code @RequestBody}（JSON）；当 {@code processor.resource-body.empty} 为 {@code ALLOW} 时，
+   *       JSON 落型为 {@code @RequestBody(required = false)}，并标记空请求体兜底</li>
+   * </ul>
+   * 无论何种情况，{@code @ResourceBody} 都不会保留到生成的 Controller 实现类中。
+   *
+   * @param method 方法元素
+   */
+  private void resolveResourceBodyParameters(ElementMethod method) {
+    // 方法体为空表示该方法已被废弃，无需处理
+    if (method.getBody().getInvokeMethodName().isEmpty()) {
+      return;
+    }
+
+    ClassName resourceBodyType = classNameOf(APT_ANNOTATION_RESOURCE_BODY);
+    ClassName modelAttributeType = classNameOf(ANNOTATION_SPRING_MODEL_ATTRIBUTE);
+    ClassName requestBodyType = classNameOf(ANNOTATION_SPRING_REQUEST_BODY);
+    if (resourceBodyType == null || modelAttributeType == null || requestBodyType == null) {
+      return;
+    }
+
+    boolean jsonBinding = "JSON".equalsIgnoreCase(context.getApc().config().resourceBinding());
+    boolean emptyBodyAllowed = "ALLOW".equalsIgnoreCase(context.getApc().config().resourceBodyEmpty());
+    boolean getMapping = isGetMapping(method);
+
+    method.getParameters().forEach(parameter -> {
+      boolean resourceBodyPresent = parameter.getAnnotations()
+                                             .stream()
+                                             .anyMatch(annotation -> resourceBodyType.equals(annotation.getType()));
+      if (!resourceBodyPresent) {
+        return;
+      }
+
+      parameter.getAnnotations().removeIf(annotation -> resourceBodyType.equals(annotation.getType()));
+
+      // 参数已显式声明 Spring 绑定注解时，以显式声明为准
+      if (hasExplicitBindingAnnotation(parameter)) {
+        return;
+      }
+
+      if (getMapping) {
+        context.getApc()
+               .messaging()
+               .warning("LabzenWebProcessor: 方法 [" +
+                        method.getName() +
+                        "] 是 GET 请求入口，不存在请求体，参数 [" +
+                        parameter.getName() +
+                        "] 上的 @ResourceBody 将按 @ModelAttribute 处理");
+        parameter.getAnnotations().add(new ElementAnnotation(modelAttributeType));
+        return;
+      }
+
+      if (jsonBinding) {
+        ElementAnnotation requestBody = new ElementAnnotation(requestBodyType);
+        if (emptyBodyAllowed) {
+          requestBody.getMembers().put("required", false);
+          parameter.setEmptyBodyFallback(true);
+        }
+        parameter.getAnnotations().add(requestBody);
+      } else {
+        parameter.getAnnotations().add(new ElementAnnotation(modelAttributeType));
+      }
+    });
+  }
+
+  /**
+   * 判断参数上是否已显式声明了 Spring MVC 的参数绑定注解
+   *
+   * @param parameter 参数元素
+   * @return 是否存在显式的 Spring 绑定注解
+   */
+  private boolean hasExplicitBindingAnnotation(ElementParameter parameter) {
+    return parameter.getAnnotations()
+                    .stream()
+                    .map(ElementAnnotation::getType)
+                    .filter(ClassName.class::isInstance)
+                    .map(ClassName.class::cast)
+                    .map(ClassName::canonicalName)
+                    .anyMatch(canonicalName -> canonicalName.startsWith(ANNOTATION_SPRING_BIND_PACKAGE));
+  }
+
+  /**
+   * 判断方法是否映射到 HTTP GET
+   *
+   * @param method 方法元素
+   * @return 是否为 GET 请求入口
+   */
+  private boolean isGetMapping(ElementMethod method) {
+    for (ElementAnnotation annotation : method.getAnnotations()) {
+      if (!(annotation.getType() instanceof ClassName className)) {
+        continue;
+      }
+
+      String canonicalName = className.canonicalName();
+      if (ANNOTATION_SPRING_GET_MAPPING.equals(canonicalName)) {
+        return true;
+      }
+      if (ANNOTATION_SPRING_REQUEST_MAPPING.equals(canonicalName)) {
+        Object mappingMethod = annotation.getMembers().get("method");
+        if (mappingMethod instanceof List<?> methods) {
+          for (Object item : methods) {
+            if (item instanceof VariableElement variableElement &&
+                "GET".equals(variableElement.getSimpleName().toString())) {
+              return true;
+            }
+            if (item instanceof String value && "GET".equalsIgnoreCase(value)) {
+              return true;
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
+   * 按全限定名获取注解类型，类型不存在时返回 {@code null}
+   *
+   * @param fqcn 注解的全限定类名
+   * @return 注解类型
+   */
+  private ClassName classNameOf(String fqcn) {
+    TypeElement element = context.getApc().elements().getTypeElement(fqcn);
+    return element == null ? null : ClassName.get(element);
   }
 
   /**

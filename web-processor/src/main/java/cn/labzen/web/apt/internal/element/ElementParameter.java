@@ -3,6 +3,7 @@ package cn.labzen.web.apt.internal.element;
 import cn.labzen.web.apt.internal.Utils;
 import com.squareup.javapoet.TypeName;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.LinkedHashSet;
 import java.util.Objects;
@@ -14,6 +15,12 @@ public final class ElementParameter implements Element {
   private final String name;
   private final TypeName type;
   private final LinkedHashSet<ElementAnnotation> annotations;
+
+  /**
+   * 空请求体兜底标记。为 true 时，生成的实现类会在调用业务方法前，将 null 的资源入参替换为该类型的空实例
+   */
+  @Setter
+  private boolean emptyBodyFallback;
 
   public ElementParameter(int index, String name, TypeName type, LinkedHashSet<ElementAnnotation> annotations) {
     this.index = index;
