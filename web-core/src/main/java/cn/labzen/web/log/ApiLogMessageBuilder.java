@@ -139,6 +139,7 @@ public class ApiLogMessageBuilder {
       try {
         String body = readBody(request);
         if (!body.isBlank()) {
+          // todo 增加功能：json打印长度可配置
           params.put("_body", body.length() > 4096 ? body.substring(0, 4096) + "...(truncated)" : body);
         }
       } catch (IOException e) {
@@ -267,7 +268,10 @@ public class ApiLogMessageBuilder {
   }
 
   /**
-   * 按指定级别输出日志。
+   * 按指定级别输出请求日志。
+   * <p>
+   * 消息内容可能包含 `{`（如 JSON 报文），因此作为占位符参数传入，
+   * 避免其内容被日志模板当作占位符再次解析。
    *
    * @param logger  LabzenLogger 实例
    * @param level   日志级别
@@ -275,16 +279,18 @@ public class ApiLogMessageBuilder {
    */
   private void doRequestLogging(LabzenLogger logger, Level level, String message) {
     switch (level) {
-      case TRACE -> logger.atTrace().scene(Scenes.REQUEST).log(message);
-      case DEBUG -> logger.atDebug().scene(Scenes.REQUEST).log(message);
-      case INFO -> logger.atInfo().scene(Scenes.REQUEST).log(message);
-      case WARN -> logger.atWarn().scene(Scenes.REQUEST).log(message);
-      case ERROR -> logger.atError().scene(Scenes.REQUEST).log(message);
+      case TRACE -> logger.atTrace().scene(Scenes.REQUEST).log("{}", message);
+      case DEBUG -> logger.atDebug().scene(Scenes.REQUEST).log("{}", message);
+      case INFO -> logger.atInfo().scene(Scenes.REQUEST).log("{}", message);
+      case WARN -> logger.atWarn().scene(Scenes.REQUEST).log("{}", message);
+      case ERROR -> logger.atError().scene(Scenes.REQUEST).log("{}", message);
     }
   }
 
   /**
-   * 按指定级别输出日志。
+   * 按指定级别输出响应日志。
+   * <p>
+   * 消息作为占位符参数传入，避免其内容被日志模板当作占位符解析；响应体通过 {@code json} 结构化字段输出。
    *
    * @param logger  LabzenLogger 实例
    * @param level   日志级别
@@ -304,7 +310,7 @@ public class ApiLogMessageBuilder {
     if (Strings.isNotBlank(content)) {
       builder.json(content);
     }
-    builder.log(message);
+    builder.log("{}", message);
   }
 
   /**
