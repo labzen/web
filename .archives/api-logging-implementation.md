@@ -76,6 +76,8 @@ HTTP Request
 | `ApiLogMessageBuilder.java` | 日志消息构建：请求参数提取（query/form/multipart/JSON body）、参数过滤（白名单/黑名单）、文件元信息、结构化日志输出（LabzenLogger） |
 | `ApiLogInterceptor.java` | HandlerInterceptor。preHandle 执行决策链（元数据查找 → 配置解析 → 采样 → 条件评估 → 请求日志）。postHandle 输出响应日志。接口名和哈希均带缓存 |
 | `ApiLogResponseAdvice.java` | ResponseBodyAdvice（`@Order(2000)`），在 LabzenRestResponseBodyAdvice 之后执行。只负责捕获原始响应体存入 `request.setAttribute(RESPONSE_RESULT_BODY_ATTRIBUTE)` |
+| `LabzenRequestBodyCachingFilter.java` | 请求体可重复读过滤器（`OncePerRequestFilter`，注册顺序 `Integer.MIN_VALUE`，位于异常捕捉过滤器之前）。将请求包装为 `RepeatableReadRequestWrapper` |
+| `RepeatableReadRequestWrapper.java` | 请求包装器。首次 `getReader()` 时缓存请求体，此后 `getReader()` / `getInputStream()` 均从缓存提供，使请求体可被多次读取；`multipart/form-data` 直接透传 |
 | `bean/YamlFile.java` | SnakeYAML 顶层映射结构（general + methods） |
 | `bean/ApiEndpointDetail.java` | 管理页面展示用端点详情 record |
 | `bean/MultipartDetail.java` | 文件上传详情 record（含 toString 格式化） |
@@ -130,7 +132,14 @@ HTTP Request
 ### 5. 参数提取（覆盖全部 HTTP 参数方式）
 
 `ApiLogMessageBuilder.extractRequestParams()` 从 `request.getParameterMap()` 获取 query string / form 参数，
-multipart 文件字段通过 `request.getParts()` 记录元信息（`MultipartDetail`），JSON body 通过 `request.getReader()` 读取并截断。
+multipart 文件字段通过 `request.getParts()` 记录元信息（`MultipartDetail`），
+`Content-Type` 为 `application/json` 时通过 `request.getReader()` 读取原始报文并以 `_body` 键记录（超过 4096 字符截断）。
+`_body` 与其他参数一样参与 `includeParams` / `excludeParams` 过滤。
+
+请求体是一次性流，而 API 日志在 `preHandle`（参数解析之前）读取它。为避免后续 `@RequestBody` 无法绑定，
+`LabzenRequestBodyCachingFilter` 将请求包装为 `RepeatableReadRequestWrapper`：首次 `getReader()` 时缓存请求体字节，
+此后 `getReader()` 与 `getInputStream()` 均从缓存提供内容，使日志与 `@RequestBody` 可各读一次。
+该缓存按需触发（仅当日志读取请求体时才发生），`multipart/form-data` 请求不缓存、直接透传。
 
 ### 6. 响应体捕获（ApiLogResponseAdvice → postHandle）
 

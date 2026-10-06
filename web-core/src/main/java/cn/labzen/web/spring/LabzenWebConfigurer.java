@@ -8,6 +8,7 @@ import cn.labzen.web.log.ApiLogInterceptor;
 import cn.labzen.web.meta.WebCoreConfiguration;
 import cn.labzen.web.spring.runtime.LabzenExceptionCatchingFilter;
 import cn.labzen.web.spring.runtime.LabzenHandlerExceptionResolver;
+import cn.labzen.web.spring.runtime.LabzenRequestBodyCachingFilter;
 import cn.labzen.web.spring.runtime.LabzenRestRequestHandlerInterceptor;
 import com.google.common.base.Strings;
 import jakarta.annotation.Nonnull;
@@ -70,6 +71,18 @@ public class LabzenWebConfigurer implements WebMvcConfigurer, ApplicationContext
   }
 
   /**
+   * 注册请求体可重复读过滤器（位于异常捕捉过滤器之前，确保下游可多次读取请求体）
+   */
+  @Bean
+  public FilterRegistrationBean<OncePerRequestFilter> requestBodyCachingFilterRegistrationBean() {
+    FilterRegistrationBean<OncePerRequestFilter> filterRegistration = new FilterRegistrationBean<>();
+    filterRegistration.setFilter(new LabzenRequestBodyCachingFilter());
+    filterRegistration.addUrlPatterns("/*");
+    filterRegistration.setOrder(Integer.MIN_VALUE);
+    return filterRegistration;
+  }
+
+  /**
    * 注册异常捕捉过滤器
    */
   @Bean
@@ -79,7 +92,7 @@ public class LabzenWebConfigurer implements WebMvcConfigurer, ApplicationContext
     FilterRegistrationBean<OncePerRequestFilter> filterRegistration = new FilterRegistrationBean<>();
     filterRegistration.setFilter(labzenExceptionCatchingFilter);
     filterRegistration.addUrlPatterns("/*");
-    filterRegistration.setOrder(Integer.MIN_VALUE);
+    filterRegistration.setOrder(Integer.MIN_VALUE + 1);
     return filterRegistration;
   }
 

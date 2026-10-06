@@ -135,7 +135,7 @@ public class ApiLogMessageBuilder {
 
     // 3. raw JSON body
     boolean isJson = contentType != null && contentType.contains("application/json");
-    if (isJson && params.isEmpty()) {
+    if (isJson) {
       try {
         String body = readBody(request);
         if (!body.isBlank()) {
