@@ -6,6 +6,7 @@ import cn.labzen.web.log.*;
 import cn.labzen.web.meta.WebCoreConfiguration;
 import cn.labzen.web.spring.runtime.LabzenExceptionCatchingFilter;
 import cn.labzen.web.spring.runtime.LabzenHandlerExceptionResolver;
+import cn.labzen.web.spring.runtime.LabzenPageableRequestBodyAdvice;
 import cn.labzen.web.spring.runtime.LabzenRestResponseBodyAdvice;
 import jakarta.annotation.Nonnull;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
@@ -32,6 +33,9 @@ public class LabzenWebComponentRegistrar implements ImportBeanDefinitionRegistra
     if (configuration.requestFailOnNullForPrimitives()) {
       register(registry, LabzenJacksonCustomizer.class);
     }
+
+    // 注册请求体分页兼容处理，为请求体绑定的 Pageable 资源附加分页能力
+    register(registry, LabzenPageableRequestBodyAdvice.class);
 
     // -------------- 注册 API 日志输出相关组件 --------------------------
     // 注册 Labzen Web Controller 元数据注册器组件

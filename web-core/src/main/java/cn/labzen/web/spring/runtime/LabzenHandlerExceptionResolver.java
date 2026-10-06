@@ -80,7 +80,7 @@ public class LabzenHandlerExceptionResolver implements HandlerExceptionResolver 
                                        @Nonnull HttpServletResponse response,
                                        Object handler,
                                        @Nonnull Exception ex) {
-    // 解包被 RuntimeException 包裹的 BindException（如 PageableCompatibleArgumentResolver 中的包装）
+    // 解包被 RuntimeException 包裹的 BindException
     Exception unwrapped = ex;
     if (ex instanceof RuntimeException re && re.getCause() instanceof BindException be) {
       unwrapped = be;

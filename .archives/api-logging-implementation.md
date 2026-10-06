@@ -141,6 +141,11 @@ multipart 文件字段通过 `request.getParts()` 记录元信息（`MultipartDe
 此后 `getReader()` 与 `getInputStream()` 均从缓存提供内容，使日志与 `@RequestBody` 可各读一次。
 该缓存按需触发（仅当日志读取请求体时才发生），`multipart/form-data` 请求不缓存、直接透传。
 
+> **日志消息模板注意**：`LabzenLogger` 会把消息当作**模板**解析占位符（`{}`、`{0}`、`{name}`、`{@func_…}`），
+> 消息内容中的 `{` 会被视为占位符起始符，无对应参数时替换为空串 —— 请求报文中的 JSON 会被整段吞掉。
+> 因此请求日志与响应日志均以 `log("{}", message)` 形式输出（消息作为占位符参数，不参与模板解析）。
+> 不要直接使用 `log(message)`。此外 `\{` 转义只是让解析器跳过该占位符，反斜杠会原样打印，不能用于此场景。
+
 ### 6. 响应体捕获（ApiLogResponseAdvice → postHandle）
 
 `ApiLogResponseAdvice`（`@Order(2000)`）在 `LabzenRestResponseBodyAdvice` 之后执行，

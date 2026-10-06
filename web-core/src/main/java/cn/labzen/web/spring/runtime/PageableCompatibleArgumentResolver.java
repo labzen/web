@@ -1,138 +1,82 @@
 package cn.labzen.web.spring.runtime;
 
 import cn.labzen.web.api.paging.Pageable;
-import cn.labzen.web.paging.internal.PageableDelegator;
-import cn.labzen.web.paging.internal.PageableResolver;
+import cn.labzen.web.paging.internal.PageableSupport;
 import jakarta.annotation.Nonnull;
-import jakarta.servlet.ServletRequest;
-import org.springframework.beans.BeanUtils;
 import org.springframework.core.MethodParameter;
-import org.springframework.validation.BindException;
-import org.springframework.validation.Errors;
-import org.springframework.validation.annotation.ValidationAnnotationUtils;
-import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
-import org.springframework.web.method.annotation.ModelFactory;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
-import org.springframework.web.servlet.mvc.method.annotation.ExtendedServletRequestDataBinder;
+import org.springframework.web.servlet.mvc.method.annotation.ServletModelAttributeMethodProcessor;
 
+import java.lang.annotation.Annotation;
+import java.util.List;
 import java.util.Objects;
 
 /**
- * Pageable 参数解析器
+ * 分页兼容参数解析器。
  * <p>
- * 负责将 HTTP 请求参数绑定到实现 {@link Pageable} 接口的方法参数上。
- * 核心功能：
- * <ul>
- *   <li>支持两种分页参数格式：紧凑格式（paging=1,20）和普通格式（pageNumber=1, pageSize=20）</li>
- *   <li>支持排序条件解析</li>
- *   <li>使用 ByteBuddy 动态代理实现分页数据的懒加载</li>
- * </ul>
+ * 处理以表单/query 方式绑定的 {@link Pageable} 资源参数：参数绑定与校验委托给 Spring 原生的
+ * {@link ServletModelAttributeMethodProcessor} 完成，随后为绑定结果附加分页能力
+ * （分页条件来自 query string，支持 {@code paging=1,20} 紧凑格式与 {@code pn}/{@code ps}/{@code od} 缩写）。
+ * <p>
+ * 仅接管「表单绑定」的参数：显式 {@link ModelAttribute}，或未声明任何 Spring 绑定注解的复杂类型。
+ * 以 {@code @RequestBody} 方式绑定的参数不由此解析器处理，其分页能力由
+ * {@code LabzenPageableRequestBodyAdvice} 在反序列化完成后附加。
+ * <p>
+ * 参数类型必须是具体类（能够被实例化并完成绑定），不能直接声明为 {@link Pageable} 接口。
  */
 public class PageableCompatibleArgumentResolver implements HandlerMethodArgumentResolver {
 
   /**
-   * 判断是否支持该参数类型
+   * Spring MVC 参数绑定注解所在包，用于判定参数是否为表单/query 来源
    */
-  @Override
-  public boolean supportsParameter(MethodParameter parameter) {
-    return Pageable.class.isAssignableFrom(parameter.getParameterType());
-  }
+  private static final String SPRING_BIND_ANNOTATION_PACKAGE = "org.springframework.web.bind.annotation.";
 
   /**
-   * 解析 Pageable 参数
-   * <p>
-   * 核心流程：
-   * <ul>
-   *   <li>1. 绑定 Bean 参数值（处理 @ModelAttribute 注解的参数）</li>
-   *   <li>2. 解析分页条件（页码、每页数量、排序）</li>
-   *   <li>3. 使用动态代理创建可访问分页数据的对象</li>
-   * </ul>
+   * 表单绑定处理器，绑定、校验与 BindingResult 语义均使用 Spring 原生实现
    */
+  private final ServletModelAttributeMethodProcessor formBinding = new ServletModelAttributeMethodProcessor(true);
+
+  @Override
+  public boolean supportsParameter(MethodParameter parameter) {
+    return Pageable.class.isAssignableFrom(parameter.getParameterType()) && isFormBound(parameter);
+  }
+
   @Override
   public Object resolveArgument(@Nonnull MethodParameter parameter,
                                 ModelAndViewContainer mavContainer,
                                 @Nonnull NativeWebRequest webRequest,
-                                WebDataBinderFactory binderFactory) {
+                                WebDataBinderFactory binderFactory) throws Exception {
     Objects.requireNonNull(mavContainer, "PageableArgumentResolver requires ModelAndViewContainer");
     Objects.requireNonNull(binderFactory, "PageableArgumentResolver requires WebDataBinderFactory");
 
-    try {
-      // 1. 先绑定Bean的参数值
-      Object attribute = bindAttribute(parameter, mavContainer, webRequest, binderFactory);
-
-      // 2. 先尝试读取分析分页相关参数，如果没有，返回默认分页条件
-      var resolvedPaging = PageableResolver.resolve(webRequest);
-
-      // 3. 对数据绑定好的参数实例，进行代理，在代理中提供解析好的分页数据
-      return PageableDelegator.delegate(parameter, attribute, resolvedPaging);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
+    Object bound = formBinding.resolveArgument(parameter, mavContainer, webRequest, binderFactory);
+    return PageableSupport.attachPaging(parameter, bound, webRequest);
   }
 
   /**
-   * 绑定请求参数到 Bean 对象
+   * 判断参数是否由表单/query 绑定
    * <p>
-   * 包含完整的 Spring 数据绑定和验证流程。
+   * 显式 {@link ModelAttribute} 视为表单绑定；出现其他 Spring 绑定注解（如 {@code @RequestBody}、
+   * {@code @RequestParam}、{@code @PathVariable}）则视为其他来源，不由本解析器接管。
    */
-  private Object bindAttribute(MethodParameter parameter,
-                               ModelAndViewContainer mavContainer,
-                               NativeWebRequest webRequest,
-                               WebDataBinderFactory binderFactory) throws Exception {
-    String name = ModelFactory.getNameForParameter(parameter);
-    var modelAttribute = parameter.getParameterAnnotation(ModelAttribute.class);
-    if (modelAttribute != null) {
-      mavContainer.setBinding(name, modelAttribute.binding());
+  private boolean isFormBound(MethodParameter parameter) {
+    if (parameter.hasParameterAnnotation(ModelAttribute.class)) {
+      return true;
     }
 
-    Class<?> clazz = parameter.getParameterType();
-    Object attribute = mavContainer.containsAttribute(name) ? mavContainer.getModel()
-                                                                          .get(name) : BeanUtils.instantiateClass(clazz);
-
-    WebDataBinder binder = binderFactory.createBinder(webRequest, attribute, name);
-    if (binder.getTarget() != null) {
-      if (!mavContainer.isBindingDisabled(name)) {
-        ((ExtendedServletRequestDataBinder) binder).bind(Objects.requireNonNull(webRequest.getNativeRequest(
-            ServletRequest.class)));
-      }
-      validateIfApplicable(binder, parameter);
-      if (binder.getBindingResult().hasErrors() && isBindExceptionRequired(parameter)) {
-        throw new BindException(binder.getBindingResult());
+    for (Annotation annotation : parametersAnnotations(parameter)) {
+      if (annotation.annotationType().getName().startsWith(SPRING_BIND_ANNOTATION_PACKAGE)) {
+        return false;
       }
     }
-
-    // Value type adaptation
-    if (!clazz.isInstance(attribute)) {
-      attribute = binder.convertIfNecessary(binder.getTarget(), clazz, parameter);
-    }
-    var bindingResult = binder.getBindingResult();
-
-    // Add resolved attribute and BindingResult at the end of the model
-    var bindingResultModel = bindingResult.getModel();
-    mavContainer.removeAttributes(bindingResultModel);
-    mavContainer.addAllAttributes(bindingResultModel);
-
-    return attribute;
+    return true;
   }
 
-  private boolean isBindExceptionRequired(MethodParameter parameter) {
-    int i = parameter.getParameterIndex();
-    Class<?>[] paramTypes = parameter.getExecutable().getParameterTypes();
-    boolean hasBindingResult = (paramTypes.length > (i + 1) && Errors.class.isAssignableFrom(paramTypes[i + 1]));
-    return !hasBindingResult;
-  }
-
-  private void validateIfApplicable(WebDataBinder binder, MethodParameter parameter) {
-    for (var ann : parameter.getParameterAnnotations()) {
-      var validationHints = ValidationAnnotationUtils.determineValidationHints(ann);
-      if (validationHints != null) {
-        binder.validate(validationHints);
-        break;
-      }
-    }
+  private List<Annotation> parametersAnnotations(MethodParameter parameter) {
+    return List.of(parameter.getParameterAnnotations());
   }
 }
