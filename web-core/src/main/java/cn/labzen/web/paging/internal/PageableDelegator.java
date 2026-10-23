@@ -7,23 +7,17 @@ import cn.labzen.meta.Labzens;
 import cn.labzen.web.api.paging.Pageable;
 import cn.labzen.web.meta.WebCoreConfiguration;
 import cn.labzen.web.paging.convert.PageConverterHolder;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.dynamic.DynamicType;
-import net.bytebuddy.dynamic.DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition;
 import net.bytebuddy.implementation.MethodDelegation;
 import net.bytebuddy.implementation.bind.annotation.AllArguments;
+import net.bytebuddy.implementation.bind.annotation.FieldValue;
 import net.bytebuddy.implementation.bind.annotation.Origin;
 import net.bytebuddy.implementation.bind.annotation.RuntimeType;
-import net.bytebuddy.implementation.bind.annotation.This;
 import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.matcher.ElementMatchers;
-import org.objenesis.Objenesis;
-import org.objenesis.ObjenesisStd;
 import org.springframework.core.MethodParameter;
 
 import java.lang.reflect.Field;
@@ -43,13 +37,14 @@ import static cn.labzen.web.api.definition.Constants.LOGGER_SCENE_PAGING;
  * <ul>
  *   <li>拦截 Pageable 接口定义的方法调用，返回解析后的分页数据</li>
  *   <li>代理其他方法调用到原始 Bean 实例</li>
- *   <li>支持调试模式：保留原始字段用于调试观察</li>
+ *   <li>生成的代理类按资源类型缓存；分页数据与原始实例存放在<b>代理实例字段</b>上，
+ *       每次调用独立注入，缓存不共享请求状态</li>
  * </ul>
  */
 public final class PageableDelegator {
 
-  private static final String DEBUGGER_PAGING_FIELD_NAME = "_paging";
-  private static final Objenesis OBJENESIS = new ObjenesisStd();
+  private static final String PAGING_FIELD_NAME = "_paging";
+  private static final String TARGET_FIELD_NAME = "_target";
   // Pageable接口定义的几个方法
   private static final ElementMatcher.Junction<MethodDescription> PAGEABLE_METHOD_NAMES = ElementMatchers.namedOneOf(
       "unpaged",
@@ -80,74 +75,57 @@ public final class PageableDelegator {
    */
   public static Object delegate(MethodParameter parameter, Object attribute, Paging resolvedPaging) {
     Class<?> parameterType = parameter.getParameterType();
+    Class<?> proxyType = PROXY_CLASS_CACHE.computeIfAbsent(parameterType, PageableDelegator::defineProxyType);
 
-    PageableValuesInterceptor pageableInterceptor = new PageableValuesInterceptor(resolvedPaging);
-    PageableBeanAttributesInterceptor beanAttributesInterceptor = new PageableBeanAttributesInterceptor(attribute);
+    Object proxy = instantiate(proxyType);
+    inject(proxyType, proxy, PAGING_FIELD_NAME, resolvedPaging);
+    inject(proxyType, proxy, TARGET_FIELD_NAME, attribute);
 
     if (FRIENDLY_FOR_DEBUGGER_VIEW) {
-      return delegateForDebugger(parameterType, pageableInterceptor, beanAttributesInterceptor);
-    } else {
-      return delegateDirectly(parameterType, pageableInterceptor, beanAttributesInterceptor);
+      copyFields(attribute, proxy);
     }
+    return proxy;
   }
 
   /**
-   * 直接代理模式
+   * 定义代理类型
    * <p>
-   * 使用 ByteBuddy 创建子类代理，拦截 Pageable 接口方法，
-   * 其他方法委托给原始 Bean 实例。
+   * 生成子类代理，拦截 Pageable 接口方法读取实例上的分页数据，其他方法委托给实例上的原始 Bean。
    */
-  private static Object delegateDirectly(Class<?> parameterType,
-                                         PageableValuesInterceptor pageableInterceptor,
-                                         PageableBeanAttributesInterceptor beanAttributesInterceptor) {
-    Class<?> proxyClass = PROXY_CLASS_CACHE.computeIfAbsent(parameterType, pt -> {
-      ReceiverTypeDefinition<?> buddyBuilder = new ByteBuddy().subclass(pt)
-                                                              .method(PAGEABLE_METHOD_NAMES)
-                                                              .intercept(MethodDelegation.to(pageableInterceptor))
-                                                              .method(ElementMatchers.not(PAGEABLE_METHOD_NAMES))
-                                                              .intercept(MethodDelegation.to(beanAttributesInterceptor));
+  private static Class<?> defineProxyType(Class<?> parameterType) {
+    DynamicType.Builder<?> buddyBuilder = new ByteBuddy().subclass(parameterType)
+                                                         .defineField(PAGING_FIELD_NAME,
+                                                             Paging.class,
+                                                             Visibility.PRIVATE)
+                                                         .defineField(TARGET_FIELD_NAME,
+                                                             Object.class,
+                                                             Visibility.PRIVATE)
+                                                         .method(PAGEABLE_METHOD_NAMES)
+                                                         .intercept(MethodDelegation.to(PageableValuesInterceptor.class))
+                                                         .method(ElementMatchers.not(PAGEABLE_METHOD_NAMES))
+                                                         .intercept(MethodDelegation.to(
+                                                             PageableBeanAttributesInterceptor.class));
 
-      try (DynamicType.Unloaded<?> made = buddyBuilder.make()) {
-        return made.load(pt.getClassLoader()).getLoaded();
-      }
-    });
+    try (DynamicType.Unloaded<?> made = buddyBuilder.make()) {
+      return made.load(parameterType.getClassLoader()).getLoaded();
+    }
+  }
 
+  private static Object instantiate(Class<?> proxyType) {
     try {
-      return proxyClass.getDeclaredConstructor().newInstance();
+      return proxyType.getDeclaredConstructor().newInstance();
     } catch (ReflectiveOperationException e) {
-      throw new RuntimeException(e);
+      throw new IllegalStateException("无法创建分页代理实例：" + proxyType.getName(), e);
     }
   }
 
-  /**
-   * 调试模式代理
-   * <p>
-   * 在代理对象中额外添加私有字段保存分页数据和原始 Bean，
-   * 便于在调试器中观察属性值。
-   */
-  private static Object delegateForDebugger(Class<?> parameterType,
-                                            PageableValuesInterceptor pageableInterceptor,
-                                            PageableBeanAttributesInterceptor beanAttributesInterceptor) {
-    ReceiverTypeDefinition<?> buddyBuilder = new ByteBuddy().subclass(parameterType)
-                                                            .defineField(DEBUGGER_PAGING_FIELD_NAME,
-                                                                Paging.class,
-                                                                Visibility.PRIVATE)
-                                                            .method(PAGEABLE_METHOD_NAMES)
-                                                            .intercept(MethodDelegation.to(pageableInterceptor))
-                                                            .method(ElementMatchers.not(PAGEABLE_METHOD_NAMES))
-                                                            .intercept(MethodDelegation.to(beanAttributesInterceptor));
-
-    try (DynamicType.Unloaded<?> unloaded = buddyBuilder.make()) {
-      Class<?> proxyType = unloaded.load(parameterType.getClassLoader()).getLoaded();
-
-      // 使用 Objenesis 创建实例，不调用构造函数
-      Object proxy = OBJENESIS.newInstance(proxyType);
-      // 把原 attribute 的字段复制到 proxy 上
-      copyFields(beanAttributesInterceptor.getTarget(), proxy);
-      // 把 Paging 注入（用于 toString）
-      injectPaging(proxyType, proxy, pageableInterceptor.paging);
-
-      return proxy;
+  private static void inject(Class<?> proxyType, Object proxy, String fieldName, Object value) {
+    try {
+      Field field = proxyType.getDeclaredField(fieldName);
+      field.setAccessible(true);
+      field.set(proxy, value);
+    } catch (ReflectiveOperationException e) {
+      throw new IllegalStateException("无法注入分页代理字段：" + fieldName, e);
     }
   }
 
@@ -176,37 +154,20 @@ public final class PageableDelegator {
   }
 
   /**
-   * 注入分页数据到代理对象的私有字段
-   */
-  private static void injectPaging(Class<?> proxyType, Object proxy, Paging paging) {
-    try {
-      Field p = proxyType.getDeclaredField(DEBUGGER_PAGING_FIELD_NAME);
-      p.setAccessible(true);
-      p.set(proxy, paging);
-    } catch (Exception e) {
-      LOGGER.atWarn().scene(LOGGER_SCENE_PAGING).status(Status.FAILED).setCause(e).log("无法注入分页数据到代理对象");
-    }
-  }
-
-  /**
    * 处理 {@link Pageable} 接口定义的几个接口参数获取
    */
   @SuppressWarnings("unused")
-  @RequiredArgsConstructor
   public static final class PageableValuesInterceptor {
 
-    @Getter(AccessLevel.PACKAGE)
-    private final Paging paging;
-
     @RuntimeType
-    public Object intercept(@Origin Method method) {
+    public static Object intercept(@FieldValue(PAGING_FIELD_NAME) Paging paging, @Origin Method method) {
       return switch (method.getName()) {
         case "unpaged" -> paging.unpaged();
         case "pageNumber" -> paging.pageNumber();
         case "pageSize" -> paging.pageSize();
         case "orders" -> paging.orders();
         case "convertTo" -> PageConverterHolder.getConverter().to(paging);
-        default -> throw new IllegalStateException();
+        default -> throw new IllegalStateException("未处理的分页方法：" + method.getName());
       };
     }
   }
@@ -215,14 +176,12 @@ public final class PageableDelegator {
    * 处理实现了 {@link Pageable} 接口的 Bean Class 的其他参数获取（除接口定义的方法）
    */
   @SuppressWarnings("unused")
-  @RequiredArgsConstructor
   public static final class PageableBeanAttributesInterceptor {
 
-    @Getter(AccessLevel.PACKAGE)
-    private final Object target;
-
     @RuntimeType
-    public Object intercept(@This Object proxy, @Origin Method method, @AllArguments Object[] args) {
+    public static Object intercept(@FieldValue(TARGET_FIELD_NAME) Object target,
+                                   @Origin Method method,
+                                   @AllArguments Object[] args) {
       try {
         return method.invoke(target, args);
       } catch (IllegalAccessException | InvocationTargetException e) {

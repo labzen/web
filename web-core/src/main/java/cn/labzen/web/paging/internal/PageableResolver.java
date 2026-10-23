@@ -3,8 +3,12 @@ package cn.labzen.web.paging.internal;
 import cn.labzen.meta.Labzens;
 import cn.labzen.web.api.paging.Order;
 import cn.labzen.web.meta.WebCoreConfiguration;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.context.request.RequestAttributes;
 
+import java.io.IOException;
 import java.util.*;
 
 import static cn.labzen.web.api.definition.Constants.DEFAULT_PAGE_NUMBER;
@@ -13,15 +17,22 @@ import static cn.labzen.web.paging.internal.Paging.DEFAULT_PAGE_SIZE;
 /**
  * 分页条件解析器
  * <p>
- * 将 HTTP 请求参数解析为分页条件对象。
- * 支持两种参数格式：
- * <ul>
- *   <li>紧凑格式：paging=1,20,field1,-field2（页码,每页数量,排序字段）</li>
- *   <li>普通格式：pageNumber=1&#38;pageSize=20&#38;orders=field1,!field2</li>
- * </ul>
+ * 将 HTTP 请求中的分页条件解析为分页数据，条件来源按优先级依次为：
+ * <ol>
+ *   <li>query string 的紧凑格式：{@code paging=1,20,field1,-field2}</li>
+ *   <li>query string 的普通格式：{@code pageNumber=1&pageSize=20&orders=field1,!field2}</li>
+ *   <li>JSON 请求体中同名的分页字段（由 {@code LabzenPageableRequestBodyAdvice} 解析后放入请求属性）</li>
+ * </ol>
+ * 三者都没有时使用默认分页（第 1 页、每页 {@link Paging#DEFAULT_PAGE_SIZE} 条）。
  */
 public final class PageableResolver {
 
+  /**
+   * 请求属性名：JSON 请求体中解析出的分页条件
+   */
+  public static final String PAGING_ATTRIBUTE = "cn.labzen.web.paging.body";
+
+  private static final ObjectMapper JSON = new ObjectMapper();
   private static final int MAX_PAGE_SIZE;
 
   static {
@@ -42,9 +53,19 @@ public final class PageableResolver {
     String parameter = webRequest.getParameter("paging");
     if (parameter != null) {
       return resolveFromCompact(parameter);
-    } else {
-      return resolveFromNormal(webRequest);
     }
+
+    Paging fromQuery = resolveFromNormal(webRequest);
+    if (fromQuery != null) {
+      return fromQuery;
+    }
+
+    Paging fromBody = resolveFromAttribute(webRequest);
+    if (fromBody != null) {
+      return fromBody;
+    }
+
+    return Paging.DEFAULT_PAGING;
   }
 
   /**
@@ -79,43 +100,133 @@ public final class PageableResolver {
   }
 
   /**
-   * 从普通格式解析分页条件
+   * 从普通格式的 query string 解析分页条件
    * <p>
    * 支持的参数名：
    * - 页码：page_number, pageNumber, pn
    * - 每页数量：page_size, pageSize, ps
    * - 排序：orders, od
    * - 禁用分页：unpaged
+   *
+   * @return 解析后的分页条件；query string 未提供任何分页条件时返回 {@code null}
    */
   private static Paging resolveFromNormal(NativeWebRequest webRequest) {
     if (webRequest.getParameter("unpaged") != null) {
       return Paging.UNPAGED_PAGING;
     }
 
-    int pageNumber = Optional.ofNullable(webRequest.getParameter("page_number"))
-                             .or(() -> Optional.ofNullable(webRequest.getParameter("pageNumber")))
-                             .or(() -> Optional.ofNullable(webRequest.getParameter("pn")))
-                             .flatMap(PageableResolver::parseInt)
-                             .orElse(DEFAULT_PAGE_NUMBER);
+    Integer pageNumber = firstInt(webRequest, "page_number", "pageNumber", "pn");
+    Integer pageSize = firstInt(webRequest, "page_size", "pageSize", "ps");
+    String ordersRaw = Optional.ofNullable(webRequest.getParameter("orders"))
+                               .orElse(webRequest.getParameter("od"));
 
-    int pageSize = Optional.ofNullable(webRequest.getParameter("page_size"))
-                           .or(() -> Optional.ofNullable(webRequest.getParameter("pageSize")))
-                           .or(() -> Optional.ofNullable(webRequest.getParameter("ps")))
-                           .flatMap(PageableResolver::parseInt)
-                           .orElse(DEFAULT_PAGE_SIZE);
-    if (pageSize > MAX_PAGE_SIZE) {
-      pageSize = MAX_PAGE_SIZE;
+    if (pageNumber == null && pageSize == null && ordersRaw == null) {
+      return null;
     }
 
-    String ordersRaw = Optional.ofNullable(webRequest.getParameter("orders")).orElse(webRequest.getParameter("od"));
+    return new Paging(false,
+        Optional.ofNullable(pageNumber).orElse(DEFAULT_PAGE_NUMBER),
+        limit(Optional.ofNullable(pageSize).orElse(DEFAULT_PAGE_SIZE)),
+        Optional.ofNullable(ordersRaw)
+                .map(raw -> List.of(raw.split(",")))
+                .filter(s -> !s.isEmpty())
+                .map(PageableResolver::resolveOrders)
+                .orElse(Collections.emptyList()));
+  }
 
-    List<Order> orders = Optional.ofNullable(ordersRaw)
-                                 .map(raw -> List.of(raw.split(",")))
-                                 .filter(s -> !s.isEmpty())
-                                 .map(PageableResolver::resolveOrders)
-                                 .orElse(Collections.emptyList());
+  /**
+   * 解析 JSON 请求体中的分页条件
+   * <p>
+   * 支持的字段名与 query string 一致：{@code unpaged}、{@code pageNumber}/{@code page_number}/{@code pn}、
+   * {@code pageSize}/{@code page_size}/{@code ps}、{@code orders}/{@code od}。
+   * 字段值可以是数字，也可以是数字字符串；{@code orders} 可以是数组或逗号分隔的字符串。
+   *
+   * @param body 请求体字节
+   * @return 解析后的分页条件；请求体不是 JSON 对象、或未包含任何分页字段时返回 {@code null}
+   */
+  public static Paging resolveFromBody(byte[] body) {
+    if (body == null || body.length == 0) {
+      return null;
+    }
 
-    return new Paging(false, pageNumber, pageSize, orders);
+    JsonNode root;
+    try {
+      root = JSON.readTree(body);
+    } catch (IOException e) {
+      return null;
+    }
+    if (root == null || !root.isObject()) {
+      return null;
+    }
+
+    JsonNode unpagedNode = root.get("unpaged");
+    if (unpagedNode != null && !unpagedNode.isNull() && unpagedNode.asBoolean(false)) {
+      return Paging.UNPAGED_PAGING;
+    }
+
+    Integer pageNumber = jsonInt(root, "pageNumber", "page_number", "pn");
+    Integer pageSize = jsonInt(root, "pageSize", "page_size", "ps");
+    List<Order> orders = jsonOrders(root);
+
+    if (pageNumber == null && pageSize == null && orders == null) {
+      return null;
+    }
+
+    return new Paging(false,
+        Optional.ofNullable(pageNumber).orElse(DEFAULT_PAGE_NUMBER),
+        limit(Optional.ofNullable(pageSize).orElse(DEFAULT_PAGE_SIZE)),
+        Optional.ofNullable(orders).orElse(Collections.emptyList()));
+  }
+
+  private static Paging resolveFromAttribute(NativeWebRequest webRequest) {
+    Object attribute = webRequest.getAttribute(PAGING_ATTRIBUTE, RequestAttributes.SCOPE_REQUEST);
+    return attribute instanceof Paging paging ? paging : null;
+  }
+
+  private static Integer firstInt(NativeWebRequest webRequest, String... names) {
+    for (String name : names) {
+      Optional<Integer> parsed = parseInt(webRequest.getParameter(name));
+      if (parsed.isPresent()) {
+        return parsed.get();
+      }
+    }
+    return null;
+  }
+
+  private static Integer jsonInt(JsonNode root, String... names) {
+    for (String name : names) {
+      JsonNode node = root.get(name);
+      if (node == null || node.isNull()) {
+        continue;
+      }
+      Optional<Integer> parsed = node.isNumber() ? Optional.of(node.asInt()) : parseInt(node.asText());
+      if (parsed.isPresent()) {
+        return parsed.get();
+      }
+    }
+    return null;
+  }
+
+  private static List<Order> jsonOrders(JsonNode root) {
+    JsonNode node = root.get("orders");
+    if (node == null || node.isNull()) {
+      node = root.get("od");
+    }
+    if (node == null || node.isNull()) {
+      return null;
+    }
+
+    List<String> chips = new ArrayList<>();
+    if (node.isArray()) {
+      node.forEach(item -> chips.add(item.asText()));
+    } else {
+      chips.addAll(Arrays.asList(node.asText().split(",")));
+    }
+    return resolveOrders(chips);
+  }
+
+  private static int limit(int pageSize) {
+    return Math.min(pageSize, MAX_PAGE_SIZE);
   }
 
   /**
