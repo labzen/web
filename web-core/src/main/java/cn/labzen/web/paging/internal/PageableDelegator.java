@@ -9,6 +9,7 @@ import cn.labzen.web.meta.WebCoreConfiguration;
 import cn.labzen.web.paging.convert.PageConverterHolder;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.method.MethodDescription;
+import net.bytebuddy.description.modifier.SyntheticState;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.implementation.MethodDelegation;
@@ -96,10 +97,12 @@ public final class PageableDelegator {
     DynamicType.Builder<?> buddyBuilder = new ByteBuddy().subclass(parameterType)
                                                          .defineField(PAGING_FIELD_NAME,
                                                              Paging.class,
-                                                             Visibility.PRIVATE)
+                                                             Visibility.PRIVATE,
+                                                             SyntheticState.SYNTHETIC)
                                                          .defineField(TARGET_FIELD_NAME,
                                                              Object.class,
-                                                             Visibility.PRIVATE)
+                                                             Visibility.PRIVATE,
+                                                             SyntheticState.SYNTHETIC)
                                                          .method(PAGEABLE_METHOD_NAMES)
                                                          .intercept(MethodDelegation.to(PageableValuesInterceptor.class))
                                                          .method(ElementMatchers.not(PAGEABLE_METHOD_NAMES))
